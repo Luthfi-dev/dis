@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 import { getDesaName, getKecamatanName, getKabupatenName, getProvinceName } from '@/lib/wilayah';
+import { Separator } from '@/components/ui/separator';
 
 function DetailItem({ label, value, icon }: { label: string; value: React.ReactNode; icon: React.ElementType }) {
   const Icon = icon;
@@ -151,6 +152,7 @@ export default function LihatSiswaPage({ params: { id } }: { params: { id: strin
                     <DetailItem label="Kabupaten" value={getKabupatenName(student.alamatKkKabupaten)} icon={Home}/>
                     <DetailItem label="Kecamatan" value={getKecamatanName(student.alamatKkKecamatan)} icon={Home}/>
                     <DetailItem label="Desa" value={getDesaName(student.alamatKkDesa)} icon={Home}/>
+                    <DetailItem label="Provinsi" value={getProvinceName(student.alamatKkProvinsi)} icon={Home}/>
                 </div>
              </div>
              <div>
@@ -183,21 +185,44 @@ export default function LihatSiswaPage({ params: { id } }: { params: { id: strin
 
         <Card className="shadow-lg">
             <CardHeader>
-                <CardTitle>Data Orang Tua / Wali</CardTitle>
+                <CardTitle>Keterangan Orang Tua / Wali</CardTitle>
             </CardHeader>
-            <CardContent>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                    <DetailItem label="Nama Ayah" value={student.namaAyah} icon={User}/>
-                    <DetailItem label="Pendidikan Ayah" value={student.pendidikanAyah} icon={GraduationCap}/>
-                    <DetailItem label="Pekerjaan Ayah" value={student.pekerjaanAyah} icon={Building}/>
-                    <DetailItem label="Nama Ibu" value={student.namaIbu} icon={User}/>
-                    <DetailItem label="Pendidikan Ibu" value={student.pendidikanIbu} icon={GraduationCap}/>
-                    <DetailItem label="Pekerjaan Ibu" value={student.pekerjaanIbu} icon={Building}/>
-                    <DetailItem label="Alamat Orang Tua" value={student.alamatOrangTua} icon={Home}/>
-                    <DetailItem label="Telepon Orang Tua" value={student.teleponOrangTua} icon={Phone}/>
-                    <DetailItem label="Nama Wali" value={student.namaWali} icon={HeartHandshake}/>
-                    <DetailItem label="Pekerjaan Wali" value={student.pekerjaanWali} icon={Building}/>
-                 </div>
+            <CardContent className="space-y-4">
+                <div>
+                    <h4 className="font-semibold text-md mb-2">a. Nama Orang Tua Kandung</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                        <DetailItem label="Nama Ayah" value={student.namaAyah} icon={User}/>
+                        <DetailItem label="Nama Ibu" value={student.namaIbu} icon={User}/>
+                    </div>
+                </div>
+                <Separator/>
+                <div>
+                    <h4 className="font-semibold text-md mb-2">b. Pendidikan Tertinggi & Pekerjaan</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                        <DetailItem label="Pendidikan Tertinggi Ayah" value={student.pendidikanAyah} icon={GraduationCap}/>
+                        <DetailItem label="Pekerjaan Ayah" value={student.pekerjaanAyah} icon={Building}/>
+                        <DetailItem label="Pendidikan Tertinggi Ibu" value={student.pendidikanIbu} icon={GraduationCap}/>
+                        <DetailItem label="Pekerjaan Ibu" value={student.pekerjaanIbu} icon={Building}/>
+                    </div>
+                </div>
+                <Separator/>
+                <div>
+                    <h4 className="font-semibold text-md mb-2">c. Wali Murid</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                        <DetailItem label="Nama Wali" value={student.namaWali} icon={HeartHandshake}/>
+                        <DetailItem label="Hubungan Keluarga" value={student.hubunganWali} icon={Users}/>
+                        <DetailItem label="Pendidikan Terakhir" value={student.pendidikanWali} icon={GraduationCap}/>
+                        <DetailItem label="Pekerjaan" value={student.pekerjaanWali} icon={Building}/>
+                    </div>
+                </div>
+                <Separator/>
+                <div>
+                    <h4 className="font-semibold text-md mb-2">d. Kontak & Alamat Orang Tua / Wali</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                        <DetailItem label="Alamat" value={student.alamatOrangTua} icon={Home}/>
+                        <DetailItem label="Telepon" value={student.teleponOrangTua} icon={Phone}/>
+                    </div>
+                </div>
             </CardContent>
         </Card>
         
@@ -236,5 +261,3 @@ export default function LihatSiswaPage({ params: { id } }: { params: { id: strin
     </div>
   );
 }
-
-    

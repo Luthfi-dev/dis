@@ -134,9 +134,10 @@ export default function PreviewSiswaPage({ params: { id } }: { params: { id: str
                     <div className="space-y-4">
                         <div className="p-4 bg-muted/50 rounded-lg space-y-3">
                             <h4 className='font-semibold text-md'>Alamat Sesuai KK</h4>
-                            <InfoRow label="Desa" value={student.alamatKkDesa} icon={Home} />
-                            <InfoRow label="Kecamatan" value={student.alamatKkKecamatan} icon={Home} />
-                            <InfoRow label="Kabupaten" value={student.alamatKkKabupaten} icon={Home} />
+                            <InfoRow label="Desa" value={getDesaName(student.alamatKkDesa)} icon={Home} />
+                            <InfoRow label="Kecamatan" value={getKecamatanName(student.alamatKkKecamatan)} icon={Home} />
+                            <InfoRow label="Kabupaten" value={getKabupatenName(student.alamatKkKabupaten)} icon={Home} />
+                            <InfoRow label="Provinsi" value={getProvinceName(student.alamatKkProvinsi)} icon={Home} />
                         </div>
                         <div className="p-4 bg-muted/50 rounded-lg space-y-3">
                             <h4 className='font-semibold text-md'>Domisili</h4>
@@ -182,6 +183,8 @@ export default function PreviewSiswaPage({ params: { id } }: { params: { id: str
                     <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">E. Keterangan Wali</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
                        <InfoRow label="Nama Wali" value={student.namaWali} icon={HeartHandshake} />
+                       <InfoRow label="Hubungan Keluarga" value={student.hubunganWali} icon={Users} />
+                       <InfoRow label="Pendidikan Wali" value={student.pendidikanWali} icon={GraduationCap} />
                        <InfoRow label="Pekerjaan Wali" value={student.pekerjaanWali} icon={Building} />
                     </div>
                 </section>

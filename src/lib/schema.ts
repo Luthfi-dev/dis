@@ -35,14 +35,16 @@ export const dataSiswaSchema = z.object({
 export const dataOrangTuaSchema = z.object({
   namaAyah: z.string().optional(),
   namaIbu: z.string().optional(),
-  pekerjaanAyah: z.string().optional(),
-  pekerjaanIbu: z.string().optional(),
   pendidikanAyah: z.string().optional(),
   pendidikanIbu: z.string().optional(),
+  pekerjaanAyah: z.string().optional(),
+  pekerjaanIbu: z.string().optional(),
+  namaWali: z.string().optional(),
+  hubunganWali: z.string().optional(),
+  pendidikanWali: z.string().optional(),
+  pekerjaanWali: z.string().optional(),
   alamatOrangTua: z.string().optional(),
   teleponOrangTua: z.string().optional(),
-  namaWali: z.string().optional(),
-  pekerjaanWali: z.string().optional(),
 });
 
 export const dataRincianSchema = z.object({
@@ -101,16 +103,18 @@ export const completeStudentFormSchema = dataSiswaSchema.merge(
         akteKematianIbu: fileSchema.nullable(),
     }),
 
-    // Orang Tua - Wali remains optional
+    // Orang Tua - Wali remains optional, but if a wali is named, other details might be needed.
     namaAyah: z.string().min(1, "Nama Ayah wajib diisi."),
     namaIbu: z.string().min(1, "Nama Ibu wajib diisi."),
+    pendidikanAyah: z.string().min(1, "Pendidikan Ayah wajib diisi."),
+    pendidikanIbu: z.string().min(1, "Pendidikan Ibu wajib diisi."),
     pekerjaanAyah: z.string().min(1, "Pekerjaan Ayah wajib diisi."),
     pekerjaanIbu: z.string().min(1, "Pekerjaan Ibu wajib diisi."),
-    pendidikanAyah: z.string().optional(),
-    pendidikanIbu: z.string().optional(),
     alamatOrangTua: z.string().min(1, "Alamat Orang Tua wajib diisi."),
     teleponOrangTua: z.string().optional(),
     namaWali: z.string().optional(),
+    hubunganWali: z.string().optional(),
+    pendidikanWali: z.string().optional(),
     pekerjaanWali: z.string().optional(),
 
     // Rincian

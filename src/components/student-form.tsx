@@ -25,6 +25,7 @@ import type { Siswa } from '@/lib/data';
 import Image from 'next/image';
 import { getProvinces, getKabupatens, getKecamatans, getDesas, Wilayah } from '@/lib/wilayah';
 import { Combobox } from './ui/combobox';
+import { Separator } from './ui/separator';
 
 const steps = [
   { id: 1, title: 'Data Siswa', schema: dataSiswaSchema },
@@ -75,14 +76,16 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
         domisiliDesa: '',
         namaAyah: '',
         namaIbu: '',
-        pekerjaanAyah: '',
-        pekerjaanIbu: '',
         pendidikanAyah: '',
         pendidikanIbu: '',
+        pekerjaanAyah: '',
+        pekerjaanIbu: '',
+        namaWali: '',
+        hubunganWali: '',
+        pendidikanWali: '',
+        pekerjaanWali: '',
         alamatOrangTua: '',
         teleponOrangTua: '',
-        namaWali: '',
-        pekerjaanWali: '',
         tinggiBadan: undefined,
         beratBadan: undefined,
         penyakit: '',
@@ -533,29 +536,67 @@ function DataSiswaForm() {
 function DataOrangTuaForm() {
   const { control } = useFormContext<StudentFormData>();
   return (
-    <Grid>
-      <FormField control={control} name="namaAyah" render={({ field }) => (
-        <FormItem><FormLabel>Nama Ayah</FormLabel><FormControl><Input placeholder="Nama lengkap ayah" {...field} /></FormControl><FormMessage /></FormItem>
-      )} />
-      <FormField control={control} name="namaIbu" render={({ field }) => (
-        <FormItem><FormLabel>Nama Ibu</FormLabel><FormControl><Input placeholder="Nama lengkap ibu" {...field} /></FormControl><FormMessage /></FormItem>
-      )} />
-      <FormField control={control} name="pekerjaanAyah" render={({ field }) => (
-        <FormItem><FormLabel>Pekerjaan Ayah</FormLabel><FormControl><Input placeholder="Contoh: Wiraswasta" {...field} /></FormControl><FormMessage /></FormItem>
-      )} />
-      <FormField control={control} name="pekerjaanIbu" render={({ field }) => (
-        <FormItem><FormLabel>Pekerjaan Ibu</FormLabel><FormControl><Input placeholder="Contoh: Ibu Rumah Tangga" {...field} /></FormControl><FormMessage /></FormItem>
-      )} />
-       <FormField control={control} name="namaWali" render={({ field }) => (
-        <FormItem><FormLabel>Nama Wali (jika ada)</FormLabel><FormControl><Input placeholder="Nama lengkap wali" {...field} /></FormControl><FormMessage /></FormItem>
-      )} />
-      <FormField control={control} name="pekerjaanWali" render={({ field }) => (
-        <FormItem><FormLabel>Pekerjaan Wali</FormLabel><FormControl><Input placeholder="Pekerjaan wali" {...field} /></FormControl><FormMessage /></FormItem>
-      )} />
-      <FormField control={control} name="alamatOrangTua" render={({ field }) => (
-        <FormItem className="md:col-span-2"><FormLabel>Alamat Orang Tua/Wali</FormLabel><FormControl><Textarea placeholder="Alamat lengkap orang tua/wali" {...field} /></FormControl><FormMessage /></FormItem>
-      )} />
-    </Grid>
+    <div className="space-y-6">
+        <div>
+            <h3 className="text-md font-semibold mb-3">a. Nama Orang Tua Kandung</h3>
+            <Grid>
+                <FormField control={control} name="namaAyah" render={({ field }) => (
+                    <FormItem><FormLabel>Nama Ayah</FormLabel><FormControl><Input placeholder="Nama lengkap ayah" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={control} name="namaIbu" render={({ field }) => (
+                    <FormItem><FormLabel>Nama Ibu</FormLabel><FormControl><Input placeholder="Nama lengkap ibu" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+            </Grid>
+        </div>
+        <Separator/>
+        <div>
+            <h3 className="text-md font-semibold mb-3">b. Pendidikan Tertinggi & Pekerjaan</h3>
+            <Grid>
+                <FormField control={control} name="pendidikanAyah" render={({ field }) => (
+                    <FormItem><FormLabel>Pendidikan Tertinggi Ayah</FormLabel><FormControl><Input placeholder="Contoh: S1" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                 <FormField control={control} name="pekerjaanAyah" render={({ field }) => (
+                    <FormItem><FormLabel>Pekerjaan Ayah</FormLabel><FormControl><Input placeholder="Contoh: Wiraswasta" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={control} name="pendidikanIbu" render={({ field }) => (
+                    <FormItem><FormLabel>Pendidikan Tertinggi Ibu</FormLabel><FormControl><Input placeholder="Contoh: SMA" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                 <FormField control={control} name="pekerjaanIbu" render={({ field }) => (
+                    <FormItem><FormLabel>Pekerjaan Ibu</FormLabel><FormControl><Input placeholder="Contoh: Ibu Rumah Tangga" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+            </Grid>
+        </div>
+        <Separator/>
+         <div>
+            <h3 className="text-md font-semibold mb-3">c. Wali Murid (jika ada)</h3>
+            <Grid>
+                <FormField control={control} name="namaWali" render={({ field }) => (
+                    <FormItem><FormLabel>Nama Wali</FormLabel><FormControl><Input placeholder="Nama lengkap wali" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                 <FormField control={control} name="hubunganWali" render={({ field }) => (
+                    <FormItem><FormLabel>Hubungan Keluarga</FormLabel><FormControl><Input placeholder="Contoh: Paman" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                 <FormField control={control} name="pendidikanWali" render={({ field }) => (
+                    <FormItem><FormLabel>Pendidikan Terakhir</FormLabel><FormControl><Input placeholder="Pendidikan terakhir wali" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={control} name="pekerjaanWali" render={({ field }) => (
+                    <FormItem><FormLabel>Pekerjaan</FormLabel><FormControl><Input placeholder="Pekerjaan wali" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+            </Grid>
+        </div>
+        <Separator/>
+        <div>
+             <h3 className="text-md font-semibold mb-3">d. Kontak & Alamat Orang Tua / Wali</h3>
+             <Grid>
+                <FormField control={control} name="alamatOrangTua" render={({ field }) => (
+                    <FormItem><FormLabel>Alamat Orang Tua/Wali</FormLabel><FormControl><Textarea placeholder="Alamat lengkap orang tua/wali" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={control} name="teleponOrangTua" render={({ field }) => (
+                    <FormItem><FormLabel>Telepon Orang Tua/Wali</FormLabel><FormControl><Input placeholder="Nomor telepon" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+             </Grid>
+        </div>
+    </div>
   );
 }
 
