@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
@@ -103,7 +104,7 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="superadmin@gmail.com"
+                  placeholder="user@gmail.com"
                   {...register('email')}
                   aria-invalid={errors.email ? 'true' : 'false'}
                 />

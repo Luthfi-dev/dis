@@ -1,12 +1,14 @@
+
 'use client';
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { mockLogin, mockLogout, checkMockSession, User } from '@/lib/auth';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { mockLogin, mockLogout, checkMockSession, User, updateUser as updateAuthUser } from '@/lib/auth';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
+  updateUser: (updatedUser: User) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,8 +42,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setLoading(false);
   };
+  
+  const updateUser = useCallback(async (updatedUser: User) => {
+    setLoading(true);
+    const result = await updateAuthUser(updatedUser);
+    if (result.success && result.user) {
+        // If the updated user is the currently logged-in user, update the context state
+        if (user && user.id === result.user.id) {
+            setUser(result.user);
+        }
+    }
+    setLoading(false);
+    return result;
+  }, [user]);
 
-  const value = { user, loading, login, logout };
+  const value = { user, loading, login, logout, updateUser };
 
   return (
     <AuthContext.Provider value={value}>

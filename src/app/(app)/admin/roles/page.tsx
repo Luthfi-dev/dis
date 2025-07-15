@@ -13,7 +13,7 @@ export default function RolesPage() {
           <h1 className="text-3xl font-bold tracking-tight">Kelola Peran & Hak Akses</h1>
           <p className="text-muted-foreground">Atur peran dan izin akses untuk setiap pengguna.</p>
         </div>
-        <Button>
+        <Button disabled>
           <PlusCircle className="mr-2 h-4 w-4" />
           Tambah Peran
         </Button>
@@ -22,7 +22,7 @@ export default function RolesPage() {
         <CardHeader>
           <CardTitle>Daftar Peran</CardTitle>
           <CardDescription>
-            Fitur manajemen peran dinamis sedang dalam pengembangan.
+            Fitur manajemen peran dinamis sedang dalam pengembangan. Fitur ini memerlukan arsitektur yang kompleks untuk mengatur hak akses setiap halaman.
           </CardDescription>
         </CardHeader>
         <CardContent>
