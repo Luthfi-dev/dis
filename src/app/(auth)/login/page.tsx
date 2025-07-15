@@ -103,7 +103,7 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="superadmin@eduarchive.com"
+                  placeholder="superadmin@gmail.com"
                   {...register('email')}
                   aria-invalid={errors.email ? 'true' : 'false'}
                 />

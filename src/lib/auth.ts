@@ -16,7 +16,7 @@ export type User = {
 const mockUsers: User[] = [
   {
     id: '1',
-    email: 'superadmin@eduarchive.com',
+    email: 'superadmin@gmail.com',
     name: 'Super Admin',
     role: 'superadmin',
     status: 'active',
@@ -39,7 +39,7 @@ const mockUsers: User[] = [
 
 // Special passwords for mock users
 const mockPasswords: Record<string, string> = {
-  'superadmin@eduarchive.com': 'superadmin*#',
+  'superadmin@gmail.com': 'superadmin*#',
   'admin@eduarchive.com': 'password123',
   'blocked@eduarchive.com': 'password123',
 };
