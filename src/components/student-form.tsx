@@ -4,7 +4,7 @@
 import { useState, useTransition, useCallback, useEffect, useMemo } from 'react';
 import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { studentFormSchema, StudentFormData, completeStudentFormSchema, dataSiswaSchema, dataRincianSchema } from '@/lib/schema';
+import { studentFormSchema, StudentFormData, completeStudentFormSchema, dataSiswaSchema, dataRincianSchema, dataPerkembanganSchema, dataMeninggalkanSekolahSchema, dataDokumenSchema, dataOrangTuaSchema } from '@/lib/schema';
 import { FormStepper } from './form-stepper';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -29,17 +29,17 @@ import { Separator } from './ui/separator';
 
 const steps = [
   { id: 1, title: 'Data Siswa', schema: dataSiswaSchema },
-  { id: 2, title: 'Dokumen Utama' },
-  { id: 3, title: 'Data Orang Tua' },
+  { id: 2, title: 'Dokumen Utama', schema: dataDokumenSchema },
+  { id: 3, title: 'Data Orang Tua', schema: dataOrangTuaSchema },
   { id: 4, title: 'Rincian Kesehatan', schema: dataRincianSchema },
-  { id: 5, title: 'Perkembangan Siswa' },
-  { id: 6, title: 'Meninggalkan Sekolah' },
+  { id: 5, title: 'Perkembangan Siswa', schema: dataPerkembanganSchema },
+  { id: 6, title: 'Meninggalkan Sekolah', schema: dataMeninggalkanSekolahSchema },
   { id: 7, title: 'Laporan Belajar' },
   { id: 8, title: 'Validasi' },
 ];
 
-const initialFormValues: Partial<StudentFormData> = {
-  fotoProfil: undefined,
+const initialFormValues: StudentFormData = {
+  fotoProfil: { fileName: '', file: undefined, fileURL: ''},
   namaLengkap: '',
   nis: '',
   nisn: '',
@@ -91,22 +91,22 @@ const initialFormValues: Partial<StudentFormData> = {
   keluarAlasan: '',
   keluarTanggal: undefined,
   documents: {
-    kartuKeluarga: undefined,
-    ktpAyah: undefined,
-    ktpIbu: undefined,
-    kartuIndonesiaPintar: undefined,
-    ijazah: undefined,
-    aktaKelahiran: undefined,
-    akteKematianAyah: undefined,
-    akteKematianIbu: undefined,
-    raporSmt1: undefined,
-    raporSmt2: undefined,
-    raporSmt3: undefined,
-    raporSmt4: undefined,
-    raporSmt5: undefined,
-    raporSmt6: undefined,
-    ijazahSmp: undefined,
-    transkripSmp: undefined,
+    kartuKeluarga: { fileName: '', file: undefined, fileURL: ''},
+    ktpAyah: { fileName: '', file: undefined, fileURL: ''},
+    ktpIbu: { fileName: '', file: undefined, fileURL: ''},
+    kartuIndonesiaPintar: { fileName: '', file: undefined, fileURL: ''},
+    ijazah: { fileName: '', file: undefined, fileURL: ''},
+    aktaKelahiran: { fileName: '', file: undefined, fileURL: ''},
+    akteKematianAyah: { fileName: '', file: undefined, fileURL: ''},
+    akteKematianIbu: { fileName: '', file: undefined, fileURL: ''},
+    raporSmt1: { fileName: '', file: undefined, fileURL: ''},
+    raporSmt2: { fileName: '', file: undefined, fileURL: ''},
+    raporSmt3: { fileName: '', file: undefined, fileURL: ''},
+    raporSmt4: { fileName: '', file: undefined, fileURL: ''},
+    raporSmt5: { fileName: '', file: undefined, fileURL: ''},
+    raporSmt6: { fileName: '', file: undefined, fileURL: ''},
+    ijazahSmp: { fileName: '', file: undefined, fileURL: ''},
+    transkripSmp: { fileName: '', file: undefined, fileURL: ''},
   }
 };
 
@@ -157,14 +157,14 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
         const dataWithURLs = { ...data };
 
         // Manually create temporary file URLs for preview if new files are uploaded
-        if (data.fotoProfil?.file) {
+        if (data.fotoProfil?.file instanceof File) {
             dataWithURLs.fotoProfil.fileURL = URL.createObjectURL(data.fotoProfil.file);
         }
         if (data.documents) {
             for (const key in data.documents) {
                 const docKey = key as keyof typeof data.documents;
                 const document = data.documents[docKey];
-                if (document?.file) {
+                if (document?.file instanceof File) {
                     document.fileURL = URL.createObjectURL(document.file);
                 }
             }
@@ -281,10 +281,14 @@ function DataSiswaForm() {
   const [preview, setPreview] = useState<string | null>(getValues('fotoProfil.fileURL') || null);
   
   useEffect(() => {
+    const fileURL = getValues('fotoProfil.fileURL');
+    if(fileURL && !preview) {
+        setPreview(fileURL);
+    }
     const subscription = watch((value, { name }) => {
       if (name === 'fotoProfil') {
         const file = value.fotoProfil?.file;
-        if (file) {
+        if (file instanceof File) {
           const newPreview = URL.createObjectURL(file);
           setPreview(newPreview);
         } else if (value.fotoProfil?.fileURL) {
@@ -295,7 +299,7 @@ function DataSiswaForm() {
       }
     });
     return () => subscription.unsubscribe();
-  }, [watch]);
+  }, [watch, getValues, preview]);
 
   
   const [provinces, setProvinces] = useState<Wilayah[]>([]);
@@ -324,34 +328,28 @@ function DataSiswaForm() {
 
   // Reset dependent fields when a parent field changes
   useEffect(() => {
-    setValue('alamatKkKabupaten', '');
-    setValue('alamatKkKecamatan', '');
-    setValue('alamatKkDesa', '');
-  }, [alamatKkProvinsi, setValue]);
+    if(!getValues('alamatKkKabupaten')) setValue('alamatKkKabupaten', '');
+  }, [alamatKkProvinsi, setValue, getValues]);
 
   useEffect(() => {
-    setValue('alamatKkKecamatan', '');
-    setValue('alamatKkDesa', '');
-  }, [alamatKkKabupaten, setValue]);
+     if(!getValues('alamatKkKecamatan')) setValue('alamatKkKecamatan', '');
+  }, [alamatKkKabupaten, setValue, getValues]);
 
   useEffect(() => {
-    setValue('alamatKkDesa', '');
-  }, [alamatKkKecamatan, setValue]);
+    if(!getValues('alamatKkDesa')) setValue('alamatKkDesa', '');
+  }, [alamatKkKecamatan, setValue, getValues]);
 
   useEffect(() => {
-    setValue('domisiliKabupaten', '');
-    setValue('domisiliKecamatan', '');
-    setValue('domisiliDesa', '');
-  }, [domisiliProvinsi, setValue]);
+    if(!getValues('domisiliKabupaten')) setValue('domisiliKabupaten', '');
+  }, [domisiliProvinsi, setValue, getValues]);
 
   useEffect(() => {
-    setValue('domisiliKecamatan', '');
-    setValue('domisiliDesa', '');
-  }, [domisiliKabupaten, setValue]);
+    if(!getValues('domisiliKecamatan')) setValue('domisiliKecamatan', '');
+  }, [domisiliKabupaten, setValue, getValues]);
   
   useEffect(() => {
-    setValue('domisiliDesa', '');
-  }, [domisiliKecamatan, setValue]);
+    if(!getValues('domisiliDesa')) setValue('domisiliDesa', '');
+  }, [domisiliKecamatan, setValue, getValues]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -647,10 +645,10 @@ function DataRincianKesehatanForm() {
             </p>
             <Grid>
                 <FormField control={control} name="tinggiBadan" render={({ field }) => (
-                    <FormItem><FormLabel>Tinggi Badan (cm)</FormLabel><FormControl><Input type="number" placeholder="Contoh: 160" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Tinggi Badan (cm)</FormLabel><FormControl><Input type="number" placeholder="Contoh: 160" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={control} name="beratBadan" render={({ field }) => (
-                    <FormItem><FormLabel>Berat Badan (kg)</FormLabel><FormControl><Input type="number" placeholder="Contoh: 50" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Berat Badan (kg)</FormLabel><FormControl><Input type="number" placeholder="Contoh: 50" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={control} name="penyakit" render={({ field }) => (
                     <FormItem className="md:col-span-2"><FormLabel>Riwayat Penyakit</FormLabel><FormControl><Textarea placeholder="Jelaskan riwayat penyakit yang pernah diderita" {...field} /></FormControl><FormMessage /></FormItem>
@@ -906,7 +904,7 @@ function DataValidasiForm() {
         { label: "Foto Profil", value: values.fotoProfil?.fileName },
         // Dokumen
         ...Object.entries(values.documents || {}).map(([key, value]) => ({
-            label: `Dokumen: ${key}`,
+            label: `Dokumen: ${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}`,
             value: value?.fileName
         }))
     ].filter(field => field.value);
@@ -922,9 +920,9 @@ function DataValidasiForm() {
             <CardHeader><CardTitle>Ringkasan Data</CardTitle></CardHeader>
             <CardContent className="space-y-2 text-sm max-h-60 overflow-y-auto">
                 {allFields.map((field, index) => (
-                    <div key={index} className="flex justify-between">
-                        <span className="font-medium text-muted-foreground">{field.label}:</span>
-                        <span className="truncate ml-4">{field.value}</span>
+                    <div key={index} className="flex justify-between items-start gap-4">
+                        <span className="font-medium text-muted-foreground shrink-0">{field.label}:</span>
+                        <span className="truncate text-right">{field.value}</span>
                     </div>
                 ))}
                  {allFields.length === 0 && <p className="text-center text-muted-foreground">Belum ada data yang diisi.</p>}
