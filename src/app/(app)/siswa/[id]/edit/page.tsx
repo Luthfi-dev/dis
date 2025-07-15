@@ -5,7 +5,8 @@ import { notFound } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export default function EditSiswaPage({ params: { id } }: { params: { id: string } }) {
+export default function EditSiswaPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const [student, setStudent] = useState<Siswa | null>(null);
   const [loading, setLoading] = useState(true);
 
