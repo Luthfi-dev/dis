@@ -23,7 +23,8 @@ import { Textarea } from './ui/textarea';
 import { useRouter } from 'next/navigation';
 import type { Siswa } from '@/lib/data';
 import Image from 'next/image';
-import { getProvinces, getKabupatens, getKecamatans, getDesas, Provinsi } from '@/lib/wilayah';
+import { getProvinces, getKabupatens, getKecamatans, getDesas, Wilayah } from '@/lib/wilayah';
+import { Combobox } from './ui/combobox';
 
 const steps = [
   { id: 1, title: 'Data Siswa', schema: dataSiswaSchema },
@@ -62,9 +63,10 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
         jumlahSaudara: 0,
         bahasa: '',
         golonganDarah: undefined,
-        alamatKkDesa: '',
-        alamatKkKecamatan: '',
+        alamatKkProvinsi: '',
         alamatKkKabupaten: '',
+        alamatKkKecamatan: '',
+        alamatKkDesa: '',
         telepon: '',
         domisiliProvinsi: '',
         domisiliKabupaten: '',
@@ -247,20 +249,46 @@ function DataSiswaForm() {
   const { control, watch, setValue } = useFormContext<StudentFormData>();
   const fotoProfil = watch('fotoProfil');
   const [preview, setPreview] = useState<string | null>(fotoProfil?.fileURL || null);
-  const [provinces, setProvinces] = useState<Provinsi[]>([]);
-
+  
+  const [provinces, setProvinces] = useState<Wilayah[]>([]);
+  
+  const alamatKkProvinsi = watch('alamatKkProvinsi');
+  const alamatKkKabupaten = watch('alamatKkKabupaten');
+  const alamatKkKecamatan = watch('alamatKkKecamatan');
+  
   const domisiliProvinsi = watch('domisiliProvinsi');
   const domisiliKabupaten = watch('domisiliKabupaten');
   const domisiliKecamatan = watch('domisiliKecamatan');
 
-  // Fetch provinces from localStorage on component mount
   useEffect(() => {
     setProvinces(getProvinces());
   }, []);
 
-  const kabupatens = useMemo(() => getKabupatens(domisiliProvinsi), [domisiliProvinsi]);
-  const kecamatans = useMemo(() => getKecamatans(domisiliKabupaten), [domisiliKabupaten]);
-  const desas = useMemo(() => getDesas(domisiliKecamatan), [domisiliKecamatan]);
+  const kkKabupatens = useMemo(() => getKabupatens(alamatKkProvinsi), [alamatKkProvinsi]);
+  const kkKecamatans = useMemo(() => getKecamatans(alamatKkKabupaten), [alamatKkKabupaten]);
+  const kkDesas = useMemo(() => getDesas(alamatKkKecamatan), [alamatKkKecamatan]);
+
+  const domisiliKabupatens = useMemo(() => getKabupatens(domisiliProvinsi), [domisiliProvinsi]);
+  const domisiliKecamatans = useMemo(() => getKecamatans(domisiliKabupaten), [domisiliKabupaten]);
+  const domisiliDesas = useMemo(() => getDesas(domisiliKecamatan), [domisiliKecamatan]);
+
+  const wilayahToOptions = (wilayah: Wilayah[]) => wilayah.map(w => ({ value: w.id, label: w.name }));
+
+  // Reset dependent fields when a parent field changes
+  useEffect(() => {
+    setValue('alamatKkKabupaten', '');
+    setValue('alamatKkKecamatan', '');
+    setValue('alamatKkDesa', '');
+  }, [alamatKkProvinsi, setValue]);
+
+  useEffect(() => {
+    setValue('alamatKkKecamatan', '');
+    setValue('alamatKkDesa', '');
+  }, [alamatKkKabupaten, setValue]);
+
+  useEffect(() => {
+    setValue('alamatKkDesa', '');
+  }, [alamatKkKecamatan, setValue]);
 
   useEffect(() => {
     setValue('domisiliKabupaten', '');
@@ -272,11 +300,10 @@ function DataSiswaForm() {
     setValue('domisiliKecamatan', '');
     setValue('domisiliDesa', '');
   }, [domisiliKabupaten, setValue]);
-
+  
   useEffect(() => {
     setValue('domisiliDesa', '');
   }, [domisiliKecamatan, setValue]);
-
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -393,47 +420,108 @@ function DataSiswaForm() {
         
         <div className="md:col-span-2 space-y-2">
             <h3 className="text-sm font-medium"><FormLabelRequired>Alamat Sesuai Kartu Keluarga</FormLabelRequired></h3>
-            <Grid>
-                <FormField control={control} name="alamatKkDesa" render={({ field }) => (
-                    <FormItem><FormLabel>Desa</FormLabel><FormControl><Input placeholder="Nama Desa" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                 <FormField control={control} name="alamatKkKecamatan" render={({ field }) => (
-                    <FormItem><FormLabel>Kecamatan</FormLabel><FormControl><Input placeholder="Nama Kecamatan" {...field} /></FormControl><FormMessage /></FormItem>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                 <FormField control={control} name="alamatKkProvinsi" render={({ field }) => (
+                    <FormItem><FormLabel>Provinsi</FormLabel><FormControl>
+                        <Combobox
+                          options={wilayahToOptions(provinces)}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Pilih Provinsi..."
+                          searchPlaceholder="Cari provinsi..."
+                        />
+                    </FormControl><FormMessage /></FormItem>
                 )} />
                  <FormField control={control} name="alamatKkKabupaten" render={({ field }) => (
-                    <FormItem><FormLabel>Kabupaten</FormLabel><FormControl><Input placeholder="Nama Kabupaten" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Kabupaten</FormLabel><FormControl>
+                        <Combobox
+                          options={wilayahToOptions(kkKabupatens)}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Pilih Kabupaten..."
+                          searchPlaceholder="Cari kabupaten..."
+                          disabled={!alamatKkProvinsi}
+                        />
+                    </FormControl><FormMessage /></FormItem>
                 )} />
-            </Grid>
+                 <FormField control={control} name="alamatKkKecamatan" render={({ field }) => (
+                    <FormItem><FormLabel>Kecamatan</FormLabel><FormControl>
+                        <Combobox
+                          options={wilayahToOptions(kkKecamatans)}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Pilih Kecamatan..."
+                          searchPlaceholder="Cari kecamatan..."
+                          disabled={!alamatKkKabupaten}
+                        />
+                    </FormControl><FormMessage /></FormItem>
+                )} />
+                 <FormField control={control} name="alamatKkDesa" render={({ field }) => (
+                    <FormItem><FormLabel>Desa</FormLabel><FormControl>
+                        <Combobox
+                          options={wilayahToOptions(kkDesas)}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Pilih Desa..."
+                          searchPlaceholder="Cari desa..."
+                          disabled={!alamatKkKecamatan}
+                        />
+                    </FormControl><FormMessage /></FormItem>
+                )} />
+            </div>
         </div>
 
         <div className="md:col-span-2 space-y-2">
             <h3 className="text-sm font-medium"><FormLabelRequired>Domisili</FormLabelRequired></h3>
-            <Grid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                  <FormField control={control} name="domisiliProvinsi" render={({ field }) => (
-                    <FormItem><FormLabel>Provinsi</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Pilih Provinsi" /></SelectTrigger></FormControl>
-                        <SelectContent>{provinces.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
-                    </Select><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Provinsi</FormLabel><FormControl>
+                        <Combobox
+                          options={wilayahToOptions(provinces)}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Pilih Provinsi..."
+                          searchPlaceholder="Cari provinsi..."
+                        />
+                    </FormControl><FormMessage /></FormItem>
                 )} />
                  <FormField control={control} name="domisiliKabupaten" render={({ field }) => (
-                    <FormItem><FormLabel>Kabupaten</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={!domisiliProvinsi}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Pilih Kabupaten" /></SelectTrigger></FormControl>
-                        <SelectContent>{kabupatens.map(k => <SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>)}</SelectContent>
-                    </Select><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Kabupaten</FormLabel><FormControl>
+                        <Combobox
+                           options={wilayahToOptions(domisiliKabupatens)}
+                           value={field.value}
+                           onChange={field.onChange}
+                           placeholder="Pilih Kabupaten..."
+                           searchPlaceholder="Cari kabupaten..."
+                           disabled={!domisiliProvinsi}
+                        />
+                    </FormControl><FormMessage /></FormItem>
                 )} />
                  <FormField control={control} name="domisiliKecamatan" render={({ field }) => (
-                    <FormItem><FormLabel>Kecamatan</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={!domisiliKabupaten}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Pilih Kecamatan" /></SelectTrigger></FormControl>
-                        <SelectContent>{kecamatans.map(k => <SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>)}</SelectContent>
-                    </Select><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Kecamatan</FormLabel><FormControl>
+                        <Combobox
+                          options={wilayahToOptions(domisiliKecamatans)}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Pilih Kecamatan..."
+                          searchPlaceholder="Cari kecamatan..."
+                          disabled={!domisiliKabupaten}
+                        />
+                    </FormControl><FormMessage /></FormItem>
                 )} />
                  <FormField control={control} name="domisiliDesa" render={({ field }) => (
-                    <FormItem><FormLabel>Desa</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={!domisiliKecamatan}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Pilih Desa" /></SelectTrigger></FormControl>
-                        <SelectContent>{desas.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent>
-                    </Select><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Desa</FormLabel><FormControl>
+                        <Combobox
+                          options={wilayahToOptions(domisiliDesas)}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Pilih Desa..."
+                          searchPlaceholder="Cari desa..."
+                          disabled={!domisiliKecamatan}
+                        />
+                    </FormControl><FormMessage /></FormItem>
                 )} />
-            </Grid>
+            </div>
         </div>
       </Grid>
     </div>
@@ -629,4 +717,3 @@ function DataDokumenForm() {
         </div>
     );
 }
-
