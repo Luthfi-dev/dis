@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useTransition, useCallback, useEffect, useRef } from 'react';
-import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
+import { useState, useTransition, useCallback, useEffect, useMemo } from 'react';
+import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { studentFormSchema, StudentFormData, completeStudentFormSchema } from '@/lib/schema';
+import { studentFormSchema, StudentFormData, completeStudentFormSchema, dataSiswaSchema } from '@/lib/schema';
 import { FormStepper } from './form-stepper';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, ArrowRight, CalendarIcon, PlusCircle, Trash2, UploadCloud, FileCheck2, FileX2, User } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, CalendarIcon, UploadCloud, FileCheck2, FileX2, User } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,9 +22,10 @@ import { Textarea } from './ui/textarea';
 import { useRouter } from 'next/navigation';
 import type { Siswa } from '@/lib/data';
 import Image from 'next/image';
+import { getProvinces, getKabupatens, getKecamatans, getDesas } from '@/lib/wilayah';
 
 const steps = [
-  { id: 1, title: 'Data Siswa' },
+  { id: 1, title: 'Data Siswa', schema: dataSiswaSchema },
   { id: 2, title: 'Unggah Dokumen' },
   { id: 3, title: 'Data Orang Tua' },
   { id: 4, title: 'Data Rincian' },
@@ -44,65 +45,74 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
     defaultValues: studentData
       ? {
         ...studentData,
-        tanggalLahir: studentData.tanggalLahir ? new Date(studentData.tanggalLahir) : undefined,
+        tanggalLahir: studentData.tanggalLahir ? new Date(studentData.tanggalLhir) : undefined,
         tanggalMasuk: studentData.tanggalMasuk ? new Date(studentData.tanggalMasuk) : undefined,
         tanggalLulus: studentData.tanggalLulus ? new Date(studentData.tanggalLulus) : undefined,
       }
       : {
-      namaLengkap: '',
-      nis: '',
-      nisn: '',
-      namaPanggilan: '',
-      jenisKelamin: undefined,
-      tempatLahir: '',
-      tanggalLahir: undefined,
-      agama: '',
-      kewarganegaraan: 'Indonesia',
-      anakKe: undefined,
-      jumlahSaudara: undefined,
-      bahasa: '',
-      alamat: '',
-      telepon: '',
-      jarakKeSekolah: '',
-      namaAyah: '',
-      namaIbu: '',
-      pekerjaanAyah: '',
-      pekerjaanIbu: '',
-      pendidikanAyah: '',
-      pendidikanIbu: '',
-      alamatOrangTua: '',
-      teleponOrangTua: '',
-      namaWali: '',
-      pekerjaanWali: '',
-      tinggiBadan: undefined,
-      beratBadan: undefined,
-      golonganDarah: '',
-      penyakit: '',
-      kelainanJasmani: '',
-      asalSekolah: '',
-      tanggalMasuk: undefined,
-      hobi: '',
-      melanjutkanKe: '',
-      tanggalLulus: undefined,
-      alasanPindah: '',
-      fotoProfil: undefined,
-      documents: {
-        kartuKeluarga: undefined,
-        ktpAyah: undefined,
-        ktpIbu: undefined,
-        kartuIndonesiaPintar: undefined,
-        ijazah: undefined,
-        aktaKelahiran: undefined,
-        akteKematianAyah: undefined,
-        akteKematianIbu: undefined,
-      },
+        namaLengkap: '',
+        nis: '',
+        nisn: '',
+        jenisKelamin: undefined,
+        tempatLahir: '',
+        tanggalLahir: undefined,
+        agama: undefined,
+        kewarganegaraan: undefined,
+        jumlahSaudara: 0,
+        bahasa: '',
+        golonganDarah: undefined,
+        alamatKkDesa: '',
+        alamatKkKecamatan: '',
+        alamatKkKabupaten: '',
+        telepon: '',
+        domisiliProvinsi: '',
+        domisiliKabupaten: '',
+        domisiliKecamatan: '',
+        domisiliDesa: '',
+        namaAyah: '',
+        namaIbu: '',
+        pekerjaanAyah: '',
+        pekerjaanIbu: '',
+        pendidikanAyah: '',
+        pendidikanIbu: '',
+        alamatOrangTua: '',
+        teleponOrangTua: '',
+        namaWali: '',
+        pekerjaanWali: '',
+        tinggiBadan: undefined,
+        beratBadan: undefined,
+        penyakit: '',
+        kelainanJasmani: '',
+        asalSekolah: '',
+        tanggalMasuk: undefined,
+        hobi: '',
+        melanjutkanKe: '',
+        tanggalLulus: undefined,
+        alasanPindah: '',
+        fotoProfil: undefined,
+        documents: {
+            kartuKeluarga: undefined,
+            ktpAyah: undefined,
+            ktpIbu: undefined,
+            kartuIndonesiaPintar: undefined,
+            ijazah: undefined,
+            aktaKelahiran: undefined,
+            akteKematianAyah: undefined,
+            akteKematianIbu: undefined,
+        },
     },
   });
 
-  const { trigger, handleSubmit, getValues, formState } = methods;
+  const { trigger, handleSubmit } = methods;
 
   const handleNext = async () => {
-    if (currentStep < steps.length) {
+    const currentStepConfig = steps[currentStep - 1];
+    let isValid = true;
+    if (currentStepConfig.schema) {
+      isValid = await trigger(Object.keys(currentStepConfig.schema.shape) as any);
+    }
+    
+    if (isValid && currentStep < steps.length) {
       setCurrentStep(prev => prev + 1);
     }
   };
@@ -142,10 +152,9 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
           variant: 'default',
         });
         
-        const newStudent = {
+        const newStudent: Siswa = {
           id: studentData?.id || submissionResult.id || crypto.randomUUID(),
-          ...dataWithURLs,
-          tanggalLahir: data.tanggalLahir?.toISOString() || new Date().toISOString(),
+          ...data,
           status: status,
         }
         
@@ -184,7 +193,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>{steps[currentStep - 1].title}</CardTitle>
-            <CardDescription>Sesi {currentStep} dari {steps.length}</CardDescription>
+            <CardDescription>Sesi {currentStep} dari {steps.length}. Kolom dengan tanda * wajib diisi.</CardDescription>
           </CardHeader>
           <CardContent>
             {currentStep === 1 && <DataSiswaForm />}
@@ -207,7 +216,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           ) : (
-            <Button type="submit" disabled={isSubmitting || !formState.isValid}>
+            <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Simpan Data
             </Button>
@@ -218,14 +227,43 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
   );
 }
 
-function Grid({ children }: { children: React.ReactNode }) {
-  return <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">{children}</div>;
+function Grid({ children, className }: { children: React.ReactNode, className?: string }) {
+  return <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4", className)}>{children}</div>;
+}
+
+function FormLabelRequired({ children }: { children: React.ReactNode }) {
+    return <FormLabel>{children} <span className="text-destructive">*</span></FormLabel>
 }
 
 function DataSiswaForm() {
   const { control, watch, setValue } = useFormContext<StudentFormData>();
   const fotoProfil = watch('fotoProfil');
   const [preview, setPreview] = useState<string | null>(fotoProfil?.fileURL || null);
+
+  const domisiliProvinsi = watch('domisiliProvinsi');
+  const domisiliKabupaten = watch('domisiliKabupaten');
+  const domisiliKecamatan = watch('domisiliKecamatan');
+
+  const provinces = useMemo(() => getProvinces(), []);
+  const kabupatens = useMemo(() => getKabupatens(domisiliProvinsi), [domisiliProvinsi]);
+  const kecamatans = useMemo(() => getKecamatans(domisiliKabupaten), [domisiliKabupaten]);
+  const desas = useMemo(() => getDesas(domisiliKecamatan), [domisiliKecamatan]);
+
+  useEffect(() => {
+    setValue('domisiliKabupaten', '');
+    setValue('domisiliKecamatan', '');
+    setValue('domisiliDesa', '');
+  }, [domisiliProvinsi, setValue]);
+
+  useEffect(() => {
+    setValue('domisiliKecamatan', '');
+    setValue('domisiliDesa', '');
+  }, [domisiliKabupaten, setValue]);
+
+  useEffect(() => {
+    setValue('domisiliDesa', '');
+  }, [domisiliKecamatan, setValue]);
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -244,9 +282,9 @@ function DataSiswaForm() {
        <FormField
         control={control}
         name="fotoProfil"
-        render={({ field }) => (
+        render={() => (
           <FormItem>
-            <FormLabel>Foto Profil (Opsional)</FormLabel>
+            <FormLabel>Foto Siswa (Opsional)</FormLabel>
             <div className="flex items-center gap-4">
                 <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center border relative">
                     {preview ? (
@@ -260,7 +298,7 @@ function DataSiswaForm() {
                         <label htmlFor="foto-profil-upload" className="cursor-pointer">
                             <UploadCloud className="mr-2 h-4 w-4" />
                             Unggah Foto
-                             <input id="foto-profil-upload" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                             <input id="foto-profil-upload" type="file" accept="image/jpeg,image/jpg" className="hidden" onChange={handleFileChange} />
                         </label>
                     </Button>
                 </FormControl>
@@ -271,65 +309,119 @@ function DataSiswaForm() {
       />
       <Grid>
         <FormField control={control} name="namaLengkap" render={({ field }) => (
-            <FormItem><FormLabel>Nama Lengkap</FormLabel><FormControl><Input placeholder="Contoh: Budi Santoso" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabelRequired>Nama</FormLabelRequired><FormControl><Input placeholder="Nama lengkap siswa" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="nis" render={({ field }) => (
-            <FormItem><FormLabel>NIS</FormLabel><FormControl><Input placeholder="Nomor Induk Siswa" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabelRequired>Nomor Induk Sekolah</FormLabelRequired><FormControl><Input placeholder="NIS" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="nisn" render={({ field }) => (
-            <FormItem><FormLabel>NISN</FormLabel><FormControl><Input placeholder="10 digit NISN" {...field} /></FormControl><FormMessage /></FormItem>
-        )} />
-        <FormField control={control} name="namaPanggilan" render={({ field }) => (
-            <FormItem><FormLabel>Nama Panggilan</FormLabel><FormControl><Input placeholder="Contoh: Budi" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabelRequired>Nomor Induk Nasional Siswa</FormLabelRequired><FormControl><Input placeholder="10 digit NISN" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="jenisKelamin" render={({ field }) => (
-            <FormItem><FormLabel>Jenis Kelamin</FormLabel><FormControl>
-            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center space-x-4">
+            <FormItem><FormLabelRequired>Jenis Kelamin</FormLabelRequired><FormControl>
+            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center space-x-4 pt-2">
                 <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Laki-laki" /></FormControl><FormLabel className="font-normal">Laki-laki</FormLabel></FormItem>
                 <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Perempuan" /></FormControl><FormLabel className="font-normal">Perempuan</FormLabel></FormItem>
             </RadioGroup>
             </FormControl><FormMessage /></FormItem>
         )} />
-        <FormField control={control} name="tempatLahir" render={({ field }) => (
-            <FormItem><FormLabel>Tempat Lahir</FormLabel><FormControl><Input placeholder="Contoh: Jakarta" {...field} /></FormControl><FormMessage /></FormItem>
-        )} />
-        <FormField control={control} name="tanggalLahir" render={({ field }) => (
-            <FormItem className="flex flex-col"><FormLabel>Tanggal Lahir</FormLabel><Popover>
-            <PopoverTrigger asChild><FormControl>
-                <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                {field.value ? format(field.value, "PPP") : <span>Pilih tanggal</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                </Button>
-            </FormControl></PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
-            </PopoverContent>
-            </Popover><FormMessage /></FormItem>
-        )} />
+        <div className="md:col-span-2 space-y-2">
+            <h3 className="text-sm font-medium"><FormLabelRequired>Kelahiran Siswa</FormLabelRequired></h3>
+            <Grid>
+                <FormField control={control} name="tempatLahir" render={({ field }) => (
+                    <FormItem><FormLabel>Tempat Lahir</FormLabel><FormControl><Input placeholder="Contoh: Jakarta" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={control} name="tanggalLahir" render={({ field }) => (
+                    <FormItem className="flex flex-col"><FormLabel>Tanggal Lahir</FormLabel><Popover>
+                    <PopoverTrigger asChild><FormControl>
+                        <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                        {field.value ? format(field.value, "PPP") : <span>Pilih tanggal</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                    </FormControl></PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
+                    </PopoverContent>
+                    </Popover><FormMessage /></FormItem>
+                )} />
+            </Grid>
+        </div>
         <FormField control={control} name="agama" render={({ field }) => (
-            <FormItem><FormLabel>Agama</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+            <FormItem><FormLabelRequired>Agama</FormLabelRequired><Select onValueChange={field.onChange} defaultValue={field.value}>
             <FormControl><SelectTrigger><SelectValue placeholder="Pilih Agama" /></SelectTrigger></FormControl>
             <SelectContent>
                 <SelectItem value="Islam">Islam</SelectItem><SelectItem value="Kristen">Kristen</SelectItem>
-                <SelectItem value="Katolik">Katolik</SelectItem><SelectItem value="Hindu">Hindu</SelectItem>
-                <SelectItem value="Buddha">Buddha</SelectItem><SelectItem value="Konghucu">Konghucu</SelectItem>
+                <SelectItem value="Hindu">Hindu</SelectItem><SelectItem value="Budha">Budha</SelectItem>
             </SelectContent>
             </Select><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="kewarganegaraan" render={({ field }) => (
-            <FormItem><FormLabel>Kewarganegaraan</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-        )} />
-        <FormField control={control} name="anakKe" render={({ field }) => (
-            <FormItem><FormLabel>Anak ke-</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabelRequired>Kewarganegaraan</FormLabelRequired><Select onValueChange={field.onChange} defaultValue={field.value}>
+            <FormControl><SelectTrigger><SelectValue placeholder="Pilih Kewarganegaraan" /></SelectTrigger></FormControl>
+            <SelectContent>
+                <SelectItem value="WNI">WNI</SelectItem><SelectItem value="WNA">WNA</SelectItem>
+            </SelectContent>
+            </Select><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="jumlahSaudara" render={({ field }) => (
-            <FormItem><FormLabel>Jumlah Saudara</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabelRequired>Jumlah Saudara</FormLabelRequired><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="bahasa" render={({ field }) => (
-            <FormItem><FormLabel>Bahasa Sehari-hari</FormLabel><FormControl><Input placeholder="Contoh: Indonesia" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabelRequired>Bahasa Sehari-hari</FormLabelRequired><FormControl><Input placeholder="Contoh: Indonesia" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
-        <FormField control={control} name="alamat" render={({ field }) => (
-            <FormItem className="md:col-span-2"><FormLabel>Alamat</FormLabel><FormControl><Textarea placeholder="Alamat lengkap siswa" {...field} /></FormControl><FormMessage /></FormItem>
+        <FormField control={control} name="golonganDarah" render={({ field }) => (
+        <FormItem><FormLabelRequired>Golongan Darah</FormLabelRequired><Select onValueChange={field.onChange} defaultValue={field.value}>
+          <FormControl><SelectTrigger><SelectValue placeholder="Pilih Gol. Darah" /></SelectTrigger></FormControl>
+          <SelectContent><SelectItem value="A">A</SelectItem><SelectItem value="B">B</SelectItem><SelectItem value="AB">AB</SelectItem><SelectItem value="O">O</SelectItem></SelectContent>
+        </Select><FormMessage /></FormItem>
         )} />
+        <FormField control={control} name="telepon" render={({ field }) => (
+            <FormItem><FormLabelRequired>Nomor HP/WA</FormLabelRequired><FormControl><Input placeholder="08xxxxxxxxxx" {...field} /></FormControl><FormMessage /></FormItem>
+        )} />
+        
+        <div className="md:col-span-2 space-y-2">
+            <h3 className="text-sm font-medium"><FormLabelRequired>Alamat Sesuai Kartu Keluarga</FormLabelRequired></h3>
+            <Grid>
+                <FormField control={control} name="alamatKkDesa" render={({ field }) => (
+                    <FormItem><FormLabel>Desa</FormLabel><FormControl><Input placeholder="Nama Desa" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                 <FormField control={control} name="alamatKkKecamatan" render={({ field }) => (
+                    <FormItem><FormLabel>Kecamatan</FormLabel><FormControl><Input placeholder="Nama Kecamatan" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                 <FormField control={control} name="alamatKkKabupaten" render={({ field }) => (
+                    <FormItem><FormLabel>Kabupaten</FormLabel><FormControl><Input placeholder="Nama Kabupaten" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+            </Grid>
+        </div>
+
+        <div className="md:col-span-2 space-y-2">
+            <h3 className="text-sm font-medium"><FormLabelRequired>Domisili</FormLabelRequired></h3>
+            <Grid className="grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+                 <FormField control={control} name="domisiliProvinsi" render={({ field }) => (
+                    <FormItem><FormLabel>Provinsi</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Pilih Provinsi" /></SelectTrigger></FormControl>
+                        <SelectContent>{provinces.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                    </Select><FormMessage /></FormItem>
+                )} />
+                 <FormField control={control} name="domisiliKabupaten" render={({ field }) => (
+                    <FormItem><FormLabel>Kabupaten</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={!domisiliProvinsi}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Pilih Kabupaten" /></SelectTrigger></FormControl>
+                        <SelectContent>{kabupatens.map(k => <SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>)}</SelectContent>
+                    </Select><FormMessage /></FormItem>
+                )} />
+                 <FormField control={control} name="domisiliKecamatan" render={({ field }) => (
+                    <FormItem><FormLabel>Kecamatan</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={!domisiliKabupaten}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Pilih Kecamatan" /></SelectTrigger></FormControl>
+                        <SelectContent>{kecamatans.map(k => <SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>)}</SelectContent>
+                    </Select><FormMessage /></FormItem>
+                )} />
+                 <FormField control={control} name="domisiliDesa" render={({ field }) => (
+                    <FormItem><FormLabel>Desa</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} disabled={!domisiliKecamatan}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Pilih Desa" /></SelectTrigger></FormControl>
+                        <SelectContent>{desas.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent>
+                    </Select><FormMessage /></FormItem>
+                )} />
+            </Grid>
+        </div>
       </Grid>
     </div>
   );
@@ -340,25 +432,25 @@ function DataOrangTuaForm() {
   return (
     <Grid>
       <FormField control={control} name="namaAyah" render={({ field }) => (
-        <FormItem><FormLabel>Nama Ayah</FormLabel><FormControl><Input placeholder="Nama lengkap ayah" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>Nama Ayah</FormLabel><FormControl><Input placeholder="Nama lengkap ayah" {...field} /></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="namaIbu" render={({ field }) => (
-        <FormItem><FormLabel>Nama Ibu</FormLabel><FormControl><Input placeholder="Nama lengkap ibu" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>Nama Ibu</FormLabel><FormControl><Input placeholder="Nama lengkap ibu" {...field} /></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="pekerjaanAyah" render={({ field }) => (
-        <FormItem><FormLabel>Pekerjaan Ayah</FormLabel><FormControl><Input placeholder="Contoh: Wiraswasta" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>Pekerjaan Ayah</FormLabel><FormControl><Input placeholder="Contoh: Wiraswasta" {...field} /></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="pekerjaanIbu" render={({ field }) => (
-        <FormItem><FormLabel>Pekerjaan Ibu</FormLabel><FormControl><Input placeholder="Contoh: Ibu Rumah Tangga" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>Pekerjaan Ibu</FormLabel><FormControl><Input placeholder="Contoh: Ibu Rumah Tangga" {...field} /></FormControl><FormMessage /></FormItem>
       )} />
        <FormField control={control} name="namaWali" render={({ field }) => (
-        <FormItem><FormLabel>Nama Wali (jika ada)</FormLabel><FormControl><Input placeholder="Nama lengkap wali" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>Nama Wali (jika ada)</FormLabel><FormControl><Input placeholder="Nama lengkap wali" {...field} /></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="pekerjaanWali" render={({ field }) => (
-        <FormItem><FormLabel>Pekerjaan Wali</FormLabel><FormControl><Input placeholder="Pekerjaan wali" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>Pekerjaan Wali</FormLabel><FormControl><Input placeholder="Pekerjaan wali" {...field} /></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="alamatOrangTua" render={({ field }) => (
-        <FormItem className="md:col-span-2"><FormLabel>Alamat Orang Tua/Wali</FormLabel><FormControl><Textarea placeholder="Alamat lengkap orang tua/wali" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
+        <FormItem className="md:col-span-2"><FormLabel>Alamat Orang Tua/Wali</FormLabel><FormControl><Textarea placeholder="Alamat lengkap orang tua/wali" {...field} /></FormControl><FormMessage /></FormItem>
       )} />
     </Grid>
   );
@@ -374,14 +466,11 @@ function DataRincianForm() {
         <FormField control={control} name="beratBadan" render={({ field }) => (
             <FormItem><FormLabel>Berat Badan (kg)</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
         )} />
-        <FormField control={control} name="golonganDarah" render={({ field }) => (
-        <FormItem><FormLabel>Golongan Darah</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-          <FormControl><SelectTrigger><SelectValue placeholder="Pilih Gol. Darah" /></SelectTrigger></FormControl>
-          <SelectContent><SelectItem value="A">A</SelectItem><SelectItem value="B">B</SelectItem><SelectItem value="AB">AB</SelectItem><SelectItem value="O">O</SelectItem></SelectContent>
-        </Select><FormMessage /></FormItem>
-      )} />
       <FormField control={control} name="penyakit" render={({ field }) => (
-        <FormItem className="md:col-span-2"><FormLabel>Riwayat Penyakit</FormLabel><FormControl><Textarea placeholder="Penyakit yang pernah diderita" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
+        <FormItem className="md:col-span-2"><FormLabel>Riwayat Penyakit</FormLabel><FormControl><Textarea placeholder="Penyakit yang pernah diderita" {...field} /></FormControl><FormMessage /></FormItem>
+      )} />
+       <FormField control={control} name="kelainanJasmani" render={({ field }) => (
+        <FormItem className="md:col-span-2"><FormLabel>Kelainan Jasmani</FormLabel><FormControl><Textarea placeholder="Kelainan jasmani yang dimiliki" {...field} /></FormControl><FormMessage /></FormItem>
       )} />
     </Grid>
   );
@@ -392,7 +481,7 @@ function DataPerkembanganForm() {
     return (
         <Grid>
              <FormField control={control} name="asalSekolah" render={({ field }) => (
-                <FormItem><FormLabel>Asal Sekolah</FormLabel><FormControl><Input placeholder="Contoh: TK Tunas Bangsa" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Asal Sekolah</FormLabel><FormControl><Input placeholder="Contoh: TK Tunas Bangsa" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
              <FormField control={control} name="tanggalMasuk" render={({ field }) => (
                 <FormItem className="flex flex-col"><FormLabel>Tanggal Diterima</FormLabel><Popover>
@@ -407,7 +496,7 @@ function DataPerkembanganForm() {
                 </Popover><FormMessage /></FormItem>
             )} />
              <FormField control={control} name="hobi" render={({ field }) => (
-                <FormItem className="md:col-span-2"><FormLabel>Hobi</FormLabel><FormControl><Textarea placeholder="Hobi siswa" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
+                <FormItem className="md:col-span-2"><FormLabel>Hobi</FormLabel><FormControl><Textarea placeholder="Hobi siswa" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
         </Grid>
     );
@@ -418,7 +507,7 @@ function DataLanjutanForm() {
     return (
         <Grid>
              <FormField control={control} name="melanjutkanKe" render={({ field }) => (
-                <FormItem><FormLabel>Melanjutkan ke</FormLabel><FormControl><Input placeholder="Contoh: SMP Negeri 1" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Melanjutkan ke</FormLabel><FormControl><Input placeholder="Contoh: SMP Negeri 1" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
              <FormField control={control} name="tanggalLulus" render={({ field }) => (
                 <FormItem className="flex flex-col"><FormLabel>Tanggal Lulus</FormLabel><Popover>
@@ -433,7 +522,7 @@ function DataLanjutanForm() {
                 </Popover><FormMessage /></FormItem>
             )} />
              <FormField control={control} name="alasanPindah" render={({ field }) => (
-                <FormItem className="md:col-span-2"><FormLabel>Alasan Pindah (jika pindahan)</FormLabel><FormControl><Textarea placeholder="Alasan pindah sekolah" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
+                <FormItem className="md:col-span-2"><FormLabel>Alasan Pindah (jika pindahan)</FormLabel><FormControl><Textarea placeholder="Alasan pindah sekolah" {...field} /></FormControl><FormMessage /></FormItem>
             )} />
         </Grid>
     );
@@ -465,7 +554,7 @@ function DocumentUploadField({ name, label }: DocumentUploadFieldProps) {
       <FormField
         control={control}
         name={fieldName as any}
-        render={({ field: { onChange, ...fieldProps }, fieldState }) => (
+        render={() => (
           <FormItem>
             <FormLabel>{label}</FormLabel>
             <div className="flex items-center gap-4">
