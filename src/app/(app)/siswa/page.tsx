@@ -17,13 +17,20 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import React, { useState } from 'react';
-import { DropdownMenuTrigger as AlertDialogTrigger } from '@radix-ui/react-dropdown-menu'; // Use this to avoid nesting issues
+import React, { useState, useEffect } from 'react';
 
-function ActionMenu({ student }: { student: Siswa }) {
+function ActionMenu({ student, onDelete }: { student: Siswa, onDelete: (id: string) => void }) {
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  
+  const handleDelete = () => {
+    onDelete(student.id);
+    setIsAlertOpen(false);
+  }
+
   return (
-    <AlertDialog>
+    <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0">
@@ -70,7 +77,7 @@ function ActionMenu({ student }: { student: Siswa }) {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Batal</AlertDialogCancel>
-          <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Hapus</AlertDialogAction>
+          <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleDelete}>Hapus</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -79,7 +86,31 @@ function ActionMenu({ student }: { student: Siswa }) {
 
 
 export default function SiswaPage() {
-  const students = mockSiswaData;
+  const [students, setStudents] = useState<Siswa[]>([]);
+
+  useEffect(() => {
+    // This effect runs only on the client side
+    try {
+      const storedData = localStorage.getItem('siswaData');
+      if (storedData) {
+        setStudents(JSON.parse(storedData));
+      } else {
+        // If no data in localStorage, initialize with mock data
+        setStudents(mockSiswaData);
+        localStorage.setItem('siswaData', JSON.stringify(mockSiswaData));
+      }
+    } catch (error) {
+      console.error("Failed to parse student data from localStorage", error);
+      setStudents(mockSiswaData);
+    }
+  }, []);
+
+  const handleDeleteStudent = (id: string) => {
+    const updatedStudents = students.filter(student => student.id !== id);
+    setStudents(updatedStudents);
+    localStorage.setItem('siswaData', JSON.stringify(updatedStudents));
+  };
+
 
   return (
     <div className="flex flex-col gap-6">
@@ -138,7 +169,7 @@ export default function SiswaPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <ActionMenu student={student} />
+                      <ActionMenu student={student} onDelete={handleDeleteStudent} />
                     </TableCell>
                   </TableRow>
                 ))}

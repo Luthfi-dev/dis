@@ -24,11 +24,11 @@ import type { Siswa } from '@/lib/data';
 
 const steps = [
   { id: 1, title: 'Data Siswa', schema: dataSiswaSchema },
-  { id: 2, title: 'Data Orang Tua', schema: dataOrangTuaSchema },
-  { id: 3, title: 'Data Rincian', schema: dataRincianSchema },
-  { id: 4, title: 'Perkembangan', schema: dataPerkembanganSchema },
-  { id: 5, title: 'Data Lanjutan', schema: dataLanjutanSchema },
-  { id: 6, title: 'Unggah Dokumen', schema: dataDokumenSchema },
+  { id: 2, title: 'Unggah Dokumen', schema: dataDokumenSchema },
+  { id: 3, title: 'Data Orang Tua', schema: dataOrangTuaSchema },
+  { id: 4, title: 'Data Rincian', schema: dataRincianSchema },
+  { id: 5, title: 'Perkembangan', schema: dataPerkembanganSchema },
+  { id: 6, title: 'Data Lanjutan', schema: dataLanjutanSchema },
 ];
 
 export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { tanggalLahir: string | Date } }) {
@@ -39,7 +39,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
 
   const methods = useForm<StudentFormData>({
     resolver: zodResolver(studentFormSchema),
-    mode: 'onBlur', // Changed to onBlur for auto-save draft functionality
+    mode: 'onBlur', 
     defaultValues: {
       namaLengkap: studentData?.namaLengkap || '',
       nis: '',
@@ -84,7 +84,6 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
   const { trigger, handleSubmit, getValues } = methods;
 
   const handleNext = async () => {
-    // Only validate for the first step
     if (currentStep === 1) {
       const isValid = await trigger(Object.keys(dataSiswaSchema.shape) as any, { shouldFocus: true });
       if (!isValid) {
@@ -103,8 +102,6 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
     }
   };
   
-  // This is a mock function for auto-saving.
-  // In a real app, this would make an API call.
   const saveDraft = async () => {
     const data = getValues();
     const result = await dataSiswaSchema.safeParse(data);
@@ -123,7 +120,6 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
 
   const processForm = (data: StudentFormData) => {
     startTransition(async () => {
-      // Determine status based on dataSiswaSchema
       const siswaDataCheck = dataSiswaSchema.safeParse(data);
       const status = siswaDataCheck.success ? 'Lengkap' : 'Draft';
       
@@ -135,6 +131,20 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
           description: result.message,
           variant: 'default',
         });
+        
+        // Save new data to localStorage to be picked up by the list page
+        const newStudent = {
+          id: result.id || crypto.randomUUID(),
+          namaLengkap: data.namaLengkap,
+          nisn: data.nisn,
+          jenisKelamin: data.jenisKelamin,
+          tanggalLahir: data.tanggalLahir?.toISOString() || new Date().toISOString(),
+          status: status,
+        }
+        
+        const existingStudents = JSON.parse(localStorage.getItem('siswaData') || '[]');
+        localStorage.setItem('siswaData', JSON.stringify([...existingStudents, newStudent]));
+        
         router.push('/siswa');
       } else {
         toast({
@@ -159,11 +169,11 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
           </CardHeader>
           <CardContent>
             {currentStep === 1 && <DataSiswaForm onFieldBlur={saveDraft} />}
-            {currentStep === 2 && <DataOrangTuaForm />}
-            {currentStep === 3 && <DataRincianForm />}
-            {currentStep === 4 && <DataPerkembanganForm />}
-            {currentStep === 5 && <DataLanjutanForm />}
-            {currentStep === 6 && <DataDokumenForm />}
+            {currentStep === 2 && <DataDokumenForm />}
+            {currentStep === 3 && <DataOrangTuaForm />}
+            {currentStep === 4 && <DataRincianForm />}
+            {currentStep === 5 && <DataPerkembanganForm />}
+            {currentStep === 6 && <DataLanjutanForm />}
           </CardContent>
         </Card>
 
@@ -205,13 +215,13 @@ function DataSiswaForm({ onFieldBlur }: { onFieldBlur: () => void }) {
         </FormItem>
       )} />
       <FormField control={control} name="nis" render={({ field }) => (
-        <FormItem><FormLabel>NIS</FormLabel><FormControl><Input placeholder="Nomor Induk Siswa" {...field} onBlur={onFieldBlur}/></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>NIS</FormLabel><FormControl><Input placeholder="Nomor Induk Siswa" {...field} value={field.value ?? ''} onBlur={onFieldBlur}/></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="nisn" render={({ field }) => (
         <FormItem><FormLabel>NISN</FormLabel><FormControl><Input placeholder="10 digit NISN" {...field} onBlur={onFieldBlur}/></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="namaPanggilan" render={({ field }) => (
-        <FormItem><FormLabel>Nama Panggilan</FormLabel><FormControl><Input placeholder="Contoh: Budi" {...field} onBlur={onFieldBlur}/></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>Nama Panggilan</FormLabel><FormControl><Input placeholder="Contoh: Budi" {...field} value={field.value ?? ''} onBlur={onFieldBlur}/></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="jenisKelamin" render={({ field }) => (
         <FormItem><FormLabel>Jenis Kelamin</FormLabel><FormControl>
@@ -256,7 +266,7 @@ function DataSiswaForm({ onFieldBlur }: { onFieldBlur: () => void }) {
         <FormItem><FormLabel>Jumlah Saudara</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} onBlur={onFieldBlur}/></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="bahasa" render={({ field }) => (
-        <FormItem><FormLabel>Bahasa Sehari-hari</FormLabel><FormControl><Input placeholder="Contoh: Indonesia" {...field} onBlur={onFieldBlur}/></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>Bahasa Sehari-hari</FormLabel><FormControl><Input placeholder="Contoh: Indonesia" {...field} value={field.value ?? ''} onBlur={onFieldBlur}/></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="alamat" render={({ field }) => (
         <FormItem className="md:col-span-2"><FormLabel>Alamat</FormLabel><FormControl><Textarea placeholder="Alamat lengkap siswa" {...field} onBlur={onFieldBlur}/></FormControl><FormMessage /></FormItem>
