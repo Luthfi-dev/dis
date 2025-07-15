@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useTransition, useCallback, useEffect } from 'react';
+import { useState, useTransition, useCallback, useEffect, useRef } from 'react';
 import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { studentFormSchema, StudentFormData, dataSiswaSchema, dataOrangTuaSchema, dataRincianSchema, dataPerkembanganSchema, dataLanjutanSchema, dataDokumenSchema } from '@/lib/schema';
+import { studentFormSchema, StudentFormData, completeStudentFormSchema } from '@/lib/schema';
 import { FormStepper } from './form-stepper';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, ArrowRight, CalendarIcon, PlusCircle, Trash2, UploadCloud, FileCheck2, FileX2 } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, CalendarIcon, PlusCircle, Trash2, UploadCloud, FileCheck2, FileX2, User } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -21,14 +21,15 @@ import { submitStudentData } from '@/lib/actions';
 import { Textarea } from './ui/textarea';
 import { useRouter } from 'next/navigation';
 import type { Siswa } from '@/lib/data';
+import Image from 'next/image';
 
 const steps = [
-  { id: 1, title: 'Data Siswa', schema: dataSiswaSchema },
-  { id: 2, title: 'Unggah Dokumen', schema: dataDokumenSchema },
-  { id: 3, title: 'Data Orang Tua', schema: dataOrangTuaSchema },
-  { id: 4, title: 'Data Rincian', schema: dataRincianSchema },
-  { id: 5, title: 'Perkembangan', schema: dataPerkembanganSchema },
-  { id: 6, title: 'Data Lanjutan', schema: dataLanjutanSchema },
+  { id: 1, title: 'Data Siswa' },
+  { id: 2, title: 'Unggah Dokumen' },
+  { id: 3, title: 'Data Orang Tua' },
+  { id: 4, title: 'Data Rincian' },
+  { id: 5, title: 'Perkembangan' },
+  { id: 6, title: 'Data Lanjutan' },
 ];
 
 export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { tanggalLahir: string | Date } }) {
@@ -40,14 +41,21 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
   const methods = useForm<StudentFormData>({
     resolver: zodResolver(studentFormSchema),
     mode: 'onBlur', 
-    defaultValues: {
-      namaLengkap: studentData?.namaLengkap || '',
+    defaultValues: studentData
+      ? {
+        ...studentData,
+        tanggalLahir: studentData.tanggalLahir ? new Date(studentData.tanggalLahir) : undefined,
+        tanggalMasuk: studentData.tanggalMasuk ? new Date(studentData.tanggalMasuk) : undefined,
+        tanggalLulus: studentData.tanggalLulus ? new Date(studentData.tanggalLulus) : undefined,
+      }
+      : {
+      namaLengkap: '',
       nis: '',
-      nisn: studentData?.nisn || '',
+      nisn: '',
       namaPanggilan: '',
-      jenisKelamin: studentData?.jenisKelamin || undefined,
+      jenisKelamin: undefined,
       tempatLahir: '',
-      tanggalLahir: studentData?.tanggalLahir ? new Date(studentData.tanggalLahir) : undefined,
+      tanggalLahir: undefined,
       agama: '',
       kewarganegaraan: 'Indonesia',
       anakKe: undefined,
@@ -77,6 +85,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
       melanjutkanKe: '',
       tanggalLulus: undefined,
       alasanPindah: '',
+      fotoProfil: undefined,
       documents: {
         kartuKeluarga: undefined,
         ktpAyah: undefined,
@@ -90,16 +99,9 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
     },
   });
 
-  const { trigger, handleSubmit, getValues } = methods;
+  const { trigger, handleSubmit, getValues, formState } = methods;
 
   const handleNext = async () => {
-    if (currentStep === 1) {
-      const isValid = await trigger(Object.keys(dataSiswaSchema.shape) as any, { shouldFocus: true });
-      if (!isValid) {
-        return;
-      }
-    }
-    
     if (currentStep < steps.length) {
       setCurrentStep(prev => prev + 1);
     }
@@ -110,38 +112,39 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
       setCurrentStep(prev => prev - 1);
     }
   };
-  
-  const saveDraft = async () => {
-    const data = getValues();
-    const result = await dataSiswaSchema.safeParse(data);
-    if(result.success) {
-      console.log("Auto-saving draft...", data);
-      toast({
-        title: 'Draf Disimpan',
-        description: 'Perubahan Anda telah disimpan sebagai draf.',
-        variant: 'default',
-        duration: 2000,
-      });
-    }
-  }
 
-  const processForm = (data: StudentFormData) => {
+  const processForm = async (data: StudentFormData) => {
+    // Manually create file URLs for preview
+    const dataWithURLs = {...data};
+    if (data.fotoProfil?.file) {
+      dataWithURLs.fotoProfil.fileURL = URL.createObjectURL(data.fotoProfil.file);
+    }
+    if (data.documents) {
+      for (const key in data.documents) {
+        const docKey = key as keyof typeof data.documents;
+        if (data.documents[docKey]?.file) {
+            data.documents[docKey]!.fileURL = URL.createObjectURL(data.documents[docKey]!.file);
+        }
+      }
+    }
+
     startTransition(async () => {
-      const siswaDataCheck = dataSiswaSchema.safeParse(data);
-      const status = siswaDataCheck.success ? 'Lengkap' : 'Draft';
+      // Check for full completion
+      const result = await completeStudentFormSchema.safeParseAsync(data);
+      const status = result.success ? 'Lengkap' : 'Belum Lengkap';
       
-      const result = await submitStudentData({...data, status});
+      const submissionResult = await submitStudentData({...dataWithURLs, status});
       
-      if (result.success) {
+      if (submissionResult.success) {
         toast({
           title: 'Sukses!',
-          description: result.message,
+          description: submissionResult.message,
           variant: 'default',
         });
         
         const newStudent = {
-          id: studentData?.id || result.id || crypto.randomUUID(),
-          ...data,
+          id: studentData?.id || submissionResult.id || crypto.randomUUID(),
+          ...dataWithURLs,
           tanggalLahir: data.tanggalLahir?.toISOString() || new Date().toISOString(),
           status: status,
         }
@@ -159,7 +162,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
       } else {
         toast({
           title: 'Error',
-          description: result.message,
+          description: submissionResult.message,
           variant: 'destructive',
         });
       }
@@ -168,7 +171,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
 
   useEffect(() => {
     if (studentData) {
-      methods.reset(studentData as StudentFormData);
+      methods.reset(studentData as any);
     }
   }, [studentData, methods]);
 
@@ -184,7 +187,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
             <CardDescription>Sesi {currentStep} dari {steps.length}</CardDescription>
           </CardHeader>
           <CardContent>
-            {currentStep === 1 && <DataSiswaForm onFieldBlur={saveDraft} />}
+            {currentStep === 1 && <DataSiswaForm />}
             {currentStep === 2 && <DataDokumenForm />}
             {currentStep === 3 && <DataOrangTuaForm />}
             {currentStep === 4 && <DataRincianForm />}
@@ -204,7 +207,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           ) : (
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || !formState.isValid}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Simpan Data
             </Button>
@@ -219,75 +222,116 @@ function Grid({ children }: { children: React.ReactNode }) {
   return <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">{children}</div>;
 }
 
-function DataSiswaForm({ onFieldBlur }: { onFieldBlur: () => void }) {
-  const { control } = useFormContext<StudentFormData>();
+function DataSiswaForm() {
+  const { control, watch, setValue } = useFormContext<StudentFormData>();
+  const fotoProfil = watch('fotoProfil');
+  const [preview, setPreview] = useState<string | null>(fotoProfil?.fileURL || null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setValue('fotoProfil', { fileName: file.name, file: file });
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
-    <Grid>
-      <FormField control={control} name="namaLengkap" render={({ field }) => (
-        <FormItem>
-          <FormLabel>Nama Lengkap</FormLabel>
-          <FormControl><Input placeholder="Contoh: Budi Santoso" {...field} onBlur={onFieldBlur} /></FormControl>
-          <FormMessage />
-        </FormItem>
-      )} />
-      <FormField control={control} name="nis" render={({ field }) => (
-        <FormItem><FormLabel>NIS</FormLabel><FormControl><Input placeholder="Nomor Induk Siswa" {...field} value={field.value ?? ''} onBlur={onFieldBlur}/></FormControl><FormMessage /></FormItem>
-      )} />
-      <FormField control={control} name="nisn" render={({ field }) => (
-        <FormItem><FormLabel>NISN</FormLabel><FormControl><Input placeholder="10 digit NISN" {...field} onBlur={onFieldBlur}/></FormControl><FormMessage /></FormItem>
-      )} />
-      <FormField control={control} name="namaPanggilan" render={({ field }) => (
-        <FormItem><FormLabel>Nama Panggilan</FormLabel><FormControl><Input placeholder="Contoh: Budi" {...field} value={field.value ?? ''} onBlur={onFieldBlur}/></FormControl><FormMessage /></FormItem>
-      )} />
-      <FormField control={control} name="jenisKelamin" render={({ field }) => (
-        <FormItem><FormLabel>Jenis Kelamin</FormLabel><FormControl>
-          <RadioGroup onValueChange={(value) => { field.onChange(value); onFieldBlur(); }} defaultValue={field.value} className="flex items-center space-x-4">
-            <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Laki-laki" /></FormControl><FormLabel className="font-normal">Laki-laki</FormLabel></FormItem>
-            <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Perempuan" /></FormControl><FormLabel className="font-normal">Perempuan</FormLabel></FormItem>
-          </RadioGroup>
-        </FormControl><FormMessage /></FormItem>
-      )} />
-      <FormField control={control} name="tempatLahir" render={({ field }) => (
-        <FormItem><FormLabel>Tempat Lahir</FormLabel><FormControl><Input placeholder="Contoh: Jakarta" {...field} onBlur={onFieldBlur}/></FormControl><FormMessage /></FormItem>
-      )} />
-      <FormField control={control} name="tanggalLahir" render={({ field }) => (
-        <FormItem className="flex flex-col"><FormLabel>Tanggal Lahir</FormLabel><Popover>
-          <PopoverTrigger asChild><FormControl>
-            <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-              {field.value ? format(field.value, "PPP") : <span>Pilih tanggal</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-            </Button>
-          </FormControl></PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar mode="single" selected={field.value} onSelect={(date) => { field.onChange(date); onFieldBlur(); }} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
-          </PopoverContent>
-        </Popover><FormMessage /></FormItem>
-      )} />
-      <FormField control={control} name="agama" render={({ field }) => (
-        <FormItem><FormLabel>Agama</FormLabel><Select onValueChange={(value) => { field.onChange(value); onFieldBlur(); }} defaultValue={field.value}>
-          <FormControl><SelectTrigger><SelectValue placeholder="Pilih Agama" /></SelectTrigger></FormControl>
-          <SelectContent>
-            <SelectItem value="Islam">Islam</SelectItem><SelectItem value="Kristen">Kristen</SelectItem>
-            <SelectItem value="Katolik">Katolik</SelectItem><SelectItem value="Hindu">Hindu</SelectItem>
-            <SelectItem value="Buddha">Buddha</SelectItem><SelectItem value="Konghucu">Konghucu</SelectItem>
-          </SelectContent>
-        </Select><FormMessage /></FormItem>
-      )} />
-      <FormField control={control} name="kewarganegaraan" render={({ field }) => (
-        <FormItem><FormLabel>Kewarganegaraan</FormLabel><FormControl><Input {...field} onBlur={onFieldBlur} /></FormControl><FormMessage /></FormItem>
-      )} />
-      <FormField control={control} name="anakKe" render={({ field }) => (
-        <FormItem><FormLabel>Anak ke-</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} onBlur={onFieldBlur} /></FormControl><FormMessage /></FormItem>
-      )} />
-      <FormField control={control} name="jumlahSaudara" render={({ field }) => (
-        <FormItem><FormLabel>Jumlah Saudara</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} onBlur={onFieldBlur}/></FormControl><FormMessage /></FormItem>
-      )} />
-      <FormField control={control} name="bahasa" render={({ field }) => (
-        <FormItem><FormLabel>Bahasa Sehari-hari</FormLabel><FormControl><Input placeholder="Contoh: Indonesia" {...field} value={field.value ?? ''} onBlur={onFieldBlur}/></FormControl><FormMessage /></FormItem>
-      )} />
-      <FormField control={control} name="alamat" render={({ field }) => (
-        <FormItem className="md:col-span-2"><FormLabel>Alamat</FormLabel><FormControl><Textarea placeholder="Alamat lengkap siswa" {...field} onBlur={onFieldBlur}/></FormControl><FormMessage /></FormItem>
-      )} />
-    </Grid>
+    <div className="space-y-6">
+       <FormField
+        control={control}
+        name="fotoProfil"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Foto Profil (Opsional)</FormLabel>
+            <div className="flex items-center gap-4">
+                <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center border relative">
+                    {preview ? (
+                        <Image src={preview} alt="Preview Foto Profil" layout="fill" objectFit="cover" className="rounded-full" />
+                    ) : (
+                        <User className="w-12 h-12 text-muted-foreground" />
+                    )}
+                </div>
+                <FormControl>
+                     <Button asChild variant="outline">
+                        <label htmlFor="foto-profil-upload" className="cursor-pointer">
+                            <UploadCloud className="mr-2 h-4 w-4" />
+                            Unggah Foto
+                             <input id="foto-profil-upload" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                        </label>
+                    </Button>
+                </FormControl>
+            </div>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <Grid>
+        <FormField control={control} name="namaLengkap" render={({ field }) => (
+            <FormItem><FormLabel>Nama Lengkap</FormLabel><FormControl><Input placeholder="Contoh: Budi Santoso" {...field} /></FormControl><FormMessage /></FormItem>
+        )} />
+        <FormField control={control} name="nis" render={({ field }) => (
+            <FormItem><FormLabel>NIS</FormLabel><FormControl><Input placeholder="Nomor Induk Siswa" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+        )} />
+        <FormField control={control} name="nisn" render={({ field }) => (
+            <FormItem><FormLabel>NISN</FormLabel><FormControl><Input placeholder="10 digit NISN" {...field} /></FormControl><FormMessage /></FormItem>
+        )} />
+        <FormField control={control} name="namaPanggilan" render={({ field }) => (
+            <FormItem><FormLabel>Nama Panggilan</FormLabel><FormControl><Input placeholder="Contoh: Budi" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+        )} />
+        <FormField control={control} name="jenisKelamin" render={({ field }) => (
+            <FormItem><FormLabel>Jenis Kelamin</FormLabel><FormControl>
+            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center space-x-4">
+                <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Laki-laki" /></FormControl><FormLabel className="font-normal">Laki-laki</FormLabel></FormItem>
+                <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Perempuan" /></FormControl><FormLabel className="font-normal">Perempuan</FormLabel></FormItem>
+            </RadioGroup>
+            </FormControl><FormMessage /></FormItem>
+        )} />
+        <FormField control={control} name="tempatLahir" render={({ field }) => (
+            <FormItem><FormLabel>Tempat Lahir</FormLabel><FormControl><Input placeholder="Contoh: Jakarta" {...field} /></FormControl><FormMessage /></FormItem>
+        )} />
+        <FormField control={control} name="tanggalLahir" render={({ field }) => (
+            <FormItem className="flex flex-col"><FormLabel>Tanggal Lahir</FormLabel><Popover>
+            <PopoverTrigger asChild><FormControl>
+                <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                {field.value ? format(field.value, "PPP") : <span>Pilih tanggal</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                </Button>
+            </FormControl></PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
+            </PopoverContent>
+            </Popover><FormMessage /></FormItem>
+        )} />
+        <FormField control={control} name="agama" render={({ field }) => (
+            <FormItem><FormLabel>Agama</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+            <FormControl><SelectTrigger><SelectValue placeholder="Pilih Agama" /></SelectTrigger></FormControl>
+            <SelectContent>
+                <SelectItem value="Islam">Islam</SelectItem><SelectItem value="Kristen">Kristen</SelectItem>
+                <SelectItem value="Katolik">Katolik</SelectItem><SelectItem value="Hindu">Hindu</SelectItem>
+                <SelectItem value="Buddha">Buddha</SelectItem><SelectItem value="Konghucu">Konghucu</SelectItem>
+            </SelectContent>
+            </Select><FormMessage /></FormItem>
+        )} />
+        <FormField control={control} name="kewarganegaraan" render={({ field }) => (
+            <FormItem><FormLabel>Kewarganegaraan</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+        )} />
+        <FormField control={control} name="anakKe" render={({ field }) => (
+            <FormItem><FormLabel>Anak ke-</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+        )} />
+        <FormField control={control} name="jumlahSaudara" render={({ field }) => (
+            <FormItem><FormLabel>Jumlah Saudara</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+        )} />
+        <FormField control={control} name="bahasa" render={({ field }) => (
+            <FormItem><FormLabel>Bahasa Sehari-hari</FormLabel><FormControl><Input placeholder="Contoh: Indonesia" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+        )} />
+        <FormField control={control} name="alamat" render={({ field }) => (
+            <FormItem className="md:col-span-2"><FormLabel>Alamat</FormLabel><FormControl><Textarea placeholder="Alamat lengkap siswa" {...field} /></FormControl><FormMessage /></FormItem>
+        )} />
+      </Grid>
+    </div>
   );
 }
 
@@ -430,12 +474,12 @@ function DocumentUploadField({ name, label }: DocumentUploadFieldProps) {
                       <label htmlFor={`file-upload-${name}`} className="cursor-pointer">
                           <UploadCloud className="mr-2 h-4 w-4" />
                           <span className="truncate">
-                              {watchedFile?.fileName || 'Pilih file PDF...'}
+                              {watchedFile?.fileName || 'Pilih file...'}
                           </span>
                           <input 
                               id={`file-upload-${name}`}
                               type="file" 
-                              accept=".pdf" 
+                              accept="image/*,.pdf" 
                               className="hidden"
                               onChange={(e) => {
                                   const file = e.target.files?.[0];
@@ -470,7 +514,7 @@ function DataDokumenForm() {
     return (
         <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-                Silakan unggah semua berkas administrasi yang diperlukan dalam format PDF.
+                Silakan unggah semua berkas administrasi yang diperlukan dalam format PDF atau Gambar.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                 {documentList.map((doc) => (

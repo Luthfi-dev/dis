@@ -165,7 +165,7 @@ export default function SiswaPage() {
                     </TableCell>
                     <TableCell>
                       <Badge variant={student.status === 'Lengkap' ? 'default' : 'outline'} className={student.status === 'Lengkap' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 'text-amber-600 border-amber-500/50'}>
-                        {student.status}
+                        {student.status === 'Lengkap' ? 'Lengkap' : 'Belum Lengkap'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">

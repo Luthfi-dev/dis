@@ -1,13 +1,24 @@
 'use client';
 import { Siswa, mockSiswaData } from '@/lib/data';
 import { notFound } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Printer } from 'lucide-react';
+import { ArrowLeft, Printer, User, Calendar, MapPin, Droplet, Stethoscope, BookOpen, Building, Phone, Home } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
+
+function InfoRow({ label, value, icon }: { label: string, value?: React.ReactNode, icon?: React.ElementType }) {
+    const Icon = icon;
+    return (
+        <div className="flex items-start text-sm">
+            {Icon && <Icon className="w-4 h-4 mr-3 mt-0.5 text-muted-foreground" />}
+            <span className="font-medium w-40 text-muted-foreground">{label}</span>
+            <span className="flex-1">: {value || '-'}</span>
+        </div>
+    )
+}
 
 export default function PreviewSiswaPage({ params }: { params: { id: string } }) {
   const [student, setStudent] = useState<Siswa | null>(null);
@@ -48,61 +59,128 @@ export default function PreviewSiswaPage({ params }: { params: { id: string } })
     notFound();
   }
 
+  const formatDate = (dateString?: string | Date) => {
+      if (!dateString) return '-';
+      return new Date(dateString).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+  }
+
   return (
-    <div className="bg-muted/30 p-4 md:p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-6 print:hidden">
+    <div className="bg-gray-100 dark:bg-gray-900 p-4 md:p-8 print:bg-white">
+      <div className="max-w-4xl mx-auto bg-white dark:bg-card rounded-xl shadow-2xl print:shadow-none print:border-none">
+        <div className="p-6 sm:p-10 flex justify-between items-center print:hidden">
             <Button variant="outline" asChild>
                 <Link href="/siswa">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Kembali
                 </Link>
             </Button>
+            <h2 className="text-xl font-semibold text-center text-primary">Resume Buku Induk Siswa</h2>
             <Button onClick={() => window.print()}>
                 <Printer className="mr-2 h-4 w-4" />
                 Cetak
             </Button>
         </div>
-        <Card className="shadow-lg print:shadow-none print:border-none">
-            <CardHeader className="text-center">
-                <CardTitle className="text-2xl">BUKU INDUK SISWA</CardTitle>
-                <CardDescription>Tahun Pelajaran 2024/2025</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-8">
+
+        <main className="p-6 sm:p-10">
+            {/* Header */}
+            <header className="flex flex-col sm:flex-row items-center gap-6 mb-8 text-center sm:text-left">
+                {student.fotoProfil?.fileURL ? (
+                    <Image src={student.fotoProfil.fileURL} alt="Foto Siswa" width={128} height={128} className="rounded-full border-4 border-primary/20 shadow-lg object-cover w-32 h-32" />
+                ) : (
+                    <div className="w-32 h-32 rounded-full bg-muted flex items-center justify-center border-4 border-primary/20 shadow-lg">
+                        <User className="w-20 h-20 text-muted-foreground" />
+                    </div>
+                )}
+                <div>
+                    <h1 className="text-3xl font-bold text-card-foreground">{student.namaLengkap}</h1>
+                    <p className="text-lg text-muted-foreground">NISN: {student.nisn}</p>
+                </div>
+            </header>
+            
+            <Separator className="my-8" />
+            
+            <div className="space-y-10">
+                {/* Keterangan Pribadi */}
                 <section>
-                    <h3 className="font-bold text-lg mb-4 border-b pb-2">A. KETERANGAN PRIBADI SISWA</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-4">
-                        <div className="md:col-span-2 space-y-4">
-                            <p>1. Nama Lengkap: <strong>{student.namaLengkap}</strong></p>
-                            <p>2. NISN: <strong>{student.nisn}</strong></p>
-                            <p>3. Jenis Kelamin: <strong>{student.jenisKelamin}</strong></p>
-                            <p>4. Tempat, Tanggal Lahir: <strong>{`${student.tempatLahir}, ${new Date(student.tanggalLahir).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`}</strong></p>
-                            <p>5. Agama: <strong>{student.agama}</strong></p>
-                            <p>6. Kewarganegaraan: <strong>{student.kewarganegaraan}</strong></p>
-                        </div>
-                        <div className="relative w-32 h-40 bg-gray-200 border self-start">
-                            <Image src="https://placehold.co/128x160.png" alt="Foto Siswa" layout="fill" objectFit="cover" data-ai-hint="student portrait" />
-                             <p className="absolute bottom-[-20px] left-0 right-0 text-center text-xs">3x4</p>
-                        </div>
+                    <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">A. Keterangan Pribadi Siswa</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                        <InfoRow label="Nama Lengkap" value={student.namaLengkap} icon={User} />
+                        <InfoRow label="Nama Panggilan" value={student.namaPanggilan} icon={User} />
+                        <InfoRow label="NISN" value={student.nisn} icon={User} />
+                        <InfoRow label="NIS" value={student.nis} icon={User} />
+                        <InfoRow label="Jenis Kelamin" value={student.jenisKelamin} icon={User} />
+                        <InfoRow label="Tempat, Tgl Lahir" value={`${student.tempatLahir}, ${formatDate(student.tanggalLahir)}`} icon={Calendar} />
+                        <InfoRow label="Agama" value={student.agama} icon={BookOpen} />
+                        <InfoRow label="Kewarganegaraan" value={student.kewarganegaraan} icon={MapPin} />
+                        <InfoRow label="Anak ke" value={student.anakKe} />
+                        <InfoRow label="Jumlah Saudara" value={student.jumlahSaudara} />
+                        <InfoRow label="Bahasa Sehari-hari" value={student.bahasa} />
                     </div>
                 </section>
+                
+                {/* Keterangan Tempat Tinggal */}
                  <section>
-                    <h3 className="font-bold text-lg mb-4 border-b pb-2">B. KETERANGAN TEMPAT TINGGAL</h3>
-                     <p>1. Alamat: <strong>{student.alamat}</strong></p>
+                    <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">B. Keterangan Tempat Tinggal</h3>
+                    <div className="space-y-4">
+                        <InfoRow label="Alamat" value={student.alamat} icon={Home} />
+                        <InfoRow label="Telepon" value={student.telepon} icon={Phone} />
+                        <InfoRow label="Jarak ke Sekolah" value={student.jarakKeSekolah} />
+                    </div>
                 </section>
+
+                {/* Keterangan Kesehatan */}
                 <section>
-                    <h3 className="font-bold text-lg mb-4 border-b pb-2">C. KETERANGAN KESEHATAN</h3>
-                     <p>1. Golongan Darah: <strong>{student.golonganDarah}</strong></p>
-                     <p>2. Riwayat Penyakit: <strong>{student.penyakit}</strong></p>
+                    <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">C. Keterangan Kesehatan</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                         <InfoRow label="Golongan Darah" value={student.golonganDarah} icon={Droplet} />
+                         <InfoRow label="Riwayat Penyakit" value={student.penyakit} icon={Stethoscope} />
+                         <InfoRow label="Kelainan Jasmani" value={student.kelainanJasmani} />
+                         <InfoRow label="Tinggi & Berat Badan" value={`${student.tinggiBadan || '-'} cm / ${student.beratBadan || '-'} kg`} />
+                    </div>
                 </section>
+
+                {/* Keterangan Orang Tua */}
                  <section>
-                    <h3 className="font-bold text-lg mb-4 border-b pb-2">D. KETERANGAN ORANG TUA</h3>
-                     <p>1. Nama Ayah: <strong>{student.namaAyah}</strong></p>
-                     <p>2. Nama Ibu: <strong>{student.namaIbu}</strong></p>
-                     <p>3. Alamat Orang Tua: <strong>{student.alamatOrangTua}</strong></p>
+                    <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">D. Keterangan Orang Tua</h3>
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 p-4 bg-muted/50 rounded-lg">
+                           <InfoRow label="Nama Ayah" value={student.namaAyah} icon={User} />
+                           <InfoRow label="Pendidikan Ayah" value={student.pendidikanAyah} icon={Building} />
+                           <InfoRow label="Pekerjaan Ayah" value={student.pekerjaanAyah} icon={Building} />
+                        </div>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 p-4 bg-muted/50 rounded-lg">
+                           <InfoRow label="Nama Ibu" value={student.namaIbu} icon={User} />
+                           <InfoRow label="Pendidikan Ibu" value={student.pendidikanIbu} icon={Building} />
+                           <InfoRow label="Pekerjaan Ibu" value={student.pekerjaanIbu} icon={Building} />
+                        </div>
+                        <InfoRow label="Alamat Orang Tua" value={student.alamatOrangTua} icon={Home} />
+                        <InfoRow label="Telepon Orang Tua" value={student.teleponOrangTua} icon={Phone} />
+                    </div>
                 </section>
-            </CardContent>
-        </Card>
+
+                 {/* Keterangan Wali */}
+                 <section>
+                    <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">E. Keterangan Wali</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                       <InfoRow label="Nama Wali" value={student.namaWali} icon={User} />
+                       <InfoRow label="Pekerjaan Wali" value={student.pekerjaanWali} icon={Building} />
+                    </div>
+                </section>
+
+                {/* Perkembangan Siswa */}
+                <section>
+                    <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">F. Perkembangan Siswa</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                        <InfoRow label="Asal Sekolah" value={student.asalSekolah} />
+                        <InfoRow label="Tanggal Diterima" value={formatDate(student.tanggalMasuk)} />
+                        <InfoRow label="Hobi" value={student.hobi} />
+                        <InfoRow label="Melanjutkan Ke" value={student.melanjutkanKe} />
+                        <InfoRow label="Tanggal Lulus" value={formatDate(student.tanggalLulus)} />
+                        <InfoRow label="Alasan Pindah" value={student.alasanPindah} />
+                    </div>
+                </section>
+            </div>
+        </main>
       </div>
     </div>
   );
