@@ -41,9 +41,42 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
     resolver: zodResolver(studentFormSchema),
     mode: 'onChange',
     defaultValues: {
-      ...studentData,
+      namaLengkap: studentData?.namaLengkap || '',
+      nis: '',
+      nisn: studentData?.nisn || '',
+      namaPanggilan: '',
+      jenisKelamin: studentData?.jenisKelamin || undefined,
+      tempatLahir: '',
       tanggalLahir: studentData?.tanggalLahir ? new Date(studentData.tanggalLahir) : undefined,
+      agama: '',
       kewarganegaraan: 'Indonesia',
+      anakKe: undefined,
+      jumlahSaudara: undefined,
+      bahasa: '',
+      alamat: '',
+      telepon: '',
+      jarakKeSekolah: '',
+      namaAyah: '',
+      namaIbu: '',
+      pekerjaanAyah: '',
+      pekerjaanIbu: '',
+      pendidikanAyah: '',
+      pendidikanIbu: '',
+      alamatOrangTua: '',
+      teleponOrangTua: '',
+      namaWali: '',
+      pekerjaanWali: '',
+      tinggiBadan: undefined,
+      beratBadan: undefined,
+      golonganDarah: '',
+      penyakit: '',
+      kelainanJasmani: '',
+      asalSekolah: '',
+      tanggalMasuk: undefined,
+      hobi: '',
+      melanjutkanKe: '',
+      tanggalLulus: undefined,
+      alasanPindah: '',
       documents: [],
     },
   });
@@ -192,10 +225,10 @@ function DataSiswaForm() {
         <FormItem><FormLabel>Kewarganegaraan</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="anakKe" render={({ field }) => (
-        <FormItem><FormLabel>Anak ke-</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>Anak ke-</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="jumlahSaudara" render={({ field }) => (
-        <FormItem><FormLabel>Jumlah Saudara</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>Jumlah Saudara</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="bahasa" render={({ field }) => (
         <FormItem><FormLabel>Bahasa Sehari-hari</FormLabel><FormControl><Input placeholder="Contoh: Indonesia" {...field} /></FormControl><FormMessage /></FormItem>
@@ -241,10 +274,10 @@ function DataRincianForm() {
   return (
     <Grid>
         <FormField control={control} name="tinggiBadan" render={({ field }) => (
-            <FormItem><FormLabel>Tinggi Badan (cm)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Tinggi Badan (cm)</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="beratBadan" render={({ field }) => (
-            <FormItem><FormLabel>Berat Badan (kg)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Berat Badan (kg)</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="golonganDarah" render={({ field }) => (
         <FormItem><FormLabel>Golongan Darah</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
