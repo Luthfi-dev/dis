@@ -38,7 +38,6 @@ const dataMasterMenuItems = [
 
 const adminMenuItems = [
     { href: '/admin/users', label: 'Kelola Pengguna', icon: Users },
-    { href: '/admin/roles', label: 'Kelola Peran', icon: ShieldCheck },
 ]
 
 export function AppSidebar() {
@@ -119,7 +118,7 @@ export function AppSidebar() {
           </CollapsibleContent>
         </Collapsible>
         
-        {user?.role === 'admin' || user?.role === 'superadmin' ? (
+        {user?.role === 'superadmin' ? (
           <Collapsible open={isDataMasterOpen} onOpenChange={setIsDataMasterOpen} className="w-full">
             <CollapsibleTrigger asChild>
               <SidebarMenuButton
