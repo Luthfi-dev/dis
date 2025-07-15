@@ -39,7 +39,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
 
   const methods = useForm<StudentFormData>({
     resolver: zodResolver(studentFormSchema),
-    mode: 'onChange',
+    mode: 'onBlur', // Changed to onBlur for auto-save draft functionality
     defaultValues: {
       namaLengkap: studentData?.namaLengkap || '',
       nis: '',
@@ -81,17 +81,19 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
     },
   });
 
-  const { trigger, handleSubmit } = methods;
+  const { trigger, handleSubmit, getValues } = methods;
 
   const handleNext = async () => {
-    const currentSchema = steps[currentStep - 1].schema;
-    const fields = Object.keys(currentSchema.shape);
-    const isValid = await trigger(fields as any, { shouldFocus: true });
-    
-    if (isValid) {
-      if (currentStep < steps.length) {
-        setCurrentStep(prev => prev + 1);
+    // Only validate for the first step
+    if (currentStep === 1) {
+      const isValid = await trigger(Object.keys(dataSiswaSchema.shape) as any, { shouldFocus: true });
+      if (!isValid) {
+        return;
       }
+    }
+    
+    if (currentStep < steps.length) {
+      setCurrentStep(prev => prev + 1);
     }
   };
 
@@ -100,10 +102,33 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
       setCurrentStep(prev => prev - 1);
     }
   };
+  
+  // This is a mock function for auto-saving.
+  // In a real app, this would make an API call.
+  const saveDraft = async () => {
+    const data = getValues();
+    const result = await dataSiswaSchema.safeParse(data);
+    if(result.success) {
+      console.log("Auto-saving draft...", data);
+      // Here you would call a server action to save the draft
+      // e.g., await saveStudentDraft(data);
+      toast({
+        title: 'Draft Disimpan',
+        description: 'Perubahan Anda telah disimpan sebagai draft.',
+        variant: 'default',
+        duration: 2000,
+      });
+    }
+  }
 
   const processForm = (data: StudentFormData) => {
     startTransition(async () => {
-      const result = await submitStudentData(data);
+      // Determine status based on dataSiswaSchema
+      const siswaDataCheck = dataSiswaSchema.safeParse(data);
+      const status = siswaDataCheck.success ? 'Lengkap' : 'Draft';
+      
+      const result = await submitStudentData({...data, status});
+      
       if (result.success) {
         toast({
           title: 'Sukses!',
@@ -133,7 +158,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
             <CardDescription>Sesi {currentStep} dari {steps.length}</CardDescription>
           </CardHeader>
           <CardContent>
-            {currentStep === 1 && <DataSiswaForm />}
+            {currentStep === 1 && <DataSiswaForm onFieldBlur={saveDraft} />}
             {currentStep === 2 && <DataOrangTuaForm />}
             {currentStep === 3 && <DataRincianForm />}
             {currentStep === 4 && <DataPerkembanganForm />}
@@ -168,36 +193,36 @@ function Grid({ children }: { children: React.ReactNode }) {
   return <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">{children}</div>;
 }
 
-function DataSiswaForm() {
+function DataSiswaForm({ onFieldBlur }: { onFieldBlur: () => void }) {
   const { control } = useFormContext<StudentFormData>();
   return (
     <Grid>
       <FormField control={control} name="namaLengkap" render={({ field }) => (
         <FormItem>
           <FormLabel>Nama Lengkap</FormLabel>
-          <FormControl><Input placeholder="Contoh: Budi Santoso" {...field} /></FormControl>
+          <FormControl><Input placeholder="Contoh: Budi Santoso" {...field} onBlur={onFieldBlur} /></FormControl>
           <FormMessage />
         </FormItem>
       )} />
       <FormField control={control} name="nis" render={({ field }) => (
-        <FormItem><FormLabel>NIS</FormLabel><FormControl><Input placeholder="Nomor Induk Siswa" {...field} /></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>NIS</FormLabel><FormControl><Input placeholder="Nomor Induk Siswa" {...field} onBlur={onFieldBlur}/></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="nisn" render={({ field }) => (
-        <FormItem><FormLabel>NISN</FormLabel><FormControl><Input placeholder="10 digit NISN" {...field} /></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>NISN</FormLabel><FormControl><Input placeholder="10 digit NISN" {...field} onBlur={onFieldBlur}/></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="namaPanggilan" render={({ field }) => (
-        <FormItem><FormLabel>Nama Panggilan</FormLabel><FormControl><Input placeholder="Contoh: Budi" {...field} /></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>Nama Panggilan</FormLabel><FormControl><Input placeholder="Contoh: Budi" {...field} onBlur={onFieldBlur}/></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="jenisKelamin" render={({ field }) => (
         <FormItem><FormLabel>Jenis Kelamin</FormLabel><FormControl>
-          <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center space-x-4">
+          <RadioGroup onValueChange={(value) => { field.onChange(value); onFieldBlur(); }} defaultValue={field.value} className="flex items-center space-x-4">
             <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Laki-laki" /></FormControl><FormLabel className="font-normal">Laki-laki</FormLabel></FormItem>
             <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Perempuan" /></FormControl><FormLabel className="font-normal">Perempuan</FormLabel></FormItem>
           </RadioGroup>
         </FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="tempatLahir" render={({ field }) => (
-        <FormItem><FormLabel>Tempat Lahir</FormLabel><FormControl><Input placeholder="Contoh: Jakarta" {...field} /></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>Tempat Lahir</FormLabel><FormControl><Input placeholder="Contoh: Jakarta" {...field} onBlur={onFieldBlur}/></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="tanggalLahir" render={({ field }) => (
         <FormItem className="flex flex-col"><FormLabel>Tanggal Lahir</FormLabel><Popover>
@@ -207,12 +232,12 @@ function DataSiswaForm() {
             </Button>
           </FormControl></PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
-            <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
+            <Calendar mode="single" selected={field.value} onSelect={(date) => { field.onChange(date); onFieldBlur(); }} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
           </PopoverContent>
         </Popover><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="agama" render={({ field }) => (
-        <FormItem><FormLabel>Agama</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
+        <FormItem><FormLabel>Agama</FormLabel><Select onValueChange={(value) => { field.onChange(value); onFieldBlur(); }} defaultValue={field.value}>
           <FormControl><SelectTrigger><SelectValue placeholder="Pilih Agama" /></SelectTrigger></FormControl>
           <SelectContent>
             <SelectItem value="Islam">Islam</SelectItem><SelectItem value="Kristen">Kristen</SelectItem>
@@ -222,19 +247,19 @@ function DataSiswaForm() {
         </Select><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="kewarganegaraan" render={({ field }) => (
-        <FormItem><FormLabel>Kewarganegaraan</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>Kewarganegaraan</FormLabel><FormControl><Input {...field} onBlur={onFieldBlur} /></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="anakKe" render={({ field }) => (
-        <FormItem><FormLabel>Anak ke-</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>Anak ke-</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} onBlur={onFieldBlur} /></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="jumlahSaudara" render={({ field }) => (
-        <FormItem><FormLabel>Jumlah Saudara</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>Jumlah Saudara</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} onBlur={onFieldBlur}/></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="bahasa" render={({ field }) => (
-        <FormItem><FormLabel>Bahasa Sehari-hari</FormLabel><FormControl><Input placeholder="Contoh: Indonesia" {...field} /></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>Bahasa Sehari-hari</FormLabel><FormControl><Input placeholder="Contoh: Indonesia" {...field} onBlur={onFieldBlur}/></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="alamat" render={({ field }) => (
-        <FormItem className="md:col-span-2"><FormLabel>Alamat</FormLabel><FormControl><Textarea placeholder="Alamat lengkap siswa" {...field} /></FormControl><FormMessage /></FormItem>
+        <FormItem className="md:col-span-2"><FormLabel>Alamat</FormLabel><FormControl><Textarea placeholder="Alamat lengkap siswa" {...field} onBlur={onFieldBlur}/></FormControl><FormMessage /></FormItem>
       )} />
     </Grid>
   );
@@ -245,25 +270,25 @@ function DataOrangTuaForm() {
   return (
     <Grid>
       <FormField control={control} name="namaAyah" render={({ field }) => (
-        <FormItem><FormLabel>Nama Ayah</FormLabel><FormControl><Input placeholder="Nama lengkap ayah" {...field} /></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>Nama Ayah</FormLabel><FormControl><Input placeholder="Nama lengkap ayah" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="namaIbu" render={({ field }) => (
-        <FormItem><FormLabel>Nama Ibu</FormLabel><FormControl><Input placeholder="Nama lengkap ibu" {...field} /></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>Nama Ibu</FormLabel><FormControl><Input placeholder="Nama lengkap ibu" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="pekerjaanAyah" render={({ field }) => (
-        <FormItem><FormLabel>Pekerjaan Ayah</FormLabel><FormControl><Input placeholder="Contoh: Wiraswasta" {...field} /></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>Pekerjaan Ayah</FormLabel><FormControl><Input placeholder="Contoh: Wiraswasta" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="pekerjaanIbu" render={({ field }) => (
-        <FormItem><FormLabel>Pekerjaan Ibu</FormLabel><FormControl><Input placeholder="Contoh: Ibu Rumah Tangga" {...field} /></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>Pekerjaan Ibu</FormLabel><FormControl><Input placeholder="Contoh: Ibu Rumah Tangga" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
       )} />
        <FormField control={control} name="namaWali" render={({ field }) => (
-        <FormItem><FormLabel>Nama Wali (jika ada)</FormLabel><FormControl><Input placeholder="Nama lengkap wali" {...field} /></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>Nama Wali (jika ada)</FormLabel><FormControl><Input placeholder="Nama lengkap wali" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="pekerjaanWali" render={({ field }) => (
-        <FormItem><FormLabel>Pekerjaan Wali</FormLabel><FormControl><Input placeholder="Pekerjaan wali" {...field} /></FormControl><FormMessage /></FormItem>
+        <FormItem><FormLabel>Pekerjaan Wali</FormLabel><FormControl><Input placeholder="Pekerjaan wali" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="alamatOrangTua" render={({ field }) => (
-        <FormItem className="md:col-span-2"><FormLabel>Alamat Orang Tua/Wali</FormLabel><FormControl><Textarea placeholder="Alamat lengkap orang tua/wali" {...field} /></FormControl><FormMessage /></FormItem>
+        <FormItem className="md:col-span-2"><FormLabel>Alamat Orang Tua/Wali</FormLabel><FormControl><Textarea placeholder="Alamat lengkap orang tua/wali" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
       )} />
     </Grid>
   );
@@ -286,7 +311,7 @@ function DataRincianForm() {
         </Select><FormMessage /></FormItem>
       )} />
       <FormField control={control} name="penyakit" render={({ field }) => (
-        <FormItem className="md:col-span-2"><FormLabel>Riwayat Penyakit</FormLabel><FormControl><Textarea placeholder="Penyakit yang pernah diderita" {...field} /></FormControl><FormMessage /></FormItem>
+        <FormItem className="md:col-span-2"><FormLabel>Riwayat Penyakit</FormLabel><FormControl><Textarea placeholder="Penyakit yang pernah diderita" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
       )} />
     </Grid>
   );
@@ -297,7 +322,7 @@ function DataPerkembanganForm() {
     return (
         <Grid>
              <FormField control={control} name="asalSekolah" render={({ field }) => (
-                <FormItem><FormLabel>Asal Sekolah</FormLabel><FormControl><Input placeholder="Contoh: TK Tunas Bangsa" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Asal Sekolah</FormLabel><FormControl><Input placeholder="Contoh: TK Tunas Bangsa" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
             )} />
              <FormField control={control} name="tanggalMasuk" render={({ field }) => (
                 <FormItem className="flex flex-col"><FormLabel>Tanggal Diterima</FormLabel><Popover>
@@ -312,7 +337,7 @@ function DataPerkembanganForm() {
                 </Popover><FormMessage /></FormItem>
             )} />
              <FormField control={control} name="hobi" render={({ field }) => (
-                <FormItem className="md:col-span-2"><FormLabel>Hobi</FormLabel><FormControl><Textarea placeholder="Hobi siswa" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem className="md:col-span-2"><FormLabel>Hobi</FormLabel><FormControl><Textarea placeholder="Hobi siswa" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
             )} />
         </Grid>
     );
@@ -323,7 +348,7 @@ function DataLanjutanForm() {
     return (
         <Grid>
              <FormField control={control} name="melanjutkanKe" render={({ field }) => (
-                <FormItem><FormLabel>Melanjutkan ke</FormLabel><FormControl><Input placeholder="Contoh: SMP Negeri 1" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Melanjutkan ke</FormLabel><FormControl><Input placeholder="Contoh: SMP Negeri 1" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
             )} />
              <FormField control={control} name="tanggalLulus" render={({ field }) => (
                 <FormItem className="flex flex-col"><FormLabel>Tanggal Lulus</FormLabel><Popover>
@@ -338,7 +363,7 @@ function DataLanjutanForm() {
                 </Popover><FormMessage /></FormItem>
             )} />
              <FormField control={control} name="alasanPindah" render={({ field }) => (
-                <FormItem className="md:col-span-2"><FormLabel>Alasan Pindah (jika pindahan)</FormLabel><FormControl><Textarea placeholder="Alasan pindah sekolah" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem className="md:col-span-2"><FormLabel>Alasan Pindah (jika pindahan)</FormLabel><FormControl><Textarea placeholder="Alasan pindah sekolah" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>
             )} />
         </Grid>
     );
@@ -354,7 +379,7 @@ function DataDokumenForm() {
   const handleDescriptionChange = useCallback(
     (description: string, index: number) => {
       const timer = setTimeout(async () => {
-        if (description.length > 10) {
+        if (description && description.length > 10) {
           setSuggestionLoading(prev => ({ ...prev, [index]: true }));
           const result = await getCategorySuggestion(description);
           if (result.success && result.category && docCategories.includes(result.category)) {
@@ -387,7 +412,7 @@ function DataDokumenForm() {
                             <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
                                 <UploadCloud className="w-8 h-8 mb-2 text-muted-foreground" />
                                 <p className="mb-2 text-sm text-muted-foreground">
-                                    {watchedDocs[index]?.fileName ? <span className="font-semibold">{watchedDocs[index]?.fileName}</span> : <><span className="font-semibold">Klik untuk unggah</span><span className="hidden sm:inline"><br/>atau seret file</span></> }
+                                    {watchedDocs && watchedDocs[index]?.fileName ? <span className="font-semibold">{watchedDocs[index]?.fileName}</span> : <><span className="font-semibold">Klik untuk unggah</span><span className="hidden sm:inline"><br/>atau seret file</span></> }
                                 </p>
                             </div>
                             <input id={`dropzone-file-${index}`} type="file" className="hidden" 
@@ -411,7 +436,7 @@ function DataDokumenForm() {
                 <FormItem>
                   <FormLabel>Deskripsi Dokumen</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Contoh: Ijazah Sekolah Dasar Negeri 1 Jakarta" {...field} onChange={e => {
+                    <Textarea placeholder="Contoh: Ijazah Sekolah Dasar Negeri 1 Jakarta" {...field} value={field.value ?? ''} onChange={e => {
                         field.onChange(e);
                         handleDescriptionChange(e.target.value, index);
                     }}/>

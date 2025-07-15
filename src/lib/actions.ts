@@ -1,7 +1,7 @@
 'use server';
 
 import { suggestUploadCategory } from '@/ai/flows/suggest-upload-category';
-import { studentFormSchema } from '@/lib/schema';
+import { studentFormSchema, dataSiswaSchema } from '@/lib/schema';
 import { z } from 'zod';
 
 export async function getCategorySuggestion(description: string) {
@@ -19,17 +19,23 @@ export async function getCategorySuggestion(description: string) {
 
 export async function submitStudentData(data: unknown) {
   try {
+    // We parse with the full schema to get all data
     const parsedData = studentFormSchema.parse(data);
+    
+    // We check against the required schema to determine the status
+    const isComplete = dataSiswaSchema.safeParse(data).success;
+    const status = isComplete ? 'Lengkap' : 'Draft';
+
     // In a real application, you would save the data to a database.
     // The table name would be `siswa_...` as requested.
     // For file uploads, you would handle storing the files in a cloud storage bucket
     // in a folder named 'uploads'.
-    console.log('Form data submitted successfully:', JSON.stringify(parsedData, null, 2));
+    console.log('Form data submitted successfully:', JSON.stringify({...parsedData, status}, null, 2));
 
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    return { success: true, message: 'Data siswa berhasil disimpan!' };
+    return { success: true, message: `Data siswa berhasil disimpan sebagai ${status}!` };
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error('Validation error:', error.errors);

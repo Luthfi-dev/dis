@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+// Only DataSiswa is fully required
 export const dataSiswaSchema = z.object({
   namaLengkap: z.string({ required_error: "Nama lengkap wajib diisi." }).min(3, "Nama lengkap minimal 3 karakter."),
   nis: z.string().optional(),
@@ -18,9 +19,10 @@ export const dataSiswaSchema = z.object({
   jarakKeSekolah: z.string().optional(),
 });
 
+// Other schemas are optional
 export const dataOrangTuaSchema = z.object({
-  namaAyah: z.string().min(1, "Nama ayah wajib diisi."),
-  namaIbu: z.string().min(1, "Nama ibu wajib diisi."),
+  namaAyah: z.string().optional(),
+  namaIbu: z.string().optional(),
   pekerjaanAyah: z.string().optional(),
   pekerjaanIbu: z.string().optional(),
   pendidikanAyah: z.string().optional(),
@@ -53,14 +55,14 @@ export const dataLanjutanSchema = z.object({
 
 export const documentSchema = z.object({
   id: z.string(),
-  fileName: z.string(),
-  description: z.string().min(1, "Deskripsi wajib diisi."),
-  category: z.string().min(1, "Kategori wajib dipilih."),
-  file: z.any().refine(file => file?.name, "File wajib diunggah."),
+  fileName: z.string().optional(),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  file: z.any().optional(),
 });
 
 export const dataDokumenSchema = z.object({
-  documents: z.array(documentSchema),
+  documents: z.array(documentSchema).optional(),
 });
 
 export const studentFormSchema = dataSiswaSchema

@@ -17,9 +17,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import React, { useState } from 'react';
+import { DropdownMenuTrigger as AlertDialogTrigger } from '@radix-ui/react-dropdown-menu'; // Use this to avoid nesting issues
 
 function ActionMenu({ student }: { student: Siswa }) {
   return (
@@ -54,7 +54,7 @@ function ActionMenu({ student }: { student: Siswa }) {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <AlertDialogTrigger asChild>
-            <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onSelect={(e) => e.preventDefault()}>
+             <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onSelect={(e) => e.preventDefault()}>
               <Trash2 className="mr-2 h-4 w-4" />
               <span>Hapus</span>
             </DropdownMenuItem>
@@ -118,7 +118,7 @@ export default function SiswaPage() {
                   <TableHead>Nama Lengkap</TableHead>
                   <TableHead>NISN</TableHead>
                   <TableHead>Jenis Kelamin</TableHead>
-                  <TableHead>Tanggal Lahir</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
@@ -128,11 +128,15 @@ export default function SiswaPage() {
                     <TableCell className="font-medium whitespace-nowrap">{student.namaLengkap}</TableCell>
                     <TableCell className="whitespace-nowrap">{student.nisn}</TableCell>
                     <TableCell>
-                      <Badge variant={student.jenisKelamin === 'Laki-laki' ? 'default' : 'secondary'} className={student.jenisKelamin === 'Perempuan' ? 'bg-pink-100 text-pink-800' : ''}>
+                      <Badge variant={student.jenisKelamin === 'Laki-laki' ? 'default' : 'secondary'} className={student.jenisKelamin === 'Perempuan' ? 'bg-pink-100 text-pink-800 dark:bg-pink-900/50 dark:text-pink-300' : ''}>
                         {student.jenisKelamin}
                       </Badge>
                     </TableCell>
-                    <TableCell className="whitespace-nowrap">{new Date(student.tanggalLahir).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</TableCell>
+                    <TableCell>
+                      <Badge variant={student.status === 'Lengkap' ? 'default' : 'outline'} className={student.status === 'Lengkap' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 'text-amber-600 border-amber-500/50'}>
+                        {student.status}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="text-right">
                       <ActionMenu student={student} />
                     </TableCell>

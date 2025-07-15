@@ -9,14 +9,14 @@ type StepperProps = {
 export function FormStepper({ steps, currentStep }: StepperProps) {
   return (
     <nav aria-label="Progress">
-      <ol role="list" className="mb-8 flex items-center">
+      <ol role="list" className="mb-12 flex items-center justify-between sm:justify-start">
         {steps.map((step, index) => {
           const stepNumber = index + 1;
           const isCompleted = stepNumber < currentStep;
           const isCurrent = stepNumber === currentStep;
 
           return (
-            <li key={step.title} className={cn('relative', index !== steps.length - 1 ? 'pr-8 sm:pr-20' : '')}>
+            <li key={step.title} className={cn('relative', index !== steps.length - 1 ? 'flex-1 sm:pr-20' : '')}>
               <div className="absolute inset-0 top-4 -ml-px mt-0.5 h-0.5 w-full bg-border" aria-hidden="true"></div>
               {isCompleted ? (
                 <>
@@ -40,7 +40,7 @@ export function FormStepper({ steps, currentStep }: StepperProps) {
                   <div className="relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-border bg-background"></div>
                 </>
               )}
-              <div className="absolute top-10 w-max text-center">
+              <div className={cn("absolute top-10 -translate-x-1/2 left-1/2 w-max text-center", !isCurrent && "hidden sm:block")}>
                   <p className={cn("text-sm", isCurrent ? "font-semibold text-primary" : "text-muted-foreground")}>{step.title}</p>
               </div>
             </li>
