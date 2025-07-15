@@ -17,13 +17,14 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { BookCopy, GraduationCap, Plus, Users, Settings, LogOut, ChevronsUpDown } from 'lucide-react';
+import { BookCopy, GraduationCap, Plus, Users, Settings, LogOut, ChevronsUpDown, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 
 const subMenuItems = [
   { href: '/siswa', label: 'Lihat Daftar Siswa', icon: Users },
   { href: '/siswa/tambah', label: 'Tambah Data Siswa', icon: Plus },
+  { href: '/siswa', label: 'Filter Data Siswa', icon: Filter },
 ];
 
 export function AppSidebar() {
@@ -66,8 +67,8 @@ export function AppSidebar() {
           </CollapsibleTrigger>
           <CollapsibleContent className="group-data-[collapsible=icon]:hidden">
             <SidebarMenu className="ml-4 mt-1 space-y-1 border-l border-sidebar-border py-1 pl-4">
-              {subMenuItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
+              {subMenuItems.map((item, index) => (
+                <SidebarMenuItem key={index}>
                   <Link href={item.href} className="w-full">
                     <SidebarMenuButton
                       variant="ghost"
@@ -75,7 +76,7 @@ export function AppSidebar() {
                       isActive={pathname === item.href}
                        className={cn(
                         'w-full justify-start',
-                        pathname === item.href && 'bg-sidebar-accent text-sidebar-accent-foreground'
+                        pathname === item.href && item.label !== 'Filter Data Siswa' && 'bg-sidebar-accent text-sidebar-accent-foreground'
                       )}
                     >
                       <item.icon className="mr-2 h-4 w-4" />
