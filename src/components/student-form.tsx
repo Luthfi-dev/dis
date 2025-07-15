@@ -9,7 +9,7 @@ import { FormStepper } from './form-stepper';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, ArrowRight, CalendarIcon, UploadCloud, FileCheck2, FileX2, User } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, CalendarIcon, UploadCloud, FileCheck2, FileX2, User, ShieldCheck } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -33,6 +33,7 @@ const steps = [
   { id: 4, title: 'Data Rincian' },
   { id: 5, title: 'Perkembangan' },
   { id: 6, title: 'Data Lanjutan' },
+  { id: 7, title: 'Validasi' },
 ];
 
 export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { tanggalLahir?: string | Date } }) {
@@ -212,6 +213,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
             {currentStep === 4 && <DataRincianForm />}
             {currentStep === 5 && <DataPerkembanganForm />}
             {currentStep === 6 && <DataLanjutanForm />}
+            {currentStep === 7 && <DataValidasiForm />}
           </CardContent>
         </Card>
 
@@ -716,4 +718,16 @@ function DataDokumenForm() {
             </div>
         </div>
     );
+}
+
+function DataValidasiForm() {
+  return (
+    <div className="flex flex-col items-center justify-center text-center space-y-4 py-8">
+        <ShieldCheck className="w-16 h-16 text-primary" />
+        <h2 className="text-2xl font-bold">Konfirmasi Akhir</h2>
+        <p className="text-muted-foreground max-w-md">
+            Anda telah mencapai langkah terakhir. Silakan periksa kembali semua data yang telah Anda masukkan di langkah-langkah sebelumnya. Jika semua sudah benar, klik tombol "Simpan Data" untuk menyelesaikan proses.
+        </p>
+    </div>
+  )
 }
