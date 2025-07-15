@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { getDesaName, getKecamatanName, getKabupatenName, getProvinceName } from '@/lib/wilayah';
+import { cn } from '@/lib/utils';
 
 function InfoRow({ label, value, icon, className }: { label: string, value?: React.ReactNode, icon?: React.ElementType, className?: string }) {
     const Icon = icon;
@@ -23,7 +24,7 @@ function InfoRow({ label, value, icon, className }: { label: string, value?: Rea
     )
 }
 
-export default function PreviewSiswaPage({ params }: { params: { id: string } }) {
+export default function PreviewSiswaPage({ params: { id } }: { params: { id: string } }) {
   const [student, setStudent] = useState<Siswa | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -31,7 +32,7 @@ export default function PreviewSiswaPage({ params }: { params: { id: string } })
     try {
       const storedData = localStorage.getItem('siswaData');
       const allStudents: Siswa[] = storedData ? JSON.parse(storedData) : mockSiswaData;
-      const foundStudent = allStudents.find(s => s.id === params.id);
+      const foundStudent = allStudents.find(s => s.id === id);
       
       if (foundStudent) {
         setStudent(foundStudent);
@@ -41,7 +42,7 @@ export default function PreviewSiswaPage({ params }: { params: { id: string } })
     } finally {
         setLoading(false);
     }
-}, [params.id]);
+}, [id]);
 
 
   if (loading) {

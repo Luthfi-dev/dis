@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export default function EditSiswaPage({ params }: { params: { id: string } }) {
+export default function EditSiswaPage({ params: { id } }: { params: { id: string } }) {
   const [student, setStudent] = useState<Siswa | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -13,7 +13,7 @@ export default function EditSiswaPage({ params }: { params: { id: string } }) {
     try {
       const storedData = localStorage.getItem('siswaData');
       const allStudents = storedData ? JSON.parse(storedData) : mockSiswaData;
-      const foundStudent = allStudents.find((s: Siswa) => s.id === params.id);
+      const foundStudent = allStudents.find((s: Siswa) => s.id === id);
       
       if (foundStudent) {
         setStudent(foundStudent);
@@ -23,7 +23,7 @@ export default function EditSiswaPage({ params }: { params: { id: string } }) {
     } finally {
       setLoading(false);
     }
-  }, [params.id]);
+  }, [id]);
 
   if (loading) {
     return (

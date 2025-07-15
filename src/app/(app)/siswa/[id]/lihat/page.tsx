@@ -44,7 +44,7 @@ function DocumentItem({ label, document }: { label: string; document?: { fileNam
     );
 }
 
-export default function LihatSiswaPage({ params }: { params: { id: string } }) {
+export default function LihatSiswaPage({ params: { id } }: { params: { id: string } }) {
     const [student, setStudent] = useState<Siswa | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -52,7 +52,7 @@ export default function LihatSiswaPage({ params }: { params: { id: string } }) {
         try {
           const storedData = localStorage.getItem('siswaData');
           const allStudents: Siswa[] = storedData ? JSON.parse(storedData) : mockSiswaData;
-          const foundStudent = allStudents.find(s => s.id === params.id);
+          const foundStudent = allStudents.find(s => s.id === id);
           
           if (foundStudent) {
             setStudent(foundStudent);
@@ -62,7 +62,7 @@ export default function LihatSiswaPage({ params }: { params: { id: string } }) {
         } finally {
             setLoading(false);
         }
-    }, [params.id]);
+    }, [id]);
 
 
   if (loading) {
