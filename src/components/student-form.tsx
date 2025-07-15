@@ -37,6 +37,79 @@ const steps = [
   { id: 7, title: 'Validasi' },
 ];
 
+const initialFormValues: Partial<StudentFormData> = {
+  fotoProfil: undefined,
+  namaLengkap: '',
+  nis: '',
+  nisn: '',
+  jenisKelamin: undefined,
+  tempatLahir: '',
+  tanggalLahir: undefined,
+  agama: undefined,
+  kewarganegaraan: undefined,
+  jumlahSaudara: 0,
+  bahasa: '',
+  golonganDarah: undefined,
+  telepon: '',
+  alamatKkProvinsi: '',
+  alamatKkKabupaten: '',
+  alamatKkKecamatan: '',
+  alamatKkDesa: '',
+  domisiliProvinsi: '',
+  domisiliKabupaten: '',
+  domisiliKecamatan: '',
+  domisiliDesa: '',
+  namaAyah: '',
+  namaIbu: '',
+  pendidikanAyah: '',
+  pendidikanIbu: '',
+  pekerjaanAyah: '',
+  pekerjaanIbu: '',
+  namaWali: '',
+  hubunganWali: '',
+  pendidikanWali: '',
+  pekerjaanWali: '',
+  alamatOrangTua: '',
+  teleponOrangTua: '',
+  tinggiBadan: undefined,
+  beratBadan: undefined,
+  penyakit: '',
+  kelainanJasmani: '',
+  asalSekolah: '',
+  nomorSttb: '',
+  tanggalSttb: undefined,
+  pindahanAsalSekolah: '',
+  pindahanDariTingkat: '',
+  pindahanDiterimaTanggal: undefined,
+  lulusTahun: '',
+  lulusNomorIjazah: '',
+  lulusMelanjutkanKe: '',
+  pindahKeSekolah: '',
+  pindahTingkatKelas: '',
+  pindahKeTingkat: '',
+  keluarAlasan: '',
+  keluarTanggal: undefined,
+  documents: {
+    kartuKeluarga: undefined,
+    ktpAyah: undefined,
+    ktpIbu: undefined,
+    kartuIndonesiaPintar: undefined,
+    ijazah: undefined,
+    aktaKelahiran: undefined,
+    akteKematianAyah: undefined,
+    akteKematianIbu: undefined,
+    raporSmt1: undefined,
+    raporSmt2: undefined,
+    raporSmt3: undefined,
+    raporSmt4: undefined,
+    raporSmt5: undefined,
+    raporSmt6: undefined,
+    ijazahSmp: undefined,
+    transkripSmp: undefined,
+  }
+};
+
+
 export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { tanggalLahir?: string | Date } }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, startTransition] = useTransition();
@@ -48,13 +121,14 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
     mode: 'onBlur', 
     defaultValues: studentData
       ? {
+        ...initialFormValues,
         ...studentData,
         tanggalLahir: studentData.tanggalLahir ? new Date(studentData.tanggalLahir) : undefined,
         tanggalSttb: studentData.tanggalSttb ? new Date(studentData.tanggalSttb) : undefined,
         pindahanDiterimaTanggal: studentData.pindahanDiterimaTanggal ? new Date(studentData.pindahanDiterimaTanggal) : undefined,
         keluarTanggal: studentData.keluarTanggal ? new Date(studentData.keluarTanggal) : undefined,
       }
-      : {},
+      : initialFormValues,
   });
 
   const { trigger, handleSubmit } = methods;
@@ -144,7 +218,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
             pindahanDiterimaTanggal: studentData.pindahanDiterimaTanggal ? new Date(studentData.pindahanDiterimaTanggal) : undefined,
             keluarTanggal: studentData.keluarTanggal ? new Date(studentData.keluarTanggal) : undefined,
         };
-        methods.reset(studentDataWithDates as any);
+        methods.reset({...initialFormValues, ...studentDataWithDates});
     }
   }, [studentData, methods]);
 
@@ -314,7 +388,7 @@ function DataSiswaForm() {
         )} />
         <FormField control={control} name="jenisKelamin" render={({ field }) => (
             <FormItem><FormLabelRequired>Jenis Kelamin</FormLabelRequired><FormControl>
-            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center space-x-4 pt-2">
+            <RadioGroup onValueChange={field.onChange} value={field.value} className="flex items-center space-x-4 pt-2">
                 <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Laki-laki" /></FormControl><FormLabel className="font-normal">Laki-laki</FormLabel></FormItem>
                 <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Perempuan" /></FormControl><FormLabel className="font-normal">Perempuan</FormLabel></FormItem>
             </RadioGroup>
@@ -341,7 +415,7 @@ function DataSiswaForm() {
             </Grid>
         </div>
         <FormField control={control} name="agama" render={({ field }) => (
-            <FormItem><FormLabelRequired>Agama</FormLabelRequired><Select onValueChange={field.onChange} defaultValue={field.value}>
+            <FormItem><FormLabelRequired>Agama</FormLabelRequired><Select onValueChange={field.onChange} value={field.value}>
             <FormControl><SelectTrigger><SelectValue placeholder="Pilih Agama" /></SelectTrigger></FormControl>
             <SelectContent>
                 <SelectItem value="Islam">Islam</SelectItem><SelectItem value="Kristen">Kristen</SelectItem>
@@ -350,7 +424,7 @@ function DataSiswaForm() {
             </Select><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="kewarganegaraan" render={({ field }) => (
-            <FormItem><FormLabelRequired>Kewarganegaraan</FormLabelRequired><Select onValueChange={field.onChange} defaultValue={field.value}>
+            <FormItem><FormLabelRequired>Kewarganegaraan</FormLabelRequired><Select onValueChange={field.onChange} value={field.value}>
             <FormControl><SelectTrigger><SelectValue placeholder="Pilih Kewarganegaraan" /></SelectTrigger></FormControl>
             <SelectContent>
                 <SelectItem value="WNI">WNI</SelectItem><SelectItem value="WNA">WNA</SelectItem>
@@ -364,7 +438,7 @@ function DataSiswaForm() {
             <FormItem><FormLabelRequired>Bahasa Sehari-hari</FormLabelRequired><FormControl><Input placeholder="Contoh: Indonesia" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="golonganDarah" render={({ field }) => (
-        <FormItem><FormLabelRequired>Golongan Darah</FormLabelRequired><Select onValueChange={field.onChange} defaultValue={field.value}>
+        <FormItem><FormLabelRequired>Golongan Darah</FormLabelRequired><Select onValueChange={field.onChange} value={field.value}>
           <FormControl><SelectTrigger><SelectValue placeholder="Pilih Gol. Darah" /></SelectTrigger></FormControl>
           <SelectContent><SelectItem value="A">A</SelectItem><SelectItem value="B">B</SelectItem><SelectItem value="AB">AB</SelectItem><SelectItem value="O">O</SelectItem></SelectContent>
         </Select><FormMessage /></FormItem>
