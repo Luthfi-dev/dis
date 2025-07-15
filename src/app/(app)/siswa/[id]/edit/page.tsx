@@ -1,54 +1,29 @@
-'use client';
-import { StudentForm } from '@/components/student-form';
-import { Siswa, mockSiswaData } from '@/lib/data';
+
+'use server';
 import { notFound } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { mockSiswaData, Siswa } from '@/lib/data';
+import { EditStudentForm } from './edit-form';
 
-export default function EditSiswaPage({ params }: { params: { id: string } }) {
+// This function now runs on the server.
+async function getStudent(id: string): Promise<Siswa | null> {
+    // In a real app, you would fetch this from a database.
+    // Since we're using localStorage, this part is a bit tricky
+    // because localStorage is client-side.
+    // For this mock setup, we'll assume a global data source or a 
+    // fetch mechanism that works server-side.
+    // The current mockSiswaData is in-memory and empty, so this won't work
+    // without reading from the actual storage, which can't be done here.
+    // This is a conceptual fix for the 'params' issue.
+    // A full fix requires moving data management to a proper database.
+    // For now, we pass the id to the client component.
+  return null;
+}
+
+
+export default async function EditSiswaPage({ params }: { params: { id: string } }) {
   const { id } = params;
-  const [student, setStudent] = useState<Siswa | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    try {
-      const storedData = localStorage.getItem('siswaData');
-      const allStudents = storedData ? JSON.parse(storedData) : mockSiswaData;
-      const foundStudent = allStudents.find((s: Siswa) => s.id === id);
-      
-      if (foundStudent) {
-        setStudent(foundStudent);
-      }
-    } catch (error) {
-      console.error("Failed to parse student data from localStorage", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  if (loading) {
-    return (
-        <div className="mx-auto max-w-5xl">
-            <div className="mb-6">
-                <Skeleton className="h-9 w-1/2 mb-2" />
-                <Skeleton className="h-5 w-1/3" />
-            </div>
-            <Skeleton className="h-[600px] w-full" />
-        </div>
-    )
-  }
-
-  if (!student) {
-    notFound();
-  }
   
-  return (
-    <div className="mx-auto max-w-5xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Edit Data Siswa</h1>
-        <p className="text-muted-foreground">Perbarui data untuk {student.namaLengkap}.</p>
-      </div>
-      <StudentForm studentData={student} />
-    </div>
-  );
+  // The client component will handle data fetching via useEffect
+  // to work with localStorage.
+  return <EditStudentForm studentId={id} />;
 }
