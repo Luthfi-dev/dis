@@ -55,16 +55,30 @@ export const dataRincianSchema = z.object({
 });
 
 export const dataPerkembanganSchema = z.object({
+  // Siswa Baru
   asalSekolah: z.string().optional(),
-  tanggalMasuk: z.date().optional(),
-  hobi: z.string().optional(),
+  nomorSttb: z.string().optional(),
+  tanggalSttb: z.date().optional(),
+  // Pindahan
+  pindahanAsalSekolah: z.string().optional(),
+  pindahanDariTingkat: z.string().optional(),
+  pindahanDiterimaTanggal: z.date().optional(),
 });
 
-export const dataLanjutanSchema = z.object({
-  melanjutkanKe: z.string().optional(),
-  tanggalLulus: z.date().optional(),
-  alasanPindah: z.string().optional(),
+export const dataMeninggalkanSekolahSchema = z.object({
+    // Lulus
+    lulusTahun: z.string().optional(),
+    lulusNomorIjazah: z.string().optional(),
+    lulusMelanjutkanKe: z.string().optional(),
+    // Pindah
+    pindahKeSekolah: z.string().optional(),
+    pindahTingkatKelas: z.string().optional(),
+    pindahKeTingkat: z.string().optional(),
+    // Keluar
+    keluarAlasan: z.string().optional(),
+    keluarTanggal: z.date().optional(),
 });
+
 
 export const dataDokumenSchema = z.object({
   documents: z.object({
@@ -76,6 +90,14 @@ export const dataDokumenSchema = z.object({
     aktaKelahiran: fileSchema,
     akteKematianAyah: fileSchema.nullable(),
     akteKematianIbu: fileSchema.nullable(),
+    raporSmt1: fileSchema.nullable(),
+    raporSmt2: fileSchema.nullable(),
+    raporSmt3: fileSchema.nullable(),
+    raporSmt4: fileSchema.nullable(),
+    raporSmt5: fileSchema.nullable(),
+    raporSmt6: fileSchema.nullable(),
+    ijazahSmp: fileSchema.nullable(),
+    transkripSmp: fileSchema.nullable(),
   }).optional(),
 });
 
@@ -84,7 +106,7 @@ export const studentFormSchema = dataSiswaSchema
   .merge(dataOrangTuaSchema)
   .merge(dataRincianSchema)
   .merge(dataPerkembanganSchema)
-  .merge(dataLanjutanSchema)
+  .merge(dataMeninggalkanSekolahSchema)
   .merge(dataDokumenSchema);
 
 // A stricter schema to check for completion status
@@ -101,6 +123,14 @@ export const completeStudentFormSchema = dataSiswaSchema.merge(
         aktaKelahiran: z.object({ fileName: z.string().min(1), file: z.any(), fileURL: z.string().optional() }),
         akteKematianAyah: fileSchema.nullable(),
         akteKematianIbu: fileSchema.nullable(),
+        raporSmt1: z.object({ fileName: z.string().min(1), file: z.any(), fileURL: z.string().optional() }),
+        raporSmt2: z.object({ fileName: z.string().min(1), file: z.any(), fileURL: z.string().optional() }),
+        raporSmt3: z.object({ fileName: z.string().min(1), file: z.any(), fileURL: z.string().optional() }),
+        raporSmt4: z.object({ fileName: z.string().min(1), file: z.any(), fileURL: z.string().optional() }),
+        raporSmt5: z.object({ fileName: z.string().min(1), file: z.any(), fileURL: z.string().optional() }),
+        raporSmt6: z.object({ fileName: z.string().min(1), file: z.any(), fileURL: z.string().optional() }),
+        ijazahSmp: z.object({ fileName: z.string().min(1), file: z.any(), fileURL: z.string().optional() }),
+        transkripSmp: z.object({ fileName: z.string().min(1), file: z.any(), fileURL: z.string().optional() }),
     }),
 
     // Orang Tua - Wali remains optional, but if a wali is named, other details might be needed.
@@ -125,13 +155,21 @@ export const completeStudentFormSchema = dataSiswaSchema.merge(
 
     // Perkembangan
     asalSekolah: z.string().min(1, "Asal sekolah wajib diisi."),
-    tanggalMasuk: z.date({ required_error: "Tanggal masuk wajib diisi." }),
-    hobi: z.string().min(1, "Hobi wajib diisi."),
-
-    // Lanjutan - All are optional as they relate to leaving the school
-    melanjutkanKe: z.string().optional(),
-    tanggalLulus: z.date().optional(),
-    alasanPindah: z.string().optional(),
+    
+    // The rest are optional as they depend on the student's situation (new, transfer, graduate, etc)
+    nomorSttb: z.string().optional(),
+    tanggalSttb: z.date().optional(),
+    pindahanAsalSekolah: z.string().optional(),
+    pindahanDariTingkat: z.string().optional(),
+    pindahanDiterimaTanggal: z.date().optional(),
+    lulusTahun: z.string().optional(),
+    lulusNomorIjazah: z.string().optional(),
+    lulusMelanjutkanKe: z.string().optional(),
+    pindahKeSekolah: z.string().optional(),
+    pindahTingkatKelas: z.string().optional(),
+    pindahKeTingkat: z.string().optional(),
+    keluarAlasan: z.string().optional(),
+    keluarTanggal: z.date().optional(),
 })
 );
 

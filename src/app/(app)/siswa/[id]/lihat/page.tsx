@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { FilePen, ArrowLeft, Building, User, Calendar, Mail, Phone, MapPin, Droplet, Stethoscope, BookOpen, File as FileIcon, Image as ImageIcon, Users, Languages, GraduationCap, School, HeartHandshake, Home } from 'lucide-react';
+import { FilePen, ArrowLeft, Building, User, Calendar, Mail, Phone, MapPin, Droplet, Stethoscope, BookOpen, File as FileIcon, Image as ImageIcon, Users, Languages, GraduationCap, School, HeartHandshake, Home, Briefcase, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -168,7 +168,7 @@ export default function LihatSiswaPage({ params: { id } }: { params: { id: strin
         </Card>
         
         <Card className="shadow-lg">
-            <CardHeader><CardTitle>Dokumen</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Dokumen Utama</CardTitle></CardHeader>
             <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
                     <DocumentItem label="Kartu Keluarga" document={student.documents?.kartuKeluarga} />
@@ -197,12 +197,12 @@ export default function LihatSiswaPage({ params: { id } }: { params: { id: strin
                 </div>
                 <Separator/>
                 <div>
-                    <h4 className="font-semibold text-md mb-2">b. Pendidikan Tertinggi & Pekerjaan</h4>
+                    <h4 className="font-semibold text-md mb-2">b. Pendidikan & Pekerjaan</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
                         <DetailItem label="Pendidikan Tertinggi Ayah" value={student.pendidikanAyah} icon={GraduationCap}/>
-                        <DetailItem label="Pekerjaan Ayah" value={student.pekerjaanAyah} icon={Building}/>
+                        <DetailItem label="Pekerjaan Ayah" value={student.pekerjaanAyah} icon={Briefcase}/>
                         <DetailItem label="Pendidikan Tertinggi Ibu" value={student.pendidikanIbu} icon={GraduationCap}/>
-                        <DetailItem label="Pekerjaan Ibu" value={student.pekerjaanIbu} icon={Building}/>
+                        <DetailItem label="Pekerjaan Ibu" value={student.pekerjaanIbu} icon={Briefcase}/>
                     </div>
                 </div>
                 <Separator/>
@@ -212,7 +212,7 @@ export default function LihatSiswaPage({ params: { id } }: { params: { id: strin
                         <DetailItem label="Nama Wali" value={student.namaWali} icon={HeartHandshake}/>
                         <DetailItem label="Hubungan Keluarga" value={student.hubunganWali} icon={Users}/>
                         <DetailItem label="Pendidikan Terakhir" value={student.pendidikanWali} icon={GraduationCap}/>
-                        <DetailItem label="Pekerjaan" value={student.pekerjaanWali} icon={Building}/>
+                        <DetailItem label="Pekerjaan" value={student.pekerjaanWali} icon={Briefcase}/>
                     </div>
                 </div>
                 <Separator/>
@@ -228,32 +228,75 @@ export default function LihatSiswaPage({ params: { id } }: { params: { id: strin
         
         <Card className="shadow-lg">
             <CardHeader>
-                <CardTitle>Data Kesehatan & Rincian</CardTitle>
+                <CardTitle>Perkembangan Siswa</CardTitle>
             </CardHeader>
-            <CardContent>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                    <DetailItem label="Tinggi Badan" value={student.tinggiBadan ? `${student.tinggiBadan} cm` : '-'} icon={User}/>
-                    <DetailItem label="Berat Badan" value={student.beratBadan ? `${student.beratBadan} kg` : '-'} icon={User}/>
-                    <DetailItem label="Golongan Darah" value={student.golonganDarah} icon={Droplet}/>
-                    <DetailItem label="Riwayat Penyakit" value={student.penyakit} icon={Stethoscope}/>
-                    <DetailItem label="Kelainan Jasmani" value={student.kelainanJasmani} icon={Stethoscope}/>
-                 </div>
+            <CardContent className="space-y-4">
+                <div>
+                    <h4 className="font-semibold text-md mb-2">Pendidikan Sebelumnya (Siswa Baru)</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                        <DetailItem label="Asal Sekolah" value={student.asalSekolah} icon={School}/>
+                        <DetailItem label="Nomor STTB" value={student.nomorSttb} icon={FileText}/>
+                        <DetailItem label="Tanggal STTB" value={formatDate(student.tanggalSttb)} icon={Calendar}/>
+                    </div>
+                </div>
+                <Separator/>
+                <div>
+                    <h4 className="font-semibold text-md mb-2">Pendidikan Sebelumnya (Pindahan)</h4>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                        <DetailItem label="Asal Sekolah" value={student.pindahanAsalSekolah} icon={School}/>
+                        <DetailItem label="Dari Tingkat" value={student.pindahanDariTingkat} icon={GraduationCap}/>
+                        <DetailItem label="Diterima Tanggal" value={formatDate(student.pindahanDiterimaTanggal)} icon={Calendar}/>
+                    </div>
+                </div>
             </CardContent>
         </Card>
 
         <Card className="shadow-lg">
             <CardHeader>
-                <CardTitle>Data Perkembangan & Lanjutan</CardTitle>
+                <CardTitle>Meninggalkan Sekolah</CardTitle>
             </CardHeader>
+            <CardContent className="space-y-4">
+                 <div>
+                    <h4 className="font-semibold text-md mb-2">Tamat Belajar / Lulus</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                        <DetailItem label="Tahun" value={student.lulusTahun} icon={Calendar}/>
+                        <DetailItem label="Nomor Ijazah" value={student.lulusNomorIjazah} icon={FileText}/>
+                        <DetailItem label="Melanjutkan Ke" value={student.lulusMelanjutkanKe} icon={Building}/>
+                    </div>
+                </div>
+                <Separator/>
+                <div>
+                    <h4 className="font-semibold text-md mb-2">Pindah Sekolah</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                        <DetailItem label="Tingkat Kelas Ditinggalkan" value={student.pindahTingkatKelas} icon={GraduationCap}/>
+                        <DetailItem label="Ke Sekolah" value={student.pindahKeSekolah} icon={Building}/>
+                        <DetailItem label="Ke Tingkat" value={student.pindahKeTingkat} icon={GraduationCap}/>
+                    </div>
+                </div>
+                <Separator/>
+                <div>
+                    <h4 className="font-semibold text-md mb-2">Keluar Sekolah</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                        <DetailItem label="Alasan Keluar" value={student.keluarAlasan} icon={FileText}/>
+                        <DetailItem label="Tanggal Keluar" value={formatDate(student.keluarTanggal)} icon={Calendar}/>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+
+        <Card className="shadow-lg">
+            <CardHeader><CardTitle>Laporan Hasil Capaian Belajar</CardTitle></CardHeader>
             <CardContent>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                    <DetailItem label="Asal Sekolah" value={student.asalSekolah} icon={School}/>
-                    <DetailItem label="Tanggal Diterima" value={formatDate(student.tanggalMasuk)} icon={Calendar}/>
-                    <DetailItem label="Hobi" value={student.hobi} icon={HeartHandshake} />
-                    <DetailItem label="Melanjutkan Ke" value={student.melanjutkanKe} icon={GraduationCap}/>
-                    <DetailItem label="Tanggal Lulus" value={formatDate(student.tanggalLulus)} icon={Calendar}/>
-                    <DetailItem label="Alasan Pindah" value={student.alasanPindah} icon={Building}/>
-                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                    <DocumentItem label="Rapor Semester 1" document={student.documents?.raporSmt1} />
+                    <DocumentItem label="Rapor Semester 2" document={student.documents?.raporSmt2} />
+                    <DocumentItem label="Rapor Semester 3" document={student.documents?.raporSmt3} />
+                    <DocumentItem label="Rapor Semester 4" document={student.documents?.raporSmt4} />
+                    <DocumentItem label="Rapor Semester 5" document={student.documents?.raporSmt5} />
+                    <DocumentItem label="Rapor Semester 6" document={student.documents?.raporSmt6} />
+                    <DocumentItem label="Ijazah SMP" document={student.documents?.ijazahSmp} />
+                    <DocumentItem label="Transkrip SMP" document={student.documents?.transkripSmp} />
+                </div>
             </CardContent>
         </Card>
 

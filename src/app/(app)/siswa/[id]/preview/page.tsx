@@ -1,9 +1,10 @@
+
 'use client';
 import { Siswa, mockSiswaData } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Printer, User, Calendar, MapPin, Droplet, Stethoscope, BookOpen, Building, Phone, Home, Users, Languages, HeartHandshake, Map, School, GraduationCap, History, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, Printer, User, Calendar, MapPin, Droplet, Stethoscope, BookOpen, Building, Phone, Home, Users, Languages, HeartHandshake, Map, School, GraduationCap, History, CheckCircle2, XCircle, FileText, Briefcase } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -165,13 +166,13 @@ export default function PreviewSiswaPage({ params: { id } }: { params: { id: str
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 p-4 bg-muted/50 rounded-lg">
                            <InfoRow label="Nama Ayah" value={student.namaAyah} icon={User} />
-                           <InfoRow label="Pendidikan Ayah" value={student.pendidikanAyah} />
-                           <InfoRow label="Pekerjaan Ayah" value={student.pekerjaanAyah} icon={Building} />
+                           <InfoRow label="Pendidikan Ayah" value={student.pendidikanAyah} icon={GraduationCap} />
+                           <InfoRow label="Pekerjaan Ayah" value={student.pekerjaanAyah} icon={Briefcase} />
                         </div>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 p-4 bg-muted/50 rounded-lg">
                            <InfoRow label="Nama Ibu" value={student.namaIbu} icon={User} />
-                           <InfoRow label="Pendidikan Ibu" value={student.pendidikanIbu} />
-                           <InfoRow label="Pekerjaan Ibu" value={student.pekerjaanIbu} icon={Building} />
+                           <InfoRow label="Pendidikan Ibu" value={student.pendidikanIbu} icon={GraduationCap} />
+                           <InfoRow label="Pekerjaan Ibu" value={student.pekerjaanIbu} icon={Briefcase} />
                         </div>
                         <InfoRow label="Alamat Orang Tua" value={student.alamatOrangTua} icon={Home} />
                         <InfoRow label="Telepon Orang Tua" value={student.teleponOrangTua} icon={Phone} />
@@ -185,22 +186,53 @@ export default function PreviewSiswaPage({ params: { id } }: { params: { id: str
                        <InfoRow label="Nama Wali" value={student.namaWali} icon={HeartHandshake} />
                        <InfoRow label="Hubungan Keluarga" value={student.hubunganWali} icon={Users} />
                        <InfoRow label="Pendidikan Wali" value={student.pendidikanWali} icon={GraduationCap} />
-                       <InfoRow label="Pekerjaan Wali" value={student.pekerjaanWali} icon={Building} />
+                       <InfoRow label="Pekerjaan Wali" value={student.pekerjaanWali} icon={Briefcase} />
                     </div>
                 </section>
 
                 {/* Perkembangan Siswa */}
                 <section>
                     <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">F. Perkembangan Siswa</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-                        <InfoRow label="Asal Sekolah" value={student.asalSekolah} icon={School}/>
-                        <InfoRow label="Tanggal Diterima" value={formatDate(student.tanggalMasuk)} icon={Calendar} />
-                        <InfoRow label="Hobi" value={student.hobi} />
-                        <InfoRow label="Melanjutkan Ke" value={student.melanjutkanKe} icon={GraduationCap} />
-                        <InfoRow label="Tanggal Lulus" value={formatDate(student.tanggalLulus)} icon={Calendar} />
-                        <InfoRow label="Alasan Pindah" value={student.alasanPindah} icon={History} />
+                     <div className="space-y-4">
+                        <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                            <h4 className='font-semibold text-md'>Pendidikan Sebelumnya (Siswa Baru)</h4>
+                            <InfoRow label="Asal Sekolah" value={student.asalSekolah} icon={School}/>
+                            <InfoRow label="Nomor STTB" value={student.nomorSttb} icon={FileText}/>
+                            <InfoRow label="Tanggal STTB" value={formatDate(student.tanggalSttb)} icon={Calendar}/>
+                        </div>
+                        <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                             <h4 className='font-semibold text-md'>Pendidikan Sebelumnya (Pindahan)</h4>
+                            <InfoRow label="Asal Sekolah" value={student.pindahanAsalSekolah} icon={School}/>
+                            <InfoRow label="Dari Tingkat" value={student.pindahanDariTingkat} icon={GraduationCap}/>
+                            <InfoRow label="Diterima Tanggal" value={formatDate(student.pindahanDiterimaTanggal)} icon={Calendar}/>
+                        </div>
                     </div>
                 </section>
+                
+                {/* Meninggalkan Sekolah */}
+                <section>
+                    <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">G. Meninggalkan Sekolah</h3>
+                     <div className="space-y-4">
+                        <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                            <h4 className='font-semibold text-md'>Tamat Belajar / Lulus</h4>
+                            <InfoRow label="Tahun" value={student.lulusTahun} icon={Calendar}/>
+                            <InfoRow label="Nomor Ijazah" value={student.lulusNomorIjazah} icon={FileText}/>
+                            <InfoRow label="Melanjutkan Ke" value={student.lulusMelanjutkanKe} icon={Building}/>
+                        </div>
+                        <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                             <h4 className='font-semibold text-md'>Pindah Sekolah</h4>
+                            <InfoRow label="Tingkat Kelas Ditinggalkan" value={student.pindahTingkatKelas} icon={GraduationCap}/>
+                            <InfoRow label="Ke Sekolah" value={student.pindahKeSekolah} icon={Building}/>
+                            <InfoRow label="Ke Tingkat" value={student.pindahKeTingkat} icon={GraduationCap}/>
+                        </div>
+                        <div className="p-4 bg-muted/50 rounded-lg space-y-3">
+                             <h4 className='font-semibold text-md'>Keluar Sekolah</h4>
+                            <InfoRow label="Alasan Keluar" value={student.keluarAlasan} icon={FileText}/>
+                            <InfoRow label="Tanggal Keluar" value={formatDate(student.keluarTanggal)} icon={Calendar}/>
+                        </div>
+                    </div>
+                </section>
+
             </div>
         </main>
       </div>
