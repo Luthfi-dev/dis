@@ -137,7 +137,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
     const currentStepConfig = steps[currentStep - 1];
     let isValid = true;
     if (currentStepConfig.schema) {
-      isValid = await trigger(Object.keys(currentStepConfig.schema.shape) as any);
+      isValid = await trigger(Object.keys(currentStepConfig.schema.shape) as any, { shouldFocus: true });
     }
     
     if (isValid && currentStep < steps.length) {
@@ -275,9 +275,24 @@ function FormLabelRequired({ children }: { children: React.ReactNode }) {
 }
 
 function DataSiswaForm() {
-  const { control, watch, setValue } = useFormContext<StudentFormData>();
-  const fotoProfil = watch('fotoProfil');
-  const [preview, setPreview] = useState<string | null>(fotoProfil?.fileURL || null);
+  const { control, watch, setValue, getValues } = useFormContext<StudentFormData>();
+  const [preview, setPreview] = useState<string | null>(getValues('fotoProfil.fileURL') || null);
+  
+  useEffect(() => {
+    const subscription = watch((value, { name }) => {
+      if (name === 'fotoProfil') {
+        const file = value.fotoProfil?.file;
+        if (file) {
+          const newPreview = URL.createObjectURL(file);
+          setPreview(newPreview);
+        } else if (value.fotoProfil?.fileURL) {
+          setPreview(value.fotoProfil.fileURL);
+        }
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch]);
+
   
   const [provinces, setProvinces] = useState<Wilayah[]>([]);
   
@@ -337,12 +352,7 @@ function DataSiswaForm() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setValue('fotoProfil', { fileName: file.name, file: file });
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      setValue('fotoProfil', { fileName: file.name, file: file, fileURL: URL.createObjectURL(file) });
     }
   };
 
@@ -795,7 +805,7 @@ function DocumentUploadField({ name, label }: DocumentUploadFieldProps) {
                               onChange={(e) => {
                                   const file = e.target.files?.[0];
                                   if (file) {
-                                      setValue(fieldName as any, { fileName: file.name, file: file });
+                                      setValue(fieldName as any, { fileName: file.name, file: file, fileURL: URL.createObjectURL(file) });
                                   }
                               }}
                           />

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const fileSchema = z.object({
   fileName: z.string(),
-  file: z.any().refine(file => file instanceof File, "File is required."),
+  file: z.any().refine(file => file instanceof File, "File is required.").optional(), // Make file optional for edit mode
   fileURL: z.string().optional(),
 }).optional();
 
@@ -109,28 +109,40 @@ export const studentFormSchema = dataSiswaSchema
   .merge(dataMeninggalkanSekolahSchema)
   .merge(dataDokumenSchema);
 
+const requiredFile = z.object({ 
+    fileName: z.string().min(1, "File harus diunggah"), 
+    file: z.any().optional(), // File object is not required for completion check if fileName exists
+    fileURL: z.string().optional()
+});
+
+const optionalFile = z.object({ 
+    fileName: z.string().min(1, "File harus diunggah"), 
+    file: z.any().optional(),
+    fileURL: z.string().optional()
+}).optional().nullable();
+
 // A stricter schema to check for completion status
 // All fields that are optional in the main form are made required here, except for truly optional ones.
 export const completeStudentFormSchema = dataSiswaSchema.merge(
     z.object({
     // Dokumen - Kematian remains optional
     documents: z.object({
-        kartuKeluarga: z.object({ fileName: z.string().min(1), file: z.any(), fileURL: z.string().optional() }),
-        ktpAyah: z.object({ fileName: z.string().min(1), file: z.any(), fileURL: z.string().optional() }),
-        ktpIbu: z.object({ fileName: z.string().min(1), file: z.any(), fileURL: z.string().optional() }),
-        kartuIndonesiaPintar: z.object({ fileName: z.string().min(1), file: z.any(), fileURL: z.string().optional() }),
-        ijazah: z.object({ fileName: z.string().min(1), file: z.any(), fileURL: z.string().optional() }),
-        aktaKelahiran: z.object({ fileName: z.string().min(1), file: z.any(), fileURL: z.string().optional() }),
-        akteKematianAyah: fileSchema.nullable(),
-        akteKematianIbu: fileSchema.nullable(),
-        raporSmt1: z.object({ fileName: z.string().min(1), file: z.any(), fileURL: z.string().optional() }),
-        raporSmt2: z.object({ fileName: z.string().min(1), file: z.any(), fileURL: z.string().optional() }),
-        raporSmt3: z.object({ fileName: z.string().min(1), file: z.any(), fileURL: z.string().optional() }),
-        raporSmt4: z.object({ fileName: z.string().min(1), file: z.any(), fileURL: z.string().optional() }),
-        raporSmt5: z.object({ fileName: z.string().min(1), file: z.any(), fileURL: z.string().optional() }),
-        raporSmt6: z.object({ fileName: z.string().min(1), file: z.any(), fileURL: z.string().optional() }),
-        ijazahSmp: z.object({ fileName: z.string().min(1), file: z.any(), fileURL: z.string().optional() }),
-        transkripSmp: z.object({ fileName: z.string().min(1), file: z.any(), fileURL: z.string().optional() }),
+        kartuKeluarga: requiredFile,
+        ktpAyah: requiredFile,
+        ktpIbu: requiredFile,
+        kartuIndonesiaPintar: requiredFile,
+        ijazah: requiredFile,
+        aktaKelahiran: requiredFile,
+        akteKematianAyah: optionalFile,
+        akteKematianIbu: optionalFile,
+        raporSmt1: requiredFile,
+        raporSmt2: requiredFile,
+        raporSmt3: requiredFile,
+        raporSmt4: requiredFile,
+        raporSmt5: requiredFile,
+        raporSmt6: requiredFile,
+        ijazahSmp: requiredFile,
+        transkripSmp: requiredFile,
     }),
 
     // Orang Tua - Wali remains optional, but if a wali is named, other details might be needed.
