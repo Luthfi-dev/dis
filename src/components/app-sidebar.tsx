@@ -1,3 +1,4 @@
+
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -10,6 +11,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import {
   Collapsible,
@@ -17,24 +19,28 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { BookCopy, GraduationCap, Plus, Users, Settings, LogOut, ChevronsUpDown, Filter } from 'lucide-react';
+import { BookCopy, GraduationCap, Plus, Users, Settings, LogOut, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 
 const subMenuItems = [
   { href: '/siswa', label: 'Lihat Daftar Siswa', icon: Users },
   { href: '/siswa/tambah', label: 'Tambah Data Siswa', icon: Plus },
-  { href: '/siswa', label: 'Filter Data Siswa', icon: Filter },
 ];
 
 export function AppSidebar() {
   const pathname = usePathname();
   const [isBukuIndukOpen, setIsBukuIndukOpen] = useState(pathname.startsWith('/siswa'));
+  const { setOpenMobile } = useSidebar();
+
+  const handleLinkClick = () => {
+    setOpenMobile(false);
+  }
 
   return (
     <Sidebar collapsible="icon" variant="sidebar">
       <SidebarHeader>
-        <Link href="/siswa" className="flex items-center gap-2.5">
+        <Link href="/siswa" className="flex items-center gap-2.5" onClick={handleLinkClick}>
           <Button
             variant="ghost"
             size="icon"
@@ -69,14 +75,14 @@ export function AppSidebar() {
             <SidebarMenu className="ml-4 mt-1 space-y-1 border-l border-sidebar-border py-1 pl-4">
               {subMenuItems.map((item, index) => (
                 <SidebarMenuItem key={index}>
-                  <Link href={item.href} className="w-full">
+                  <Link href={item.href} className="w-full" onClick={handleLinkClick}>
                     <SidebarMenuButton
                       variant="ghost"
                       size="sm"
                       isActive={pathname === item.href}
                        className={cn(
                         'w-full justify-start',
-                        pathname === item.href && item.label !== 'Filter Data Siswa' && 'bg-sidebar-accent text-sidebar-accent-foreground'
+                        pathname === item.href && 'bg-sidebar-accent text-sidebar-accent-foreground'
                       )}
                     >
                       <item.icon className="mr-2 h-4 w-4" />
