@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition, useCallback, useEffect, useMemo } from 'react';
@@ -22,7 +23,7 @@ import { Textarea } from './ui/textarea';
 import { useRouter } from 'next/navigation';
 import type { Siswa } from '@/lib/data';
 import Image from 'next/image';
-import { getProvinces, getKabupatens, getKecamatans, getDesas } from '@/lib/wilayah';
+import { getProvinces, getKabupatens, getKecamatans, getDesas, Provinsi } from '@/lib/wilayah';
 
 const steps = [
   { id: 1, title: 'Data Siswa', schema: dataSiswaSchema },
@@ -33,7 +34,7 @@ const steps = [
   { id: 6, title: 'Data Lanjutan' },
 ];
 
-export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { tanggalLahir: string | Date } }) {
+export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { tanggalLahir?: string | Date } }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, startTransition] = useTransition();
   const { toast } = useToast();
@@ -45,7 +46,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
     defaultValues: studentData
       ? {
         ...studentData,
-        tanggalLahir: studentData.tanggalLahir ? new Date(studentData.tanggalLhir) : undefined,
+        tanggalLahir: studentData.tanggalLahir ? new Date(studentData.tanggalLahir) : undefined,
         tanggalMasuk: studentData.tanggalMasuk ? new Date(studentData.tanggalMasuk) : undefined,
         tanggalLulus: studentData.tanggalLulus ? new Date(studentData.tanggalLulus) : undefined,
       }
@@ -132,8 +133,9 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
     if (data.documents) {
       for (const key in data.documents) {
         const docKey = key as keyof typeof data.documents;
-        if (data.documents[docKey]?.file) {
-            data.documents[docKey]!.fileURL = URL.createObjectURL(data.documents[docKey]!.file);
+        const document = data.documents[docKey];
+        if (document?.file) {
+            document.fileURL = URL.createObjectURL(document.file);
         }
       }
     }
@@ -158,7 +160,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
           status: status,
         }
         
-        let existingStudents = JSON.parse(localStorage.getItem('siswaData') || '[]');
+        let existingStudents: Siswa[] = JSON.parse(localStorage.getItem('siswaData') || '[]');
         if (studentData?.id) {
             existingStudents = existingStudents.map((s: Siswa) => s.id === studentData.id ? newStudent : s);
         } else {
@@ -180,7 +182,13 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
 
   useEffect(() => {
     if (studentData) {
-      methods.reset(studentData as any);
+        const studentDataWithDates = {
+            ...studentData,
+            tanggalLahir: studentData.tanggalLahir ? new Date(studentData.tanggalLahir) : undefined,
+            tanggalMasuk: studentData.tanggalMasuk ? new Date(studentData.tanggalMasuk) : undefined,
+            tanggalLulus: studentData.tanggalLulus ? new Date(studentData.tanggalLulus) : undefined,
+        };
+        methods.reset(studentDataWithDates as any);
     }
   }, [studentData, methods]);
 
@@ -239,12 +247,17 @@ function DataSiswaForm() {
   const { control, watch, setValue } = useFormContext<StudentFormData>();
   const fotoProfil = watch('fotoProfil');
   const [preview, setPreview] = useState<string | null>(fotoProfil?.fileURL || null);
+  const [provinces, setProvinces] = useState<Provinsi[]>([]);
 
   const domisiliProvinsi = watch('domisiliProvinsi');
   const domisiliKabupaten = watch('domisiliKabupaten');
   const domisiliKecamatan = watch('domisiliKecamatan');
 
-  const provinces = useMemo(() => getProvinces(), []);
+  // Fetch provinces from localStorage on component mount
+  useEffect(() => {
+    setProvinces(getProvinces());
+  }, []);
+
   const kabupatens = useMemo(() => getKabupatens(domisiliProvinsi), [domisiliProvinsi]);
   const kecamatans = useMemo(() => getKecamatans(domisiliKabupaten), [domisiliKabupaten]);
   const desas = useMemo(() => getDesas(domisiliKecamatan), [domisiliKecamatan]);
@@ -284,7 +297,7 @@ function DataSiswaForm() {
         name="fotoProfil"
         render={() => (
           <FormItem>
-            <FormLabel>Foto Siswa (Opsional)</FormLabel>
+            <FormLabel>Foto Siswa (Opsional, JPG)</FormLabel>
             <div className="flex items-center gap-4">
                 <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center border relative">
                     {preview ? (
@@ -529,7 +542,7 @@ function DataLanjutanForm() {
 }
 
 type DocumentUploadFieldProps = {
-    name: keyof StudentFormData['documents'];
+    name: keyof NonNullable<StudentFormData['documents']>;
     label: string;
 }
 
@@ -546,9 +559,10 @@ const documentList: DocumentUploadFieldProps[] = [
 
 
 function DocumentUploadField({ name, label }: DocumentUploadFieldProps) {
-    const { control, watch, setValue } = useFormContext<StudentFormData>();
+    const { control, watch, setValue, formState: { errors } } = useFormContext<StudentFormData>();
     const fieldName = `documents.${name}`;
     const watchedFile = watch(fieldName as any);
+    const error = errors.documents?.[name];
   
     return (
       <FormField
@@ -563,7 +577,7 @@ function DocumentUploadField({ name, label }: DocumentUploadFieldProps) {
                       <label htmlFor={`file-upload-${name}`} className="cursor-pointer">
                           <UploadCloud className="mr-2 h-4 w-4" />
                           <span className="truncate">
-                              {watchedFile?.fileName || 'Pilih file...'}
+                              {watchedFile?.fileName || 'Pilih file (PDF/Gambar)...'}
                           </span>
                           <input 
                               id={`file-upload-${name}`}
@@ -586,10 +600,12 @@ function DocumentUploadField({ name, label }: DocumentUploadFieldProps) {
                       <span className="sr-only">Terunggah</span>
                   </div>
               ) : (
+                !error && (
                   <div className="flex items-center gap-2 text-muted-foreground">
                       <FileX2 className="h-5 w-5" />
                       <span className="sr-only">Belum diunggah</span>
                   </div>
+                )
               )}
             </div>
             <FormMessage />
@@ -613,3 +629,4 @@ function DataDokumenForm() {
         </div>
     );
 }
+

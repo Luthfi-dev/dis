@@ -19,22 +19,32 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { BookCopy, GraduationCap, Plus, Users, Settings, LogOut, ChevronsUpDown } from 'lucide-react';
+import { BookCopy, GraduationCap, Plus, Users, Settings, LogOut, ChevronsUpDown, Database } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 
-const subMenuItems = [
+const bukuIndukMenuItems = [
   { href: '/siswa', label: 'Lihat Daftar Siswa', icon: Users },
   { href: '/siswa/tambah', label: 'Tambah Data Siswa', icon: Plus },
 ];
 
+const dataMasterMenuItems = [
+    { href: '/master/provinsi', label: 'Provinsi', icon: Database },
+    // { href: '/master/kabupaten', label: 'Kabupaten', icon: Database },
+    // { href: '/master/kecamatan', label: 'Kecamatan', icon: Database },
+    // { href: '/master/desa', label: 'Desa', icon: Database },
+]
+
 export function AppSidebar() {
   const pathname = usePathname();
   const [isBukuIndukOpen, setIsBukuIndukOpen] = useState(pathname.startsWith('/siswa'));
+  const [isDataMasterOpen, setIsDataMasterOpen] = useState(pathname.startsWith('/master'));
   const { setOpenMobile } = useSidebar();
 
   const handleLinkClick = () => {
-    setOpenMobile(false);
+    if (setOpenMobile) {
+      setOpenMobile(false);
+    }
   }
 
   return (
@@ -73,7 +83,47 @@ export function AppSidebar() {
           </CollapsibleTrigger>
           <CollapsibleContent className="group-data-[collapsible=icon]:hidden">
             <SidebarMenu className="ml-4 mt-1 space-y-1 border-l border-sidebar-border py-1 pl-4">
-              {subMenuItems.map((item, index) => (
+              {bukuIndukMenuItems.map((item, index) => (
+                <SidebarMenuItem key={index}>
+                  <Link href={item.href} className="w-full" onClick={handleLinkClick}>
+                    <SidebarMenuButton
+                      variant="ghost"
+                      size="sm"
+                      isActive={pathname === item.href}
+                       className={cn(
+                        'w-full justify-start',
+                        pathname === item.href && 'bg-sidebar-accent text-sidebar-accent-foreground'
+                      )}
+                    >
+                      <item.icon className="mr-2 h-4 w-4" />
+                      {item.label}
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </CollapsibleContent>
+        </Collapsible>
+        <Collapsible open={isDataMasterOpen} onOpenChange={setIsDataMasterOpen} className="w-full">
+          <CollapsibleTrigger asChild>
+            <SidebarMenuButton
+              className="w-full justify-between"
+              isActive={pathname.startsWith('/master')}
+              tooltip={{
+                children: 'Data Master',
+                className: 'group-data-[collapsible=icon]:flex hidden',
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <Database />
+                <span>Data Master</span>
+              </div>
+              <ChevronsUpDown className="h-4 w-4 shrink-0 group-data-[collapsible=icon]:hidden" />
+            </SidebarMenuButton>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="group-data-[collapsible=icon]:hidden">
+            <SidebarMenu className="ml-4 mt-1 space-y-1 border-l border-sidebar-border py-1 pl-4">
+              {dataMasterMenuItems.map((item, index) => (
                 <SidebarMenuItem key={index}>
                   <Link href={item.href} className="w-full" onClick={handleLinkClick}>
                     <SidebarMenuButton
