@@ -1,23 +1,25 @@
+
 'use client';
 import { Siswa, mockSiswaData } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { FilePen, ArrowLeft, Building, User, Calendar, Mail, Phone, MapPin, Droplet, Stethoscope, BookOpen, File as FileIcon, Image as ImageIcon } from 'lucide-react';
+import { FilePen, ArrowLeft, Building, User, Calendar, Mail, Phone, MapPin, Droplet, Stethoscope, BookOpen, File as FileIcon, Image as ImageIcon, Users, Languages, GraduationCap, School, HeartHandshake, Home } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
+import { getDesaName, getKecamatanName, getKabupatenName, getProvinceName } from '@/lib/wilayah';
 
 function DetailItem({ label, value, icon }: { label: string; value: React.ReactNode; icon: React.ElementType }) {
   const Icon = icon;
   return (
-    <div className="flex items-start gap-3">
+    <div className="flex items-start gap-4 py-2">
       <Icon className="h-5 w-5 text-muted-foreground mt-1 flex-shrink-0" />
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1 w-full">
         <p className="text-sm font-medium text-muted-foreground">{label}</p>
-        <div className="text-base break-words">{value || '-'}</div>
+        <div className="text-base break-words font-semibold">{value || '-'}</div>
       </div>
     </div>
   );
@@ -64,6 +66,10 @@ export default function LihatSiswaPage({ params: { id } }: { params: { id: strin
         }
     }, [id]);
 
+    const formatDate = (dateString?: string | Date) => {
+        if (!dateString) return '-';
+        return new Date(dateString).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+    }
 
   if (loading) {
     return <div className="max-w-4xl mx-auto space-y-6">
@@ -121,18 +127,39 @@ export default function LihatSiswaPage({ params: { id } }: { params: { id: strin
           </CardHeader>
           <CardContent className="space-y-6">
              <div>
-                <h3 className="text-lg font-semibold mb-4 border-b pb-2">Data Pribadi</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">Data Pribadi</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                    <DetailItem label="NIS" value={student.nis} icon={User} />
                     <DetailItem label="NISN" value={student.nisn} icon={User} />
                     <DetailItem label="Jenis Kelamin" value={
-                    <Badge variant={student.jenisKelamin === 'Laki-laki' ? 'default' : 'secondary'} className={student.jenisKelamin === 'Perempuan' ? 'bg-pink-100 text-pink-800' : ''}>
-                        {student.jenisKelamin}
-                    </Badge>
-                    } icon={User} />
+                        <Badge variant={student.jenisKelamin === 'Laki-laki' ? 'default' : 'secondary'} className={student.jenisKelamin === 'Perempuan' ? 'bg-pink-100 text-pink-800' : ''}>
+                            {student.jenisKelamin}
+                        </Badge>
+                    } icon={Users} />
                     <DetailItem label="Tempat Lahir" value={student.tempatLahir} icon={MapPin} />
-                    <DetailItem label="Tanggal Lahir" value={new Date(student.tanggalLahir).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })} icon={Calendar}/>
+                    <DetailItem label="Tanggal Lahir" value={formatDate(student.tanggalLahir)} icon={Calendar}/>
                     <DetailItem label="Agama" value={student.agama} icon={BookOpen} />
-                    <DetailItem label="Alamat" value={student.alamat} icon={MapPin} />
+                    <DetailItem label="Kewarganegaraan" value={student.kewarganegaraan} icon={MapPin}/>
+                    <DetailItem label="Jumlah Saudara" value={student.jumlahSaudara} icon={Users} />
+                    <DetailItem label="Bahasa Sehari-hari" value={student.bahasa} icon={Languages}/>
+                    <DetailItem label="Nomor HP/WA" value={student.telepon} icon={Phone}/>
+                </div>
+             </div>
+             <div>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">Alamat Sesuai KK</h3>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                    <DetailItem label="Kabupaten" value={student.alamatKkKabupaten} icon={Home}/>
+                    <DetailItem label="Kecamatan" value={student.alamatKkKecamatan} icon={Home}/>
+                    <DetailItem label="Desa" value={student.alamatKkDesa} icon={Home}/>
+                </div>
+             </div>
+             <div>
+                <h3 className="text-lg font-semibold mb-2 border-b pb-2">Alamat Domisili</h3>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                    <DetailItem label="Provinsi" value={getProvinceName(student.domisiliProvinsi)} icon={MapPin}/>
+                    <DetailItem label="Kabupaten" value={getKabupatenName(student.domisiliKabupaten)} icon={MapPin}/>
+                    <DetailItem label="Kecamatan" value={getKecamatanName(student.domisiliKecamatan)} icon={MapPin}/>
+                    <DetailItem label="Desa" value={getDesaName(student.domisiliDesa)} icon={MapPin}/>
                 </div>
              </div>
           </CardContent>
@@ -141,7 +168,7 @@ export default function LihatSiswaPage({ params: { id } }: { params: { id: strin
         <Card className="shadow-lg">
             <CardHeader><CardTitle>Dokumen</CardTitle></CardHeader>
             <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
                     <DocumentItem label="Kartu Keluarga" document={student.documents?.kartuKeluarga} />
                     <DocumentItem label="KTP Ayah" document={student.documents?.ktpAyah} />
                     <DocumentItem label="KTP Ibu" document={student.documents?.ktpIbu} />
@@ -159,11 +186,17 @@ export default function LihatSiswaPage({ params: { id } }: { params: { id: strin
                 <CardTitle>Data Orang Tua / Wali</CardTitle>
             </CardHeader>
             <CardContent>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
                     <DetailItem label="Nama Ayah" value={student.namaAyah} icon={User}/>
+                    <DetailItem label="Pendidikan Ayah" value={student.pendidikanAyah} icon={GraduationCap}/>
                     <DetailItem label="Pekerjaan Ayah" value={student.pekerjaanAyah} icon={Building}/>
                     <DetailItem label="Nama Ibu" value={student.namaIbu} icon={User}/>
+                    <DetailItem label="Pendidikan Ibu" value={student.pendidikanIbu} icon={GraduationCap}/>
                     <DetailItem label="Pekerjaan Ibu" value={student.pekerjaanIbu} icon={Building}/>
+                    <DetailItem label="Alamat Orang Tua" value={student.alamatOrangTua} icon={Home}/>
+                    <DetailItem label="Telepon Orang Tua" value={student.teleponOrangTua} icon={Phone}/>
+                    <DetailItem label="Nama Wali" value={student.namaWali} icon={HeartHandshake}/>
+                    <DetailItem label="Pekerjaan Wali" value={student.pekerjaanWali} icon={Building}/>
                  </div>
             </CardContent>
         </Card>
@@ -173,14 +206,32 @@ export default function LihatSiswaPage({ params: { id } }: { params: { id: strin
                 <CardTitle>Data Kesehatan & Rincian</CardTitle>
             </CardHeader>
             <CardContent>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
                     <DetailItem label="Tinggi Badan" value={student.tinggiBadan ? `${student.tinggiBadan} cm` : '-'} icon={User}/>
                     <DetailItem label="Berat Badan" value={student.beratBadan ? `${student.beratBadan} kg` : '-'} icon={User}/>
                     <DetailItem label="Golongan Darah" value={student.golonganDarah} icon={Droplet}/>
                     <DetailItem label="Riwayat Penyakit" value={student.penyakit} icon={Stethoscope}/>
+                    <DetailItem label="Kelainan Jasmani" value={student.kelainanJasmani} icon={Stethoscope}/>
                  </div>
             </CardContent>
         </Card>
+
+        <Card className="shadow-lg">
+            <CardHeader>
+                <CardTitle>Data Perkembangan & Lanjutan</CardTitle>
+            </CardHeader>
+            <CardContent>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                    <DetailItem label="Asal Sekolah" value={student.asalSekolah} icon={School}/>
+                    <DetailItem label="Tanggal Diterima" value={formatDate(student.tanggalMasuk)} icon={Calendar}/>
+                    <DetailItem label="Hobi" value={student.hobi} icon={HeartHandshake} />
+                    <DetailItem label="Melanjutkan Ke" value={student.melanjutkanKe} icon={GraduationCap}/>
+                    <DetailItem label="Tanggal Lulus" value={formatDate(student.tanggalLulus)} icon={Calendar}/>
+                    <DetailItem label="Alasan Pindah" value={student.alasanPindah} icon={Building}/>
+                 </div>
+            </CardContent>
+        </Card>
+
       </div>
     </div>
   );
