@@ -1,8 +1,10 @@
+
 'use server';
 
 import { suggestUploadCategory } from '@/ai/flows/suggest-upload-category';
 import { studentFormSchema } from '@/lib/schema';
 import { z } from 'zod';
+import type { Siswa } from './data';
 
 export async function getCategorySuggestion(description: string) {
   if (!description) {
@@ -17,22 +19,20 @@ export async function getCategorySuggestion(description: string) {
   }
 }
 
-export async function submitStudentData(data: unknown) {
+export async function submitStudentData(data: Partial<Siswa>) {
   try {
-    // We only need to parse with the base schema here for submission validation
     const parsedData = studentFormSchema.parse(data);
+    const isUpdate = !!data.id;
     const status = (data as any).status || 'Belum Lengkap';
     
-    // In a real application, you would save this to a database.
-    // We are simulating this by returning the ID and handling storage on the client.
-    console.log('Form data submitted successfully with status:', status);
-
-    // Simulate network delay
+    console.log(`Form data ${isUpdate ? 'updated' : 'submitted'} successfully with status:`, status);
+    
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    const newId = crypto.randomUUID();
+    const id = data.id || crypto.randomUUID();
+    const message = isUpdate ? 'Data siswa berhasil diperbarui!' : 'Data siswa berhasil disimpan!';
 
-    return { success: true, message: `Data siswa berhasil disimpan dengan status ${status}!`, id: newId };
+    return { success: true, message, id };
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error('Validation error:', error.errors);

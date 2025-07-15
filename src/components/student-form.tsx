@@ -78,60 +78,62 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
   };
 
   const processForm = async (data: StudentFormData) => {
-    // Manually create file URLs for preview
-    const dataWithURLs = {...data};
-    if (data.fotoProfil?.file) {
-      dataWithURLs.fotoProfil.fileURL = URL.createObjectURL(data.fotoProfil.file);
-    }
-    if (data.documents) {
-      for (const key in data.documents) {
-        const docKey = key as keyof typeof data.documents;
-        const document = data.documents[docKey];
-        if (document?.file) {
-            document.fileURL = URL.createObjectURL(document.file);
-        }
-      }
-    }
-
     startTransition(async () => {
-      // Check for full completion
-      const result = await completeStudentFormSchema.safeParseAsync(data);
-      const status = result.success ? 'Lengkap' : 'Belum Lengkap';
-      
-      const submissionResult = await submitStudentData({...dataWithURLs, status});
-      
-      if (submissionResult.success) {
-        toast({
-          title: 'Sukses!',
-          description: submissionResult.message,
-          variant: 'default',
-        });
-        
-        const newStudent: Siswa = {
-          id: studentData?.id || submissionResult.id || crypto.randomUUID(),
-          ...data,
-          status: status,
+        const dataWithURLs = { ...data };
+
+        // Manually create temporary file URLs for preview if new files are uploaded
+        if (data.fotoProfil?.file) {
+            dataWithURLs.fotoProfil.fileURL = URL.createObjectURL(data.fotoProfil.file);
         }
-        
-        let existingStudents: Siswa[] = JSON.parse(localStorage.getItem('siswaData') || '[]');
-        if (studentData?.id) {
-            existingStudents = existingStudents.map((s: Siswa) => s.id === studentData.id ? newStudent : s);
+        if (data.documents) {
+            for (const key in data.documents) {
+                const docKey = key as keyof typeof data.documents;
+                const document = data.documents[docKey];
+                if (document?.file) {
+                    document.fileURL = URL.createObjectURL(document.file);
+                }
+            }
+        }
+
+        const result = await completeStudentFormSchema.safeParseAsync(data);
+        const status = result.success ? 'Lengkap' : 'Belum Lengkap';
+        const finalData = { ...dataWithURLs, id: studentData?.id, status };
+
+        const submissionResult = await submitStudentData(finalData);
+
+        if (submissionResult.success) {
+            toast({
+                title: 'Sukses!',
+                description: submissionResult.message,
+                variant: 'default',
+            });
+
+            // Update localStorage
+            let existingStudents: Siswa[] = JSON.parse(localStorage.getItem('siswaData') || '[]');
+            const newStudent: Siswa = { ...finalData, id: submissionResult.id };
+
+            if (studentData?.id) {
+                // Update existing student
+                existingStudents = existingStudents.map(s => s.id === studentData.id ? newStudent : s);
+            } else {
+                // Add new student
+                existingStudents.push(newStudent);
+            }
+            localStorage.setItem('siswaData', JSON.stringify(existingStudents));
+
+            router.push('/siswa');
+            router.refresh();
+
         } else {
-            existingStudents.push(newStudent);
+            toast({
+                title: 'Error',
+                description: submissionResult.message,
+                variant: 'destructive',
+            });
         }
-        localStorage.setItem('siswaData', JSON.stringify(existingStudents));
-        
-        router.push('/siswa');
-        router.refresh();
-      } else {
-        toast({
-          title: 'Error',
-          description: submissionResult.message,
-          variant: 'destructive',
-        });
-      }
     });
-  };
+};
+
 
   useEffect(() => {
     if (studentData) {
@@ -498,7 +500,7 @@ function DataOrangTuaForm() {
         </div>
         <Separator/>
         <div>
-            <h3 className="text-md font-semibold mb-3">b. Pendidikan Tertinggi & Pekerjaan</h3>
+            <h3 className="text-md font-semibold mb-3">b. Pendidikan & Pekerjaan</h3>
             <Grid>
                 <FormField control={control} name="pendidikanAyah" render={({ field }) => (
                     <FormItem><FormLabel>Pendidikan Tertinggi Ayah</FormLabel><FormControl><Input placeholder="Contoh: S1" {...field} /></FormControl><FormMessage /></FormItem>
@@ -714,7 +716,7 @@ function DocumentUploadField({ name, label }: DocumentUploadFieldProps) {
                           <input 
                               id={`file-upload-${name}`}
                               type="file" 
-                              accept="application/pdf" 
+                              accept="application/pdf,image/*" 
                               className="hidden"
                               onChange={(e) => {
                                   const file = e.target.files?.[0];
