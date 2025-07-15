@@ -53,16 +53,22 @@ export const dataLanjutanSchema = z.object({
   alasanPindah: z.string().optional(),
 });
 
-export const documentSchema = z.object({
-  id: z.string(),
+export const documentFileSchema = z.object({
   fileName: z.string().optional(),
-  description: z.string().optional(),
-  category: z.string().optional(),
   file: z.any().optional(),
 });
 
 export const dataDokumenSchema = z.object({
-  documents: z.array(documentSchema).optional(),
+  documents: z.object({
+    kartuKeluarga: documentFileSchema.optional(),
+    ktpAyah: documentFileSchema.optional(),
+    ktpIbu: documentFileSchema.optional(),
+    kartuIndonesiaPintar: documentFileSchema.optional(),
+    ijazah: documentFileSchema.optional(),
+    aktaKelahiran: documentFileSchema.optional(),
+    akteKematianAyah: documentFileSchema.optional(),
+    akteKematianIbu: documentFileSchema.optional(),
+  }).optional(),
 });
 
 export const studentFormSchema = dataSiswaSchema
@@ -73,4 +79,4 @@ export const studentFormSchema = dataSiswaSchema
   .merge(dataDokumenSchema);
 
 export type StudentFormData = z.infer<typeof studentFormSchema>;
-export type DocumentData = z.infer<typeof documentSchema>;
+export type DocumentData = z.infer<typeof dataDokumenSchema>;

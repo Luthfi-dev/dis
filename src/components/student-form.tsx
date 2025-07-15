@@ -3,12 +3,12 @@
 import { useState, useTransition, useCallback, useEffect } from 'react';
 import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { studentFormSchema, StudentFormData, dataSiswaSchema, dataOrangTuaSchema, dataRincianSchema, dataPerkembanganSchema, dataLanjutanSchema, dataDokumenSchema, DocumentData } from '@/lib/schema';
+import { studentFormSchema, StudentFormData, dataSiswaSchema, dataOrangTuaSchema, dataRincianSchema, dataPerkembanganSchema, dataLanjutanSchema, dataDokumenSchema } from '@/lib/schema';
 import { FormStepper } from './form-stepper';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, ArrowRight, CalendarIcon, PlusCircle, Trash2, UploadCloud, GripVertical } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, CalendarIcon, PlusCircle, Trash2, UploadCloud, FileCheck2, FileX2 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -17,7 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { getCategorySuggestion, submitStudentData } from '@/lib/actions';
+import { submitStudentData } from '@/lib/actions';
 import { Textarea } from './ui/textarea';
 import { useRouter } from 'next/navigation';
 import type { Siswa } from '@/lib/data';
@@ -77,7 +77,16 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
       melanjutkanKe: '',
       tanggalLulus: undefined,
       alasanPindah: '',
-      documents: [],
+      documents: {
+        kartuKeluarga: undefined,
+        ktpAyah: undefined,
+        ktpIbu: undefined,
+        kartuIndonesiaPintar: undefined,
+        ijazah: undefined,
+        aktaKelahiran: undefined,
+        akteKematianAyah: undefined,
+        akteKematianIbu: undefined,
+      },
     },
   });
 
@@ -107,11 +116,9 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
     const result = await dataSiswaSchema.safeParse(data);
     if(result.success) {
       console.log("Auto-saving draft...", data);
-      // Here you would call a server action to save the draft
-      // e.g., await saveStudentDraft(data);
       toast({
-        title: 'Draft Disimpan',
-        description: 'Perubahan Anda telah disimpan sebagai draft.',
+        title: 'Draf Disimpan',
+        description: 'Perubahan Anda telah disimpan sebagai draf.',
         variant: 'default',
         duration: 2000,
       });
@@ -132,20 +139,23 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
           variant: 'default',
         });
         
-        // Save new data to localStorage to be picked up by the list page
         const newStudent = {
-          id: result.id || crypto.randomUUID(),
-          namaLengkap: data.namaLengkap,
-          nisn: data.nisn,
-          jenisKelamin: data.jenisKelamin,
+          id: studentData?.id || result.id || crypto.randomUUID(),
+          ...data,
           tanggalLahir: data.tanggalLahir?.toISOString() || new Date().toISOString(),
           status: status,
         }
         
-        const existingStudents = JSON.parse(localStorage.getItem('siswaData') || '[]');
-        localStorage.setItem('siswaData', JSON.stringify([...existingStudents, newStudent]));
+        let existingStudents = JSON.parse(localStorage.getItem('siswaData') || '[]');
+        if (studentData?.id) {
+            existingStudents = existingStudents.map((s: Siswa) => s.id === studentData.id ? newStudent : s);
+        } else {
+            existingStudents.push(newStudent);
+        }
+        localStorage.setItem('siswaData', JSON.stringify(existingStudents));
         
         router.push('/siswa');
+        router.refresh();
       } else {
         toast({
           title: 'Error',
@@ -155,6 +165,12 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
       }
     });
   };
+
+  useEffect(() => {
+    if (studentData) {
+      methods.reset(studentData as StudentFormData);
+    }
+  }, [studentData, methods]);
 
   return (
     <FormProvider {...methods}>
@@ -379,103 +395,88 @@ function DataLanjutanForm() {
     );
 }
 
-const docCategories = ["Ijazah", "Transkrip", "Rapor", "Akta Kelahiran", "Kartu Keluarga", "Surat Pindah", "Sertifikat Prestasi", "Lainnya"];
+type DocumentUploadFieldProps = {
+    name: keyof StudentFormData['documents'];
+    label: string;
+}
+
+const documentList: DocumentUploadFieldProps[] = [
+    { name: "kartuKeluarga", label: "Kartu Keluarga" },
+    { name: "ktpAyah", label: "KTP Ayah" },
+    { name: "ktpIbu", label: "KTP Ibu" },
+    { name: "kartuIndonesiaPintar", label: "Kartu Indonesia Pintar" },
+    { name: "ijazah", label: "Ijazah SD/Sederajat" },
+    { name: "aktaKelahiran", label: "Akta Kelahiran" },
+    { name: "akteKematianAyah", label: "Akte Kematian Ayah (opsional)" },
+    { name: "akteKematianIbu", label: "Akte Kematian Ibu (opsional)" },
+];
+
+
+function DocumentUploadField({ name, label }: DocumentUploadFieldProps) {
+    const { control, watch, setValue } = useFormContext<StudentFormData>();
+    const fieldName = `documents.${name}`;
+    const watchedFile = watch(fieldName as any);
+  
+    return (
+      <FormField
+        control={control}
+        name={fieldName as any}
+        render={({ field: { onChange, ...fieldProps }, fieldState }) => (
+          <FormItem>
+            <FormLabel>{label}</FormLabel>
+            <div className="flex items-center gap-4">
+              <FormControl>
+                  <Button asChild variant="outline" className="w-full justify-start text-left font-normal">
+                      <label htmlFor={`file-upload-${name}`} className="cursor-pointer">
+                          <UploadCloud className="mr-2 h-4 w-4" />
+                          <span className="truncate">
+                              {watchedFile?.fileName || 'Pilih file PDF...'}
+                          </span>
+                          <input 
+                              id={`file-upload-${name}`}
+                              type="file" 
+                              accept=".pdf" 
+                              className="hidden"
+                              onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                      setValue(fieldName as any, { fileName: file.name, file: file });
+                                  }
+                              }}
+                          />
+                      </label>
+                  </Button>
+              </FormControl>
+              {watchedFile?.fileName ? (
+                  <div className="flex items-center gap-2 text-green-600">
+                      <FileCheck2 className="h-5 w-5" />
+                      <span className="sr-only">Terunggah</span>
+                  </div>
+              ) : (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                      <FileX2 className="h-5 w-5" />
+                      <span className="sr-only">Belum diunggah</span>
+                  </div>
+              )}
+            </div>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    );
+  }
 
 function DataDokumenForm() {
-  const { control, setValue, watch } = useFormContext<StudentFormData>();
-  const { fields, append, remove } = useFieldArray({ control, name: "documents" });
-  const [suggestionLoading, setSuggestionLoading] = useState<Record<string, boolean>>({});
-
-  const handleDescriptionChange = useCallback(
-    (description: string, index: number) => {
-      const timer = setTimeout(async () => {
-        if (description && description.length > 10) {
-          setSuggestionLoading(prev => ({ ...prev, [index]: true }));
-          const result = await getCategorySuggestion(description);
-          if (result.success && result.category && docCategories.includes(result.category)) {
-            setValue(`documents.${index}.category`, result.category, { shouldValidate: true });
-          }
-          setSuggestionLoading(prev => ({ ...prev, [index]: false }));
-        }
-      }, 1000); // 1-second debounce
-      return () => clearTimeout(timer);
-    },
-    [setValue]
-  );
-  
-  const watchedDocs = watch('documents');
-
-  return (
-    <div className="space-y-6">
-      {fields.map((field, index) => (
-        <Card key={field.id} className="p-4 relative bg-muted/30">
-          <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => remove(index)}>
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
-            <FormField control={control} name={`documents.${index}.file`} render={({ field: { onChange, ...fieldProps } }) => (
-              <FormItem className="md:col-span-1">
-                <FormLabel>File Dokumen</FormLabel>
-                <FormControl>
-                    <div className="flex items-center justify-center w-full">
-                        <label htmlFor={`dropzone-file-${index}`} className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-background hover:bg-muted">
-                            <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
-                                <UploadCloud className="w-8 h-8 mb-2 text-muted-foreground" />
-                                <p className="mb-2 text-sm text-muted-foreground">
-                                    {watchedDocs && watchedDocs[index]?.fileName ? <span className="font-semibold">{watchedDocs[index]?.fileName}</span> : <><span className="font-semibold">Klik untuk unggah</span><span className="hidden sm:inline"><br/>atau seret file</span></> }
-                                </p>
-                            </div>
-                            <input id={`dropzone-file-${index}`} type="file" className="hidden" 
-                                {...fieldProps}
-                                onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if(file) {
-                                        setValue(`documents.${index}.fileName`, file.name);
-                                        onChange(file);
-                                    }
-                                }}
-                            />
-                        </label>
-                    </div> 
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <div className="md:col-span-2 space-y-4">
-              <FormField control={control} name={`documents.${index}.description`} render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Deskripsi Dokumen</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Contoh: Ijazah Sekolah Dasar Negeri 1 Jakarta" {...field} value={field.value ?? ''} onChange={e => {
-                        field.onChange(e);
-                        handleDescriptionChange(e.target.value, index);
-                    }}/>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={control} name={`documents.${index}.category`} render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Kategori</FormLabel>
-                   <div className="flex items-center gap-2">
-                    <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Pilih Kategori" /></SelectTrigger></FormControl>
-                        <SelectContent>
-                            {docCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                     {suggestionLoading[index] && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
-                    </div>
-                  <FormMessage />
-                </FormItem>
-              )} />
+    return (
+        <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+                Silakan unggah semua berkas administrasi yang diperlukan dalam format PDF.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                {documentList.map((doc) => (
+                    <DocumentUploadField key={doc.name} name={doc.name} label={doc.label} />
+                ))}
             </div>
-          </div>
-        </Card>
-      ))}
-      <Button type="button" variant="outline" onClick={() => append({ id: crypto.randomUUID(), fileName: '', description: '', category: '', file: null })}>
-        <PlusCircle className="mr-2 h-4 w-4" /> Tambah Dokumen
-      </Button>
-    </div>
-  );
+        </div>
+    );
 }
