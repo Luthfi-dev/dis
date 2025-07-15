@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useCallback } from 'react';
+import { useState, useTransition, useCallback, useEffect } from 'react';
 import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { studentFormSchema, StudentFormData, dataSiswaSchema, dataOrangTuaSchema, dataRincianSchema, dataPerkembanganSchema, dataLanjutanSchema, dataDokumenSchema, DocumentData } from '@/lib/schema';
@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { getCategorySuggestion, submitStudentData } from '@/lib/actions';
 import { Textarea } from './ui/textarea';
 import { useRouter } from 'next/navigation';
+import type { Siswa } from '@/lib/data';
 
 const steps = [
   { id: 1, title: 'Data Siswa', schema: dataSiswaSchema },
@@ -30,7 +31,7 @@ const steps = [
   { id: 6, title: 'Unggah Dokumen', schema: dataDokumenSchema },
 ];
 
-export function StudentForm() {
+export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { tanggalLahir: string | Date } }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, startTransition] = useTransition();
   const { toast } = useToast();
@@ -40,6 +41,8 @@ export function StudentForm() {
     resolver: zodResolver(studentFormSchema),
     mode: 'onChange',
     defaultValues: {
+      ...studentData,
+      tanggalLahir: studentData?.tanggalLahir ? new Date(studentData.tanggalLahir) : undefined,
       kewarganegaraan: 'Indonesia',
       documents: [],
     },
@@ -112,12 +115,12 @@ export function StudentForm() {
             Kembali
           </Button>
           {currentStep < steps.length ? (
-            <Button type="button" onClick={handleNext} className="bg-accent hover:bg-accent/90">
+            <Button type="button" onClick={handleNext}>
               Lanjut
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           ) : (
-            <Button type="submit" disabled={isSubmitting} className="bg-accent hover:bg-accent/90">
+            <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Simpan Data
             </Button>
@@ -348,10 +351,10 @@ function DataDokumenForm() {
                 <FormControl>
                     <div className="flex items-center justify-center w-full">
                         <label htmlFor={`dropzone-file-${index}`} className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-background hover:bg-muted">
-                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
                                 <UploadCloud className="w-8 h-8 mb-2 text-muted-foreground" />
-                                <p className="mb-2 text-sm text-center text-muted-foreground">
-                                    {watchedDocs[index]?.fileName ? <span className="font-semibold">{watchedDocs[index]?.fileName}</span> : <span><span className="font-semibold">Klik untuk unggah</span><br/>atau seret file</span> }
+                                <p className="mb-2 text-sm text-muted-foreground">
+                                    {watchedDocs[index]?.fileName ? <span className="font-semibold">{watchedDocs[index]?.fileName}</span> : <><span className="font-semibold">Klik untuk unggah</span><span className="hidden sm:inline"><br/>atau seret file</span></> }
                                 </p>
                             </div>
                             <input id={`dropzone-file-${index}`} type="file" className="hidden" 
