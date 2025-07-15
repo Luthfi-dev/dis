@@ -65,7 +65,7 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </CollapsibleTrigger>
           <CollapsibleContent className="group-data-[collapsible=icon]:hidden">
-            <SidebarMenu className="ml-4 mt-1 space-y-1 border-l py-1 pl-4">
+            <SidebarMenu className="ml-4 mt-1 space-y-1 border-l border-sidebar-border py-1 pl-4">
               {subMenuItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <Link href={item.href} className="w-full">
@@ -73,9 +73,9 @@ export function AppSidebar() {
                       variant="ghost"
                       size="sm"
                       isActive={pathname === item.href}
-                      className={cn(
+                       className={cn(
                         'w-full justify-start',
-                        pathname === item.href && 'bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary'
+                        pathname === item.href && 'bg-sidebar-accent text-sidebar-accent-foreground'
                       )}
                     >
                       <item.icon className="mr-2 h-4 w-4" />
