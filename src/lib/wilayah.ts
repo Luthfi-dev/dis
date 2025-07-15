@@ -46,34 +46,63 @@ const getFromStorage = <T>(key: string, defaultValue: T[]): T[] => {
     }
     try {
         const item = window.localStorage.getItem(key);
-        return item ? JSON.parse(item) : defaultValue;
+        // If the item doesn't exist, set it with the default value
+        if (item === null) {
+            window.localStorage.setItem(key, JSON.stringify(defaultValue));
+            return defaultValue;
+        }
+        return JSON.parse(item);
     } catch (error) {
         console.error(`Error reading from localStorage key “${key}”:`, error);
         return defaultValue;
     }
 };
 
-// Initialize with default data if localStorage is empty
-if (typeof window !== 'undefined' && !localStorage.getItem('provinsiData')) {
-    localStorage.setItem('provinsiData', JSON.stringify(defaultProvinces));
-}
-if (typeof window !== 'undefined' && !localStorage.getItem('kabupatenData')) {
-    localStorage.setItem('kabupatenData', JSON.stringify(defaultKabupatens));
-}
-if (typeof window !== 'undefined' && !localStorage.getItem('kecamatanData')) {
-    localStorage.setItem('kecamatanData', JSON.stringify(defaultKecamatans));
-}
-if (typeof window !== 'undefined' && !localStorage.getItem('desaData')) {
-    localStorage.setItem('desaData', JSON.stringify(defaultDesas));
+const saveToStorage = <T>(key: string, data: T[]): void => {
+     if (typeof window === 'undefined') {
+        return;
+    }
+    try {
+        window.localStorage.setItem(key, JSON.stringify(data));
+    } catch (error) {
+        console.error(`Error writing to localStorage key “${key}”:`, error);
+    }
 }
 
-export const getProvinces = (): Provinsi[] => getFromStorage<Provinsi>('provinsiData', defaultProvinces);
-export const getKabupatens = (provinceId: string): Kabupaten[] => getFromStorage<Kabupaten>('kabupatenData', defaultKabupatens).filter(k => k.province_id === provinceId);
-export const getKecamatans = (regencyId: string): Kecamatan[] => getFromStorage<Kecamatan>('kecamatanData', defaultKecamatans).filter(k => k.regency_id === regencyId);
-export const getDesas = (districtId: string): Desa[] => getFromStorage<Desa>('desaData', defaultDesas).filter(d => d.district_id === districtId);
+// Ensure default data is set if not present
+getFromStorage<Provinsi>('provinsiData', defaultProvinces);
+getFromStorage<Kabupaten>('kabupatenData', defaultKabupatens);
+getFromStorage<Kecamatan>('kecamatanData', defaultKecamatans);
+getFromStorage<Desa>('desaData', defaultDesas);
 
-// Helper functions to get names by ID
+
+// --- Getter functions ---
+export const getProvinces = (): Provinsi[] => getFromStorage<Provinsi>('provinsiData', []);
+export const getKabupatens = (provinceId?: string): Kabupaten[] => {
+    const all = getFromStorage<Kabupaten>('kabupatenData', []);
+    if (!provinceId) return all;
+    return all.filter(k => k.province_id === provinceId);
+};
+export const getKecamatans = (regencyId?: string): Kecamatan[] => {
+    const all = getFromStorage<Kecamatan>('kecamatanData', []);
+    if (!regencyId) return all;
+    return all.filter(k => k.regency_id === regencyId);
+};
+export const getDesas = (districtId?: string): Desa[] => {
+    const all = getFromStorage<Desa>('desaData', []);
+    if (!districtId) return all;
+    return all.filter(d => d.district_id === districtId);
+};
+
+// --- Setter functions ---
+export const saveProvinces = (data: Provinsi[]) => saveToStorage('provinsiData', data);
+export const saveKabupatens = (data: Kabupaten[]) => saveToStorage('kabupatenData', data);
+export const saveKecamatans = (data: Kecamatan[]) => saveToStorage('kecamatanData', data);
+export const saveDesas = (data: Desa[]) => saveToStorage('desaData', data);
+
+
+// --- Helper functions to get names by ID ---
 export const getProvinceName = (id?: string) => getProvinces().find(p => p.id === id)?.name || id || '';
-export const getKabupatenName = (id?: string) => getFromStorage<Kabupaten>('kabupatenData', []).find(k => k.id === id)?.name || id || '';
-export const getKecamatanName = (id?: string) => getFromStorage<Kecamatan>('kecamatanData', []).find(k => k.id === id)?.name || id || '';
-export const getDesaName = (id?: string) => getFromStorage<Desa>('desaData', []).find(d => d.id === id)?.name || id || '';
+export const getKabupatenName = (id?: string) => getKabupatens().find(k => k.id === id)?.name || id || '';
+export const getKecamatanName = (id?: string) => getKecamatans().find(k => k.id === id)?.name || id || '';
+export const getDesaName = (id?: string) => getDesas().find(d => d.id === id)?.name || id || '';

@@ -30,9 +30,9 @@ const bukuIndukMenuItems = [
 
 const dataMasterMenuItems = [
     { href: '/master/provinsi', label: 'Provinsi', icon: Database },
-    // { href: '/master/kabupaten', label: 'Kabupaten', icon: Database },
-    // { href: '/master/kecamatan', label: 'Kecamatan', icon: Database },
-    // { href: '/master/desa', label: 'Desa', icon: Database },
+    { href: '/master/kabupaten', label: 'Kabupaten', icon: Database },
+    { href: '/master/kecamatan', label: 'Kecamatan', icon: Database },
+    { href: '/master/desa', label: 'Desa', icon: Database },
 ]
 
 export function AppSidebar() {
