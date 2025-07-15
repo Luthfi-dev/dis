@@ -148,9 +148,9 @@ export default function LihatSiswaPage({ params: { id } }: { params: { id: strin
              <div>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">Alamat Sesuai KK</h3>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                    <DetailItem label="Kabupaten" value={student.alamatKkKabupaten} icon={Home}/>
-                    <DetailItem label="Kecamatan" value={student.alamatKkKecamatan} icon={Home}/>
-                    <DetailItem label="Desa" value={student.alamatKkDesa} icon={Home}/>
+                    <DetailItem label="Kabupaten" value={getKabupatenName(student.alamatKkKabupaten)} icon={Home}/>
+                    <DetailItem label="Kecamatan" value={getKecamatanName(student.alamatKkKecamatan)} icon={Home}/>
+                    <DetailItem label="Desa" value={getDesaName(student.alamatKkDesa)} icon={Home}/>
                 </div>
              </div>
              <div>
@@ -236,3 +236,5 @@ export default function LihatSiswaPage({ params: { id } }: { params: { id: strin
     </div>
   );
 }
+
+    
