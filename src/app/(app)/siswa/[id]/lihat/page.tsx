@@ -225,6 +225,19 @@ export default function LihatSiswaPage({ params: { id } }: { params: { id: strin
                 </div>
             </CardContent>
         </Card>
+
+        <Card className="shadow-lg">
+            <CardHeader><CardTitle>Rincian Kesehatan</CardTitle></CardHeader>
+            <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                    <DetailItem label="Golongan Darah" value={student.golonganDarah} icon={Droplet} />
+                    <DetailItem label="Tinggi Badan (cm)" value={student.tinggiBadan} icon={Stethoscope} />
+                    <DetailItem label="Berat Badan (kg)" value={student.beratBadan} icon={Stethoscope} />
+                    <DetailItem label="Riwayat Penyakit" value={student.penyakit} icon={Stethoscope} />
+                    <DetailItem label="Kelainan Jasmani" value={student.kelainanJasmani} icon={Stethoscope} />
+                </div>
+            </CardContent>
+        </Card>
         
         <Card className="shadow-lg">
             <CardHeader>

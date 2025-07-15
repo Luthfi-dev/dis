@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 const fileSchema = z.object({
-  fileName: z.string(),
-  file: z.any().refine(file => file instanceof File, "File is required.").optional(), // Make file optional for edit mode
+  fileName: z.string().min(1, "File harus diunggah"),
+  file: z.any().optional(),
   fileURL: z.string().optional(),
 }).optional();
 

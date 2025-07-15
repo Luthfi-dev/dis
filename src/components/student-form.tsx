@@ -4,7 +4,7 @@
 import { useState, useTransition, useCallback, useEffect, useMemo } from 'react';
 import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { studentFormSchema, StudentFormData, completeStudentFormSchema, dataSiswaSchema } from '@/lib/schema';
+import { studentFormSchema, StudentFormData, completeStudentFormSchema, dataSiswaSchema, dataRincianSchema } from '@/lib/schema';
 import { FormStepper } from './form-stepper';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -31,10 +31,11 @@ const steps = [
   { id: 1, title: 'Data Siswa', schema: dataSiswaSchema },
   { id: 2, title: 'Dokumen Utama' },
   { id: 3, title: 'Data Orang Tua' },
-  { id: 4, title: 'Perkembangan Siswa' },
-  { id: 5, title: 'Meninggalkan Sekolah' },
-  { id: 6, title: 'Laporan Belajar' },
-  { id: 7, title: 'Validasi' },
+  { id: 4, title: 'Rincian Kesehatan', schema: dataRincianSchema },
+  { id: 5, title: 'Perkembangan Siswa' },
+  { id: 6, title: 'Meninggalkan Sekolah' },
+  { id: 7, title: 'Laporan Belajar' },
+  { id: 8, title: 'Validasi' },
 ];
 
 const initialFormValues: Partial<StudentFormData> = {
@@ -237,10 +238,11 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
             {currentStep === 1 && <DataSiswaForm />}
             {currentStep === 2 && <DataDokumenUtamaForm />}
             {currentStep === 3 && <DataOrangTuaForm />}
-            {currentStep === 4 && <DataPerkembanganForm />}
-            {currentStep === 5 && <DataMeninggalkanSekolahForm />}
-            {currentStep === 6 && <DataLaporanBelajarForm />}
-            {currentStep === 7 && <DataValidasiForm />}
+            {currentStep === 4 && <DataRincianKesehatanForm />}
+            {currentStep === 5 && <DataPerkembanganForm />}
+            {currentStep === 6 && <DataMeninggalkanSekolahForm />}
+            {currentStep === 7 && <DataLaporanBelajarForm />}
+            {currentStep === 8 && <DataValidasiForm />}
           </CardContent>
         </Card>
 
@@ -287,6 +289,8 @@ function DataSiswaForm() {
           setPreview(newPreview);
         } else if (value.fotoProfil?.fileURL) {
           setPreview(value.fotoProfil.fileURL);
+        } else {
+          setPreview(null);
         }
       }
     });
@@ -632,6 +636,31 @@ function DataOrangTuaForm() {
         </div>
     </div>
   );
+}
+
+function DataRincianKesehatanForm() {
+    const { control } = useFormContext<StudentFormData>();
+    return (
+        <div className="space-y-6">
+            <p className="text-sm text-muted-foreground">
+                Isi rincian kesehatan siswa. Kolom ini bersifat opsional.
+            </p>
+            <Grid>
+                <FormField control={control} name="tinggiBadan" render={({ field }) => (
+                    <FormItem><FormLabel>Tinggi Badan (cm)</FormLabel><FormControl><Input type="number" placeholder="Contoh: 160" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={control} name="beratBadan" render={({ field }) => (
+                    <FormItem><FormLabel>Berat Badan (kg)</FormLabel><FormControl><Input type="number" placeholder="Contoh: 50" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={control} name="penyakit" render={({ field }) => (
+                    <FormItem className="md:col-span-2"><FormLabel>Riwayat Penyakit</FormLabel><FormControl><Textarea placeholder="Jelaskan riwayat penyakit yang pernah diderita" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={control} name="kelainanJasmani" render={({ field }) => (
+                    <FormItem className="md:col-span-2"><FormLabel>Kelainan Jasmani</FormLabel><FormControl><Textarea placeholder="Jelaskan jika ada kelainan jasmani" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+            </Grid>
+        </div>
+    );
 }
 
 
