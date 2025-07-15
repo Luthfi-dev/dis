@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 const loginSchema = z.object({
   email: z.string().email('Email tidak valid.'),
-  password: z.string().min(6, 'Password minimal 6 karakter.'),
+  password: z.string().min(1, 'Password tidak boleh kosong.'),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -61,6 +61,10 @@ export default function LoginPage() {
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: ''
+    }
   });
 
   const onSubmit = (data: LoginFormData) => {
@@ -99,7 +103,7 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="admin@contoh.com"
+                  placeholder="superadmin@eduarchive.com"
                   {...register('email')}
                   aria-invalid={errors.email ? 'true' : 'false'}
                 />
@@ -108,7 +112,6 @@ export default function LoginPage() {
               <div className="grid gap-2">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
-                  <a href="#" className="ml-auto inline-block text-sm underline">Lupa password?</a>
                 </div>
                 <Input
                   id="password"
