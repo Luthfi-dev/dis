@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useTransition, useEffect, useMemo } from 'react';
-import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext, useFieldArray, get } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { pegawaiFormSchema, PegawaiFormData, pegawai_IdentitasSchema, pegawai_FileSchema, completePegawaiFormSchema } from '@/lib/pegawai-schema';
 import { FormStepper } from './form-stepper';
@@ -114,13 +114,17 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
       : initialFormValues,
   });
 
-  const { trigger, handleSubmit, getValues } = methods;
+  const { trigger, handleSubmit, formState, getValues } = methods;
 
   const handleNext = async () => {
     const currentStepConfig = steps[currentStep - 1];
     let isValid = true;
+
     if (currentStepConfig.schema) {
-      isValid = await trigger(Object.keys(currentStepConfig.schema.shape) as any, { shouldFocus: true });
+      const fieldsToValidate = Object.keys(currentStepConfig.schema.shape).filter(field => get(formState.dirtyFields, field));
+      if (fieldsToValidate.length > 0) {
+        isValid = await trigger(fieldsToValidate as any, { shouldFocus: true });
+      }
     }
     
     if (isValid && currentStep < steps.length) {
@@ -205,8 +209,8 @@ function FormLabelRequired({ children }: { children: React.ReactNode }) {
 
 function DataIdentitasPegawaiForm() {
   const { control, watch, setValue, getValues } = useFormContext<PegawaiFormData>();
-  const [preview, setPreview] = useState<string | null>(getValues('pegawai_phaspoto.fileURL') || null);
   const { toast } = useToast();
+  const [preview, setPreview] = useState<string | null>(getValues('pegawai_phaspoto.fileURL') || null);
   
   useEffect(() => {
     const fileURL = getValues('pegawai_phaspoto.fileURL');
@@ -251,6 +255,7 @@ function DataIdentitasPegawaiForm() {
       try {
         const fileURL = await uploadFile(file);
         setValue(fieldName as any, { fileName: file.name, fileURL: fileURL });
+        setPreview(fileURL);
       } catch (error) {
         toast({ title: 'Upload Gagal', description: 'Gagal mengunggah file.', variant: 'destructive' });
       }

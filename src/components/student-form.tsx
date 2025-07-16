@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useTransition, useCallback, useEffect, useMemo } from 'react';
-import { useForm, FormProvider, useFormContext } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext, get } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { studentFormSchema, StudentFormData, completeStudentFormSchema, dataSiswaSchema, dataRincianSchema, dataPerkembanganSchema, dataMeninggalkanSekolahSchema, dataDokumenSchema, dataOrangTuaSchema } from '@/lib/schema';
 import { FormStepper } from './form-stepper';
@@ -147,13 +147,17 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
       : initialFormValues,
   });
 
-  const { trigger, handleSubmit } = methods;
+  const { trigger, handleSubmit, formState } = methods;
 
   const handleNext = async () => {
     const currentStepConfig = steps[currentStep - 1];
     let isValid = true;
+
     if (currentStepConfig.schema) {
-      isValid = await trigger(Object.keys(currentStepConfig.schema.shape) as any, { shouldFocus: true });
+      const fieldsToValidate = Object.keys(currentStepConfig.schema.shape).filter(field => get(formState.dirtyFields, field));
+      if (fieldsToValidate.length > 0) {
+        isValid = await trigger(fieldsToValidate as any, { shouldFocus: true });
+      }
     }
     
     if (isValid && currentStep < steps.length) {
