@@ -28,7 +28,7 @@ export const studentFormSchema = z.object({
 
   // Optional Fields
   siswa_fotoProfil: fileSchema,
-  siswa_jumlahSaudara: z.number().optional(),
+  siswa_jumlahSaudara: z.coerce.number().optional(),
   siswa_bahasa: z.string().optional(),
   siswa_golonganDarah: z.enum(['A', 'B', 'AB', 'O']).optional(),
   
@@ -57,8 +57,8 @@ export const studentFormSchema = z.object({
   siswa_teleponOrangTua: z.string().optional(),
 
   // Step 4: Kesehatan (All Optional)
-  siswa_tinggiBadan: z.number().optional(),
-  siswa_beratBadan: z.number().optional(),
+  siswa_tinggiBadan: z.coerce.number().optional(),
+  siswa_beratBadan: z.coerce.number().optional(),
   siswa_penyakit: z.string().optional(),
   siswa_kelainanJasmani: z.string().optional(),
 

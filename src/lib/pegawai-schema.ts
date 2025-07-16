@@ -22,10 +22,10 @@ export const pegawaiFormSchema = z.object({
   pegawai_nama: z.string().min(1, "Nama lengkap wajib diisi."),
   pegawai_jenisKelamin: z.enum(['Laki-laki', 'Perempuan'], { required_error: "Jenis kelamin wajib dipilih." }),
   pegawai_tempatLahir: z.string().min(1, "Tempat lahir wajib diisi."),
-  pegawai_tanggalLahir: z.string(),
+  pegawai_tanggalLahir: z.string().min(1, 'Tanggal lahir wajib diisi.'),
   pegawai_statusPerkawinan: z.enum(['Belum Kawin', 'Kawin', 'Cerai Hidup', 'Cerai Mati'], { required_error: "Status perkawinan wajib dipilih." }),
   pegawai_jabatan: z.string().min(1, "Jabatan wajib dipilih."),
-  pegawai_terhitungMulaiTanggal: z.string(),
+  pegawai_terhitungMulaiTanggal: z.string().min(1, 'TMT wajib diisi.'),
 
   pegawai_phaspoto: fileSchema,
   pegawai_nip: z.string().optional(),

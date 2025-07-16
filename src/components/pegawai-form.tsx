@@ -41,22 +41,22 @@ const initialFormValues: PegawaiFormData = {
     pegawai_nama: 'Budi Test Pegawai',
     pegawai_jenisKelamin: 'Laki-laki',
     pegawai_tempatLahir: 'Bandung',
-    pegawai_tanggalLahir: '1985-05-10T00:00:00.000Z',
+    pegawai_tanggalLahir: '1985-05-10',
     pegawai_nip: '198505102010011001',
     pegawai_nuptk: '1234567890123456',
     pegawai_nrg: '0987654321',
     pegawai_statusPerkawinan: 'Kawin',
-    pegawai_tanggalPerkawinan: '2010-01-15T00:00:00.000Z',
+    pegawai_tanggalPerkawinan: '2010-01-15',
     pegawai_namaPasangan: 'Siti Test Pasangan',
     pegawai_jumlahAnak: 2,
     pegawai_jabatan: 'Guru Mata Pelajaran',
     pegawai_bidangStudi: 'Matematika',
     pegawai_tugasTambahan: 'Wakasek Bidang Kurikulum',
-    pegawai_terhitungMulaiTanggal: '2010-01-01T00:00:00.000Z',
+    pegawai_terhitungMulaiTanggal: '2010-01-01',
     pegawai_alamatDusun: 'Dusun Test',
-    pegawai_alamatDesa: '3273011001', // GEGERKALONG
-    pegawai_alamatKecamatan: '327301', // SUKASARI
-    pegawai_alamatKabupaten: '3273', // KOTA BANDUNG
+    pegawai_alamatDesa: '3273011001',
+    pegawai_alamatKecamatan: '327301',
+    pegawai_alamatKabupaten: '3273',
     pegawai_pendidikanSD: { tamatTahun: '1997', ijazah: undefined },
     pegawai_pendidikanSMP: { tamatTahun: '2000', ijazah: undefined },
     pegawai_pendidikanSMA: { tamatTahun: '2003', ijazah: undefined },
@@ -167,17 +167,24 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
         const fieldName = key.replace('pegawai_', '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
         errorMessages.push(fieldName);
     }
+    
+    let description;
+    if (errorMessages.length > 0) {
+        description = `Silakan periksa kolom berikut: ${errorMessages.join(', ')}.`;
+    } else {
+        description = "Terjadi kesalahan validasi umum. Silakan periksa kembali seluruh data.";
+    }
 
     toast({
         title: 'Gagal Menyimpan: Data Tidak Valid',
-        description: `Silakan periksa kolom berikut: ${errorMessages.join(', ')}.`,
+        description: description,
         variant: 'destructive',
     });
 
-    if (firstErrorStep !== Infinity) {
+    if (firstErrorStep !== Infinity && firstErrorStep !== currentStep) {
       setCurrentStep(firstErrorStep);
-      trigger(Object.keys(errors) as FieldPath<PegawaiFormData>[], { shouldFocus: true });
     }
+    trigger(Object.keys(errors) as FieldPath<PegawaiFormData>[], { shouldFocus: true });
   };
 
   return (
@@ -371,7 +378,7 @@ function DataIdentitasPegawaiForm() {
                 </Button>
             </FormControl></PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date?.toISOString())} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
+                <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date ? format(date, 'yyyy-MM-dd') : '')} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
             </PopoverContent>
             </Popover><FormMessage /></FormItem>
         )} />
@@ -403,7 +410,7 @@ function DataIdentitasPegawaiForm() {
                 </Button>
             </FormControl></PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date?.toISOString())} disabled={(date) => date > new Date()} initialFocus />
+                <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date ? format(date, 'yyyy-MM-dd') : '')} disabled={(date) => date > new Date()} initialFocus />
             </PopoverContent>
             </Popover><FormMessage /></FormItem>
         )} />
@@ -417,7 +424,8 @@ function DataIdentitasPegawaiForm() {
                     <Input 
                         type="number" 
                         placeholder="0" 
-                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))}
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
                         value={field.value ?? ''}
                     />
                 </FormControl>
@@ -466,7 +474,7 @@ function DataIdentitasPegawaiForm() {
                 </Button>
             </FormControl></PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date?.toISOString())} disabled={(date) => date > new Date()} initialFocus />
+                <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date ? format(date, 'yyyy-MM-dd') : '')} disabled={(date) => date > new Date()} initialFocus />
             </PopoverContent>
             </Popover><FormMessage /></FormItem>
         )} />
