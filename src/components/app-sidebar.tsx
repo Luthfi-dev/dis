@@ -19,7 +19,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { BookCopy, GraduationCap, Plus, Users, Settings, LogOut, ChevronsUpDown, Database, ShieldCheck } from 'lucide-react';
+import { BookCopy, GraduationCap, Plus, Users, Settings, LogOut, ChevronsUpDown, Database, ShieldCheck, Briefcase } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -27,6 +27,11 @@ import { useAuth } from '@/hooks/use-auth';
 const bukuIndukMenuItems = [
   { href: '/siswa', label: 'Lihat Daftar Siswa', icon: Users },
   { href: '/siswa/tambah', label: 'Tambah Data Siswa', icon: Plus },
+];
+
+const bukuIndukPegawaiMenuItems = [
+    { href: '/pegawai', label: 'Lihat Daftar Pegawai', icon: Users },
+    { href: '/pegawai/tambah', label: 'Tambah Data Pegawai', icon: Plus },
 ];
 
 const dataMasterMenuItems = [
@@ -45,6 +50,7 @@ export function AppSidebar() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [isBukuIndukOpen, setIsBukuIndukOpen] = useState(pathname.startsWith('/siswa'));
+  const [isBukuIndukPegawaiOpen, setIsBukuIndukPegawaiOpen] = useState(pathname.startsWith('/pegawai'));
   const [isDataMasterOpen, setIsDataMasterOpen] = useState(pathname.startsWith('/master'));
   const [isAdminOpen, setIsAdminOpen] = useState(pathname.startsWith('/admin'));
   const { setOpenMobile } = useSidebar();
@@ -118,6 +124,47 @@ export function AppSidebar() {
           </CollapsibleContent>
         </Collapsible>
         
+        <Collapsible open={isBukuIndukPegawaiOpen} onOpenChange={setIsBukuIndukPegawaiOpen} className="w-full">
+          <CollapsibleTrigger asChild>
+            <SidebarMenuButton
+              className="w-full justify-between"
+              isActive={pathname.startsWith('/pegawai')}
+              tooltip={{
+                children: 'Buku Induk Pegawai',
+                className: 'group-data-[collapsible=icon]:flex hidden',
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <Briefcase />
+                <span>Buku Induk Pegawai</span>
+              </div>
+              <ChevronsUpDown className="h-4 w-4 shrink-0 group-data-[collapsible=icon]:hidden" />
+            </SidebarMenuButton>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="group-data-[collapsible=icon]:hidden">
+            <SidebarMenu className="ml-4 mt-1 space-y-1 border-l border-sidebar-border py-1 pl-4">
+              {bukuIndukPegawaiMenuItems.map((item, index) => (
+                <SidebarMenuItem key={index}>
+                  <Link href={item.href} className="w-full" onClick={handleLinkClick}>
+                    <SidebarMenuButton
+                      variant="ghost"
+                      size="sm"
+                      isActive={pathname === item.href}
+                       className={cn(
+                        'w-full justify-start',
+                        pathname === item.href && 'bg-sidebar-accent text-sidebar-accent-foreground'
+                      )}
+                    >
+                      <item.icon className="mr-2 h-4 w-4" />
+                      {item.label}
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </CollapsibleContent>
+        </Collapsible>
+
         {user?.role === 'superadmin' ? (
           <Collapsible open={isDataMasterOpen} onOpenChange={setIsDataMasterOpen} className="w-full">
             <CollapsibleTrigger asChild>

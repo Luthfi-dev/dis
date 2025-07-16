@@ -3,8 +3,10 @@
 
 import { suggestUploadCategory } from '@/ai/flows/suggest-upload-category';
 import { studentFormSchema } from '@/lib/schema';
+import { pegawaiFormSchema } from '@/lib/pegawai-schema';
 import { z } from 'zod';
 import type { Siswa } from './data';
+import type { Pegawai } from './pegawai-data';
 
 export async function getCategorySuggestion(description: string) {
   if (!description) {
@@ -42,3 +44,26 @@ export async function submitStudentData(data: Partial<Siswa>) {
     return { success: false, message: 'Gagal menyimpan data siswa.' };
   }
 }
+
+export async function submitPegawaiData(data: Partial<Pegawai>) {
+    try {
+      const parsedData = pegawaiFormSchema.parse(data);
+      const isUpdate = !!data.id;
+      
+      console.log(`Form data ${isUpdate ? 'updated' : 'submitted'} successfully`);
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const id = data.id || crypto.randomUUID();
+      const message = isUpdate ? 'Data pegawai berhasil diperbarui!' : 'Data pegawai berhasil disimpan!';
+  
+      return { success: true, message, id };
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        console.error('Validation error:', error.errors);
+        return { success: false, message: 'Data tidak valid.', errors: error.errors };
+      }
+      console.error('Submission error:', error);
+      return { success: false, message: 'Gagal menyimpan data pegawai.' };
+    }
+  }
