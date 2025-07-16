@@ -22,7 +22,10 @@ const baseStudentSchema = z.object({
   siswa_tanggalLahir: z.date({ required_error: "Tanggal lahir wajib diisi." }),
   siswa_agama: z.enum(['Islam', 'Kristen', 'Hindu', 'Budha'], { required_error: "Agama wajib dipilih." }),
   siswa_kewarganegaraan: z.enum(['WNI', 'WNA'], { required_error: "Kewarganegaraan wajib dipilih." }),
-  siswa_jumlahSaudara: z.coerce.number().nonnegative("Jumlah saudara tidak boleh negatif."),
+  siswa_jumlahSaudara: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? 0 : Number(val)),
+    z.coerce.number().nonnegative("Jumlah saudara tidak boleh negatif.")
+  ),
   siswa_bahasa: z.string().min(1, "Bahasa sehari-hari wajib diisi."),
   siswa_golonganDarah: z.enum(['A', 'B', 'AB', 'O'], { required_error: "Golongan darah wajib dipilih." }),
   
@@ -52,8 +55,14 @@ const baseStudentSchema = z.object({
   siswa_teleponOrangTua: z.string().optional(),
 
   // Rincian (opsional)
-  siswa_tinggiBadan: z.coerce.number().optional(),
-  siswa_beratBadan: z.coerce.number().optional(),
+  siswa_tinggiBadan: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? undefined : Number(val)),
+    z.coerce.number().optional()
+  ),
+  siswa_beratBadan: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? undefined : Number(val)),
+    z.coerce.number().optional()
+  ),
   siswa_penyakit: z.string().optional(),
   siswa_kelainanJasmani: z.string().optional(),
 
@@ -97,17 +106,10 @@ const baseStudentSchema = z.object({
 });
 
 // Skema utama yang digunakan oleh form resolver.
-// Ini menambahkan transformasi ke skema dasar.
-export const studentFormSchema = baseStudentSchema.transform((data) => ({
-      ...data,
-      siswa_jumlahSaudara: Number(data.siswa_jumlahSaudara) || 0,
-      siswa_tinggiBadan: Number(data.siswa_tinggiBadan) || undefined,
-      siswa_beratBadan: Number(data.siswa_beratBadan) || undefined,
-}));
+export const studentFormSchema = baseStudentSchema;
 
 
 // Skema ketat ini HANYA digunakan di server untuk menentukan status 'Lengkap'
-// Sekarang .extend() dipanggil pada baseStudentSchema yang merupakan ZodObject.
 export const completeStudentFormSchema = baseStudentSchema.extend({
     // Semua yang wajib untuk status lengkap
     siswa_alamatKkProvinsi: z.string().min(1, "Provinsi (KK) wajib dipilih."),

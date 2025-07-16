@@ -1,4 +1,6 @@
 
+'use client';
+
 import { z } from 'zod';
 
 const fileSchema = z.object({
@@ -16,8 +18,6 @@ const multiFileSchema = z.array(z.object({
     fileURL: z.string().url('URL tidak valid'),
 })).optional();
 
-// Skema utama yang digunakan oleh form resolver.
-// Dibuat sangat longgar untuk memastikan data bisa disimpan kapan saja.
 export const pegawaiFormSchema = z.object({
   pegawai_phaspoto: fileSchema,
   pegawai_nama: z.string().min(1, "Nama lengkap wajib diisi."),
@@ -30,7 +30,10 @@ export const pegawaiFormSchema = z.object({
   pegawai_statusPerkawinan: z.enum(['Belum Kawin', 'Kawin', 'Cerai Hidup', 'Cerai Mati'], { required_error: "Status perkawinan wajib dipilih." }),
   pegawai_tanggalPerkawinan: z.date().optional().nullable(),
   pegawai_namaPasangan: z.string().optional(),
-  pegawai_jumlahAnak: z.coerce.number().nonnegative("Jumlah anak tidak boleh negatif.").optional(),
+  pegawai_jumlahAnak: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? 0 : Number(val)),
+    z.coerce.number().nonnegative("Jumlah anak tidak boleh negatif.").optional()
+  ),
   pegawai_jabatan: z.string().min(1, "Jabatan wajib dipilih."),
   pegawai_bidangStudi: z.string().optional(),
   pegawai_tugasTambahan: z.enum([
@@ -80,7 +83,6 @@ export const pegawaiFormSchema = z.object({
 
 export type PegawaiFormData = z.infer<typeof pegawaiFormSchema>;
 
-// Skema ketat ini HANYA digunakan di server untuk menentukan status 'Lengkap'
 export const completePegawaiFormSchema = pegawaiFormSchema.extend({
     pegawai_nip: z.string().min(1, 'NIP wajib diisi untuk status Lengkap.'),
     pegawai_nuptk: z.string().min(1, 'NUPTK wajib diisi untuk status Lengkap.'),
