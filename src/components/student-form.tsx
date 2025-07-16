@@ -150,23 +150,8 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
   const { trigger, handleSubmit, formState } = methods;
 
   const handleNext = async () => {
-    const currentStepConfig = steps[currentStep - 1];
-    let isValid = true;
-  
-    if (currentStepConfig.schema) {
-      const fieldsInSchema = Object.keys(currentStepConfig.schema.shape);
-      const dirtyFields = Object.keys(formState.dirtyFields);
-      
-      const fieldsToValidate = fieldsInSchema.filter(field => 
-        dirtyFields.includes(field)
-      ) as FieldPath<StudentFormData>[];
-  
-      if (fieldsToValidate.length > 0) {
-        isValid = await trigger(fieldsToValidate, { shouldFocus: true });
-      }
-    }
-    
-    if (isValid && currentStep < steps.length) {
+    // No validation on next, just proceed to the next step
+    if (currentStep < steps.length) {
       setCurrentStep(prev => prev + 1);
     }
   };
