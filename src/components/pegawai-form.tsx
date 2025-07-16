@@ -121,7 +121,16 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
     let isValid = true;
   
     if (currentStepConfig.schema) {
-      isValid = await trigger(Object.keys(currentStepConfig.schema.shape) as any, { shouldFocus: true });
+      const allOptional = Object.values(currentStepConfig.schema.shape).every(
+          (field: any) => field.isOptional()
+      );
+
+      if (allOptional && Object.keys(formState.dirtyFields).filter(df => df.startsWith('pegawai_')).length === 0) {
+          isValid = true;
+      } else {
+        const fieldsToValidate = Object.keys(currentStepConfig.schema.shape);
+        isValid = await trigger(fieldsToValidate as any, { shouldFocus: true });
+      }
     }
   
     if (isValid && currentStep < steps.length) {
