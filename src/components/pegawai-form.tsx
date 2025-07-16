@@ -790,5 +790,3 @@ function DataValidasiForm() {
     </div>
   )
 }
-
-    
