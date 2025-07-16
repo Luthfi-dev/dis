@@ -1,13 +1,8 @@
 
 import { StudentFormData } from "./schema";
 
-// This renames the internal fields to use the `siswa_` prefix.
-// It keeps the external-facing props like 'namaLengkap' for easier component use.
 export type Siswa = StudentFormData & {
   id: string;
-  namaLengkap: string;
-  nisn: string;
-  jenisKelamin: string;
   status: 'Lengkap' | 'Belum Lengkap';
 };
 
@@ -18,8 +13,7 @@ declare global {
   var students: Siswa[];
 }
 
-export const mockSiswaData: Siswa[] = global.students || [];
-
-if (process.env.NODE_ENV !== 'production') {
-  global.students = global.students || [];
+// Initialize the global variable only if it's not already defined.
+if (!(global as any).students) {
+  (global as any).students = [];
 }

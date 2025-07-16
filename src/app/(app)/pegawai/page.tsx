@@ -20,23 +20,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useTransition } from 'react';
 import { Input } from '@/components/ui/input';
-
-// This function now runs on the client and fetches from localStorage,
-// which is populated by the server action via a global variable simulation.
-// This is a common pattern for prototypes that need to work in a server/client env.
-const getPegawaiFromStorage = (): Pegawai[] => {
-    if (typeof window === 'undefined') return [];
-    const data = localStorage.getItem('pegawaiData');
-    return data ? JSON.parse(data) : [];
-}
-
-const savePegawaiToStorage = (data: Pegawai[]) => {
-    if (typeof window !== 'undefined') {
-        localStorage.setItem('pegawaiData', JSON.stringify(data));
-    }
-}
+import { getPegawai, deletePegawai } from '@/lib/actions';
+import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 function ActionMenu({ pegawai, onDelete }: { pegawai: Pegawai, onDelete: (id: string) => void }) {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
@@ -89,7 +77,7 @@ function ActionMenu({ pegawai, onDelete }: { pegawai: Pegawai, onDelete: (id: st
         <AlertDialogHeader>
           <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>
           <AlertDialogDescription>
-            Tindakan ini tidak dapat diurungkan. Ini akan menghapus data pegawai <strong>{pegawai.nama}</strong> secara permanen.
+            Tindakan ini tidak dapat diurungkan. Ini akan menghapus data pegawai <strong>{pegawai.pegawai_nama}</strong> secara permanen.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -104,30 +92,39 @@ function ActionMenu({ pegawai, onDelete }: { pegawai: Pegawai, onDelete: (id: st
 
 export default function PegawaiPage() {
   const [pegawaiList, setPegawaiList] = useState<Pegawai[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isDeleting, startDeleteTransition] = useTransition();
+  const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
-    try {
-      // Fetch initial data from server-simulated storage (localStorage)
-      const storedData = getPegawaiFromStorage();
-      setPegawaiList(storedData);
-    } catch (error) {
-      console.error("Failed to parse pegawai data from localStorage", error);
-      setPegawaiList([]);
+    const fetchPegawai = async () => {
+      setLoading(true);
+      const data = await getPegawai();
+      setPegawaiList(data);
+      setLoading(false);
     }
+    fetchPegawai();
   }, []);
 
   const handleDeletePegawai = (id: string) => {
-    const updatedPegawai = pegawaiList.filter(p => p.id !== id);
-    setPegawaiList(updatedPegawai);
-    savePegawaiToStorage(updatedPegawai);
+    startDeleteTransition(async () => {
+      const result = await deletePegawai(id);
+      if (result.success) {
+        setPegawaiList(prev => prev.filter(p => p.id !== id));
+        toast({ title: 'Sukses!', description: result.message });
+      } else {
+        toast({ title: 'Gagal', description: result.message, variant: 'destructive' });
+      }
+    });
   };
 
   const filteredPegawai = useMemo(() => {
     if (!searchTerm) return pegawaiList;
     return pegawaiList.filter(p => 
-      p.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.nip?.includes(searchTerm)
+      p.pegawai_nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.pegawai_nip?.includes(searchTerm)
     );
   }, [pegawaiList, searchTerm]);
 
@@ -179,12 +176,18 @@ export default function PegawaiPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPegawai.length > 0 ? (
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell colSpan={5} className="py-4"><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                    </TableRow>
+                  ))
+                ) : filteredPegawai.length > 0 ? (
                   filteredPegawai.map((pegawai) => (
-                    <TableRow key={pegawai.id}>
-                      <TableCell className="font-medium whitespace-nowrap">{pegawai.nama}</TableCell>
-                      <TableCell className="whitespace-nowrap">{pegawai.nip || '-'}</TableCell>
-                      <TableCell className="whitespace-nowrap">{pegawai.jabatan}</TableCell>
+                    <TableRow key={pegawai.id} className={isDeleting ? 'opacity-50' : ''}>
+                      <TableCell className="font-medium whitespace-nowrap">{pegawai.pegawai_nama}</TableCell>
+                      <TableCell className="whitespace-nowrap">{pegawai.pegawai_nip || '-'}</TableCell>
+                      <TableCell className="whitespace-nowrap">{pegawai.pegawai_jabatan}</TableCell>
                       <TableCell>
                         <Badge variant={pegawai.status === 'Lengkap' ? 'default' : 'outline'} className={pegawai.status === 'Lengkap' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 'text-amber-600 border-amber-500/50'}>
                           {pegawai.status}

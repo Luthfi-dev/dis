@@ -20,20 +20,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useTransition } from 'react';
 import { Input } from '@/components/ui/input';
-
-const getSiswaFromStorage = (): Siswa[] => {
-    if (typeof window === 'undefined') return [];
-    const data = localStorage.getItem('siswaData');
-    return data ? JSON.parse(data) : [];
-}
-
-const saveSiswaToStorage = (data: Siswa[]) => {
-    if (typeof window !== 'undefined') {
-        localStorage.setItem('siswaData', JSON.stringify(data));
-    }
-}
+import { getSiswa, deleteSiswa } from '@/lib/actions';
+import { useToast } from '@/hooks/use-toast';
 
 function ActionMenu({ student, onDelete }: { student: Siswa, onDelete: (id: string) => void }) {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
@@ -86,7 +76,7 @@ function ActionMenu({ student, onDelete }: { student: Siswa, onDelete: (id: stri
         <AlertDialogHeader>
           <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>
           <AlertDialogDescription>
-            Tindakan ini tidak dapat diurungkan. Ini akan menghapus data siswa <strong>{student.namaLengkap}</strong> secara permanen.
+            Tindakan ini tidak dapat diurungkan. Ini akan menghapus data siswa <strong>{student.siswa_namaLengkap}</strong> secara permanen.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -101,29 +91,38 @@ function ActionMenu({ student, onDelete }: { student: Siswa, onDelete: (id: stri
 
 export default function SiswaPage() {
   const [students, setStudents] = useState<Siswa[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isDeleting, startDeleteTransition] = useTransition();
+  const { toast } = useToast();
 
   useEffect(() => {
-    try {
-      const storedData = getSiswaFromStorage();
-      setStudents(storedData);
-    } catch (error) {
-      console.error("Failed to parse student data from localStorage", error);
-      setStudents([]);
+    const fetchStudents = async () => {
+      setLoading(true);
+      const data = await getSiswa();
+      setStudents(data);
+      setLoading(false);
     }
+    fetchStudents();
   }, []);
 
   const handleDeleteStudent = (id: string) => {
-    const updatedStudents = students.filter(student => student.id !== id);
-    setStudents(updatedStudents);
-    saveSiswaToStorage(updatedStudents);
+    startDeleteTransition(async () => {
+      const result = await deleteSiswa(id);
+      if (result.success) {
+        setStudents(prev => prev.filter(student => student.id !== id));
+        toast({ title: 'Sukses!', description: result.message });
+      } else {
+        toast({ title: 'Gagal', description: result.message, variant: 'destructive' });
+      }
+    });
   };
 
   const filteredStudents = useMemo(() => {
     if (!searchTerm) return students;
     return students.filter(student => 
-      student.namaLengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.nisn.includes(searchTerm)
+      student.siswa_namaLengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.siswa_nisn.includes(searchTerm)
     );
   }, [students, searchTerm]);
 
@@ -183,14 +182,20 @@ export default function SiswaPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredStudents.length > 0 ? (
+                {loading ? (
+                   Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell colSpan={5} className="py-4"><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                    </TableRow>
+                  ))
+                ) : filteredStudents.length > 0 ? (
                   filteredStudents.map((student) => (
-                    <TableRow key={student.id}>
-                      <TableCell className="font-medium whitespace-nowrap">{student.namaLengkap}</TableCell>
-                      <TableCell className="whitespace-nowrap">{student.nisn}</TableCell>
+                    <TableRow key={student.id} className={isDeleting ? 'opacity-50' : ''}>
+                      <TableCell className="font-medium whitespace-nowrap">{student.siswa_namaLengkap}</TableCell>
+                      <TableCell className="whitespace-nowrap">{student.siswa_nisn}</TableCell>
                       <TableCell>
-                        <Badge variant={student.jenisKelamin === 'Laki-laki' ? 'default' : 'secondary'} className={student.jenisKelamin === 'Perempuan' ? 'bg-pink-100 text-pink-800 dark:bg-pink-900/50 dark:text-pink-300' : ''}>
-                          {student.jenisKelamin}
+                        <Badge variant={student.siswa_jenisKelamin === 'Laki-laki' ? 'default' : 'secondary'} className={student.siswa_jenisKelamin === 'Perempuan' ? 'bg-pink-100 text-pink-800 dark:bg-pink-900/50 dark:text-pink-300' : ''}>
+                          {student.siswa_jenisKelamin}
                         </Badge>
                       </TableCell>
                       <TableCell>

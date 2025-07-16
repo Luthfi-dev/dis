@@ -9,43 +9,40 @@ import type { Siswa } from './data';
 import type { Pegawai } from './pegawai-data';
 import { logActivity } from './activity-log';
 
-// This is a server-side storage simulation.
+// --- Server-side Storage Simulation ---
 // In a real app, this would be a database.
 if (typeof global.students === 'undefined') {
-    global.students = [];
+    (global as any).students = [];
 }
 if (typeof global.pegawai === 'undefined') {
-    global.pegawai = [];
+    (global as any).pegawai = [];
 }
+const allStudents: Siswa[] = (global as any).students;
+const allPegawai: Pegawai[] = (global as any).pegawai;
 
-const getStudentsFromStorage = (): Siswa[] => {
-    return (global as any).students;
-};
-const saveStudentsToStorage = (students: Siswa[]) => {
-    (global as any).students = students;
-};
-
-const getPegawaiFromStorage = (): Pegawai[] => {
-    return (global as any).pegawai;
-};
-const savePegawaiToStorage = (pegawai: Pegawai[]) => {
-    (global as any).pegawai = pegawai;
-};
 
 // --- Public-facing Server Actions ---
 
+// SISWA ACTIONS
+export async function getSiswa(): Promise<Siswa[]> {
+    return allStudents;
+}
+
 export async function getSiswaById(id: string): Promise<Siswa | null> {
-    const students = getStudentsFromStorage();
-    const student = students.find(s => s.id === id) || null;
+    const student = allStudents.find(s => s.id === id) || null;
     return student;
 }
 
-export async function getPegawaiById(id: string): Promise<Pegawai | null> {
-    const pegawai = getPegawaiFromStorage();
-    const p = pegawai.find(p => p.id === id) || null;
-    return p;
+export async function deleteSiswa(id: string): Promise<{ success: boolean; message: string }> {
+    const studentIndex = allStudents.findIndex(s => s.id === id);
+    if (studentIndex > -1) {
+        const studentName = allStudents[studentIndex].siswa_namaLengkap;
+        allStudents.splice(studentIndex, 1);
+        logActivity(`Data siswa ${studentName} telah dihapus.`);
+        return { success: true, message: 'Data siswa berhasil dihapus.' };
+    }
+    return { success: false, message: 'Gagal menghapus data siswa.' };
 }
-
 
 export async function getCategorySuggestion(description: string) {
   if (!description) {
@@ -63,7 +60,6 @@ export async function getCategorySuggestion(description: string) {
 export async function submitStudentData(data: StudentFormData, studentId?: string) {
   try {
     const parsedData = studentFormSchema.parse(data);
-    const allStudents = getStudentsFromStorage(); 
     
     // Check for NISN duplicates
     if (parsedData.siswa_nisn) {
@@ -87,13 +83,12 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
         status 
     };
     
-    let updatedStudents;
     if (studentId) {
-        updatedStudents = allStudents.map(s => s.id === studentId ? finalData : s);
+        const index = allStudents.findIndex(s => s.id === studentId);
+        if (index !== -1) allStudents[index] = finalData;
     } else {
-        updatedStudents = [...allStudents, finalData];
+        allStudents.push(finalData);
     }
-    saveStudentsToStorage(updatedStudents);
 
     const message = studentId ? `Data siswa ${finalData.siswa_namaLengkap} berhasil diperbarui!` : `Data siswa ${finalData.siswa_namaLengkap} berhasil disimpan!`;
     logActivity(message);
@@ -110,10 +105,32 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
   }
 }
 
+
+// PEGAWAI ACTIONS
+export async function getPegawai(): Promise<Pegawai[]> {
+    return allPegawai;
+}
+
+export async function getPegawaiById(id: string): Promise<Pegawai | null> {
+    const p = allPegawai.find(p => p.id === id) || null;
+    return p;
+}
+
+export async function deletePegawai(id: string): Promise<{ success: boolean; message: string }> {
+    const pegawaiIndex = allPegawai.findIndex(p => p.id === id);
+    if (pegawaiIndex > -1) {
+        const pegawaiName = allPegawai[pegawaiIndex].pegawai_nama;
+        allPegawai.splice(pegawaiIndex, 1);
+        logActivity(`Data pegawai ${pegawaiName} telah dihapus.`);
+        return { success: true, message: 'Data pegawai berhasil dihapus.' };
+    }
+    return { success: false, message: 'Gagal menghapus data pegawai.' };
+}
+
+
 export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: string) {
     try {
         const parsedData = pegawaiFormSchema.parse(data);
-        const allPegawai = getPegawaiFromStorage();
 
         // Check for duplicates
         if (parsedData.pegawai_nip) {
@@ -148,13 +165,12 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
             status,
         };
 
-        let updatedPegawai;
         if (pegawaiId) {
-            updatedPegawai = allPegawai.map(p => (p.id === pegawaiId ? finalData : p));
+            const index = allPegawai.findIndex(p => (p.id === pegawaiId));
+            if (index !== -1) allPegawai[index] = finalData;
         } else {
-            updatedPegawai = [...allPegawai, finalData];
+            allPegawai.push(finalData);
         }
-        savePegawaiToStorage(updatedPegawai);
 
         const message = pegawaiId ? `Data pegawai ${finalData.pegawai_nama} berhasil diperbarui!` : `Data pegawai ${finalData.pegawai_nama} berhasil disimpan!`;
         logActivity(message);
@@ -170,4 +186,3 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
       return { success: false, message: 'Gagal menyimpan data pegawai.' };
     }
   }
-

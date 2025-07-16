@@ -3,9 +3,6 @@ import { PegawaiFormData } from "./pegawai-schema";
 
 export type Pegawai = PegawaiFormData & {
   id: string;
-  nama: string;
-  nip?: string;
-  jabatan: string;
   status: 'Lengkap' | 'Belum Lengkap';
 };
 
@@ -15,8 +12,7 @@ declare global {
   var pegawai: Pegawai[];
 }
 
-export const mockPegawaiData: Pegawai[] = global.pegawai || [];
-
-if (process.env.NODE_ENV !== 'production') {
-  global.pegawai = global.pegawai || [];
+// Initialize the global variable only if it's not already defined.
+if (!(global as any).pegawai) {
+  (global as any).pegawai = [];
 }
