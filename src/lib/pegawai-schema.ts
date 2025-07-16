@@ -17,10 +17,10 @@ const multiFileSchema = z.array(z.object({
 })).optional();
 
 // Skema utama yang digunakan oleh form resolver.
-// Dibuat lebih longgar untuk memungkinkan penyimpanan data yang belum lengkap.
+// Dibuat sangat longgar untuk memastikan data bisa disimpan kapan saja.
 export const pegawaiFormSchema = z.object({
   pegawai_phaspoto: z.any().optional(),
-  pegawai_nama: z.string().min(3, "Nama lengkap minimal 3 karakter."),
+  pegawai_nama: z.string().min(1, "Nama lengkap wajib diisi."),
   pegawai_jenisKelamin: z.enum(['Laki-laki', 'Perempuan'], { required_error: "Jenis kelamin wajib dipilih." }),
   pegawai_tempatLahir: z.string().min(1, "Tempat lahir wajib diisi."),
   pegawai_tanggalLahir: z.date({ required_error: "Tanggal lahir wajib diisi." }),
@@ -32,7 +32,7 @@ export const pegawaiFormSchema = z.object({
   pegawai_namaPasangan: z.string().optional(),
   pegawai_jumlahAnak: z.coerce.number().nonnegative("Jumlah anak tidak boleh negatif.").optional(),
   pegawai_jabatan: z.string().min(1, "Jabatan wajib dipilih."),
-  pegawai_bidangStudi: z.string().min(1, "Bidang studi wajib diisi."),
+  pegawai_bidangStudi: z.string().optional(), // Dibuat opsional
   pegawai_tugasTambahan: z.enum([
     'Kepala Sekolah',
     'Wakasek Bidang Kesiswaan',
@@ -43,10 +43,12 @@ export const pegawaiFormSchema = z.object({
     'Kepala Perpustakaan',
   ]).optional().nullable(),
   pegawai_terhitungMulaiTanggal: z.date({ required_error: "TMT wajib diisi." }),
-  pegawai_alamatKabupaten: z.string().min(1, "Kabupaten wajib dipilih."),
-  pegawai_alamatKecamatan: z.string().min(1, "Kecamatan wajib dipilih."),
-  pegawai_alamatDesa: z.string().min(1, "Desa wajib dipilih."),
-  pegawai_alamatDusun: z.string().min(1, "Dusun wajib diisi."),
+  
+  // Alamat dibuat sepenuhnya opsional
+  pegawai_alamatKabupaten: z.string().optional(),
+  pegawai_alamatKecamatan: z.string().optional(),
+  pegawai_alamatDesa: z.string().optional(),
+  pegawai_alamatDusun: z.string().optional(),
   
   // Semua riwayat pendidikan dan file dibuat opsional untuk penyimpanan dasar
   pegawai_pendidikanSD: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),

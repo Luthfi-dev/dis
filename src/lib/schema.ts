@@ -14,7 +14,7 @@ const requiredFileSchema = z.object({
 // Base schema object without transformation
 const baseStudentSchema = z.object({
   siswa_fotoProfil: fileSchema,
-  siswa_namaLengkap: z.string().min(3, "Nama lengkap minimal 3 karakter."),
+  siswa_namaLengkap: z.string().min(1, "Nama lengkap wajib diisi."),
   siswa_nis: z.string().min(1, "Nomor Induk Sekolah wajib diisi."),
   siswa_nisn: z.string().length(10, "NISN harus 10 digit."),
   siswa_jenisKelamin: z.enum(['Laki-laki', 'Perempuan'], { required_error: "Jenis kelamin wajib dipilih." }),
@@ -25,15 +25,17 @@ const baseStudentSchema = z.object({
   siswa_jumlahSaudara: z.coerce.number().nonnegative("Jumlah saudara tidak boleh negatif."),
   siswa_bahasa: z.string().min(1, "Bahasa sehari-hari wajib diisi."),
   siswa_golonganDarah: z.enum(['A', 'B', 'AB', 'O'], { required_error: "Golongan darah wajib dipilih." }),
-  siswa_alamatKkProvinsi: z.string().min(1, "Provinsi (KK) wajib dipilih."),
-  siswa_alamatKkKabupaten: z.string().min(1, "Kabupaten (KK) wajib dipilih."),
-  siswa_alamatKkKecamatan: z.string().min(1, "Kecamatan (KK) wajib dipilih."),
-  siswa_alamatKkDesa: z.string().min(1, "Desa (KK) wajib diisi."),
-  siswa_telepon: z.string().min(1, "Nomor HP/WA wajib diisi."),
-  siswa_domisiliProvinsi: z.string().min(1, "Provinsi domisili wajib dipilih."),
-  siswa_domisiliKabupaten: z.string().min(1, "Kabupaten domisili wajib dipilih."),
-  siswa_domisiliKecamatan: z.string().min(1, "Kecamatan domisili wajib dipilih."),
-  siswa_domisiliDesa: z.string().min(1, "Desa domisili wajib dipilih."),
+  
+  // Dibuat opsional
+  siswa_alamatKkProvinsi: z.string().optional(),
+  siswa_alamatKkKabupaten: z.string().optional(),
+  siswa_alamatKkKecamatan: z.string().optional(),
+  siswa_alamatKkDesa: z.string().optional(),
+  siswa_telepon: z.string().optional(),
+  siswa_domisiliProvinsi: z.string().optional(),
+  siswa_domisiliKabupaten: z.string().optional(),
+  siswa_domisiliKecamatan: z.string().optional(),
+  siswa_domisiliDesa: z.string().optional(),
 
   // Orang Tua (opsional)
   siswa_namaAyah: z.string().optional(),
@@ -58,10 +60,10 @@ const baseStudentSchema = z.object({
   // Perkembangan (opsional)
   siswa_asalSekolah: z.string().optional(),
   siswa_nomorSttb: z.string().optional(),
-  siswa_tanggalSttb: z.date().optional(),
+  siswa_tanggalSttb: z.date().optional().nullable(),
   siswa_pindahanAsalSekolah: z.string().optional(),
   siswa_pindahanDariTingkat: z.string().optional(),
-  siswa_pindahanDiterimaTanggal: z.date().optional(),
+  siswa_pindahanDiterimaTanggal: z.date().optional().nullable(),
 
   // Meninggalkan Sekolah (opsional)
   siswa_lulusTahun: z.string().optional(),
@@ -71,7 +73,7 @@ const baseStudentSchema = z.object({
   siswa_pindahTingkatKelas: z.string().optional(),
   siswa_pindahKeTingkat: z.string().optional(),
   siswa_keluarAlasan: z.string().optional(),
-  siswa_keluarTanggal: z.date().optional(),
+  siswa_keluarTanggal: z.date().optional().nullable(),
 
   // Dokumen (opsional)
   documents: z.object({
@@ -107,6 +109,13 @@ export const studentFormSchema = baseStudentSchema.transform((data) => ({
 // Skema ketat ini HANYA digunakan di server untuk menentukan status 'Lengkap'
 // Sekarang .extend() dipanggil pada baseStudentSchema yang merupakan ZodObject.
 export const completeStudentFormSchema = baseStudentSchema.extend({
+    // Semua yang wajib untuk status lengkap
+    siswa_alamatKkProvinsi: z.string().min(1, "Provinsi (KK) wajib dipilih."),
+    siswa_alamatKkKabupaten: z.string().min(1, "Kabupaten (KK) wajib dipilih."),
+    siswa_alamatKkKecamatan: z.string().min(1, "Kecamatan (KK) wajib dipilih."),
+    siswa_alamatKkDesa: z.string().min(1, "Desa (KK) wajib diisi."),
+    siswa_telepon: z.string().min(1, "Nomor HP/WA wajib diisi."),
+
     documents: z.object({
         kartuKeluarga: requiredFileSchema,
         ktpAyah: requiredFileSchema,
