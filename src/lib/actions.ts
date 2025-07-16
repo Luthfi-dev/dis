@@ -7,6 +7,7 @@ import { z } from 'zod';
 import type { Siswa } from './data';
 import type { Pegawai } from './pegawai-data';
 import { logActivity } from './activity-log';
+import { mergeDeep } from './utils';
 
 // --- Server-side Storage Simulation ---
 if (typeof global.students === 'undefined') {
@@ -46,11 +47,16 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
     try {
         const validationResult = studentFormSchema.safeParse(data);
         if (!validationResult.success) {
-            console.error("Zod Validation Error in submitStudentData:", validationResult.error.flatten());
+            const errorDetails = validationResult.error.flatten().fieldErrors;
+            const errorMessages = Object.entries(errorDetails).map(([key, value]) => `${key}: ${value?.join(', ')}`).join('; ');
+            const finalMessage = `Data tidak valid. ${errorMessages || 'Terjadi kesalahan validasi umum, silakan periksa kembali seluruh data.'}`;
+            
+            console.error("Student Validation Error:", errorDetails);
+            
             return {
                 success: false,
-                message: "Data tidak valid.",
-                errors: validationResult.error.flatten().fieldErrors,
+                message: finalMessage,
+                errors: errorDetails,
             };
         }
 
@@ -65,8 +71,10 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
 
         const completionResult = completeStudentFormSchema.safeParse(data);
         const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
+        
+        const existingData = await getSiswaById(id);
+        const finalData: Siswa = mergeDeep(existingData || {}, { ...parsedData, id, status });
 
-        const finalData: Siswa = { ...parsedData, id, status };
         const existingStudentIndex = allStudents.findIndex(s => s.id === id);
 
         if (existingStudentIndex !== -1) {
@@ -79,13 +87,15 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
         logActivity(message);
 
         return { success: true, message, student: finalData };
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    } catch (error: any) {
+        const errorMessage = `Kesalahan Server: ${error.name} - ${error.message}`;
         console.error("Student submission server error:", {
-            message: errorMessage,
+            message: error.message,
+            name: error.name,
+            stack: error.stack,
             error: error,
         });
-        return { success: false, message: `Gagal menyimpan data siswa karena kesalahan server: ${errorMessage}` };
+        return { success: false, message: `Gagal menyimpan data siswa karena ${errorMessage}` };
     }
 }
 
@@ -113,44 +123,31 @@ export async function deletePegawai(id: string): Promise<{ success: boolean; mes
 
 
 export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: string) {
-    // Menghapus semua validasi Zod untuk isolasi masalah Turbopack.
-    // Logika ini hanya akan menerima data dan menyimpannya.
-    try {
-        const id = pegawaiId || crypto.randomUUID();
-        
-        // Cek NIP duplikat secara manual
-        if (data.pegawai_nip && !pegawaiId) {
-            if (allPegawai.some(p => p.pegawai_nip === data.pegawai_nip)) {
-                return { success: false, message: "NIP sudah digunakan oleh pegawai lain." };
-            }
-        }
-        
-        // Untuk status, kita gunakan skema secara aman di sini saja.
-        const completionResult = completePegawaiFormSchema.safeParse(data);
-        const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
-        
-        const finalData: Pegawai = { ...data, id, status };
+    // SMOKE TEST: Ignore all incoming data and just try to save a hardcoded object.
+    // This is to prove if the client-server action connection itself is working without
+    // any interference from complex data or validation.
+    
+    const hardcodedPegawai: Pegawai = {
+        id: pegawaiId || crypto.randomUUID(),
+        pegawai_nama: 'Pegawai Tes Sukses',
+        pegawai_jenisKelamin: 'Laki-laki',
+        pegawai_tempatLahir: 'Test',
+        pegawai_tanggalLahir: new Date().toISOString(),
+        pegawai_statusPerkawinan: 'Kawin',
+        pegawai_jabatan: 'Guru',
+        pegawai_terhitungMulaiTanggal: new Date().toISOString(),
+        status: 'Lengkap',
+    };
 
-        const existingPegawaiIndex = allPegawai.findIndex(p => p.id === id);
+    const existingPegawaiIndex = allPegawai.findIndex(p => p.id === hardcodedPegawai.id);
 
-        if (existingPegawaiIndex !== -1) {
-            // Langsung ganti data yang ada, tidak ada penggabungan.
-            allPegawai[existingPegawaiIndex] = finalData;
-        } else {
-            allPegawai.push(finalData);
-        }
-
-        const message = pegawaiId ? `Data pegawai ${finalData.pegawai_nama} berhasil diperbarui!` : `Data pegawai ${finalData.pegawai_nama} berhasil disimpan!`;
-        logActivity(message);
-
-        return { success: true, message, pegawai: finalData };
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      console.error('Pegawai submission server error:', {
-        message: errorMessage,
-        error: error
-      });
-      return { success: false, message: `Gagal menyimpan data karena kesalahan server: ${errorMessage}` };
+    if (existingPegawaiIndex !== -1) {
+        allPegawai[existingPegawaiIndex] = hardcodedPegawai;
+    } else {
+        allPegawai.push(hardcodedPegawai);
     }
+    
+    logActivity(`Data pegawai tes ${hardcodedPegawai.pegawai_nama} berhasil disimpan.`);
+
+    return { success: true, message: "Data tes berhasil disimpan!" };
 }
