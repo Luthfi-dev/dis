@@ -3,7 +3,6 @@
 
 import { useState, useTransition, useCallback, useEffect, useMemo } from 'react';
 import { useForm, FormProvider, useFormContext, get, FieldPath, FieldErrors } from 'react-hook-form';
-import { studentFormSchema, StudentFormData } from '@/lib/schema';
 import { FormStepper } from './form-stepper';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -21,6 +20,7 @@ import { submitStudentData } from '@/lib/actions';
 import { Textarea } from './ui/textarea';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { Siswa } from '@/lib/data';
+import type { StudentFormData } from '@/lib/student-data-t';
 import Image from 'next/image';
 import { getProvinces, getKabupatens, getKecamatans, getDesas, Wilayah } from '@/lib/wilayah';
 import { Combobox } from './ui/combobox';
@@ -28,17 +28,14 @@ import { Separator } from './ui/separator';
 import { logActivity } from '@/lib/activity-log';
 
 const steps = [
-  { id: 1, title: 'Data Siswa', fields: [
-      'siswa_namaLengkap', 'siswa_nis', 'siswa_nisn', 'siswa_jenisKelamin', 
-      'siswa_tempatLahir', 'siswa_tanggalLahir', 'siswa_agama', 'siswa_kewarganegaraan'
-  ] },
-  { id: 2, title: 'Dokumen Utama', fields: [] },
-  { id: 3, title: 'Data Orang Tua', fields: [] },
-  { id: 4, title: 'Rincian Kesehatan', fields: [] },
-  { id: 5, title: 'Perkembangan Siswa', fields: [] },
-  { id: 6, title: 'Meninggalkan Sekolah', fields: [] },
-  { id: 7, title: 'Laporan Belajar', fields: [] },
-  { id: 8, title: 'Validasi', fields: [] },
+  { id: 1, title: 'Data Siswa' },
+  { id: 2, title: 'Dokumen Utama' },
+  { id: 3, title: 'Data Orang Tua' },
+  { id: 4, title: 'Rincian Kesehatan' },
+  { id: 5, title: 'Perkembangan Siswa' },
+  { id: 6, title: 'Meninggalkan Sekolah' },
+  { id: 7, title: 'Laporan Belajar' },
+  { id: 8, title: 'Validasi' },
 ];
 
 const initialFormValues: StudentFormData = {
@@ -48,7 +45,7 @@ const initialFormValues: StudentFormData = {
   siswa_nisn: '0012345678',
   siswa_jenisKelamin: 'Perempuan',
   siswa_tempatLahir: 'Jakarta',
-  siswa_tanggalLahir: new Date('2008-07-12').toISOString(),
+  siswa_tanggalLahir: new Date('2008-07-12'),
   siswa_agama: 'Islam',
   siswa_kewarganegaraan: 'WNI',
   siswa_jumlahSaudara: 2,
@@ -379,7 +376,7 @@ function DataSiswaForm() {
                         </Button>
                     </FormControl></PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date?.toISOString())} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
+                        <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date)} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
                     </PopoverContent>
                     </Popover><FormMessage /></FormItem>
                 )} />
@@ -598,7 +595,7 @@ function DataOrangTuaForm() {
                     <FormItem><FormLabel>Alamat Orang Tua/Wali</FormLabel><FormControl><Textarea placeholder="Alamat lengkap orang tua/wali" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={control} name="siswa_teleponOrangTua" render={({ field }) => (
-                    <FormItem><FormLabel>Telepon Orang Tua/Wali</FormLabel><FormControl><Input placeholder="Nomor telepon" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Telepon Orang Tua/Wali</FormLabel><FormControl><Input placeholder="Nomor telepon" {...field} /></FormControl><FormMessage /></FormMessage>
                 )} />
              </Grid>
         </div>

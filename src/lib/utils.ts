@@ -1,3 +1,4 @@
+
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
@@ -31,4 +32,45 @@ export function mergeDeep(target: any, source: any): any {
   }
 
   return output;
+}
+
+/**
+ * Sanitizes a string by replacing HTML special characters with their entities.
+ * @param str The string to sanitize.
+ * @returns The sanitized string.
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+/**
+ * Recursively sanitizes all string properties of an object.
+ * @param data The object or value to sanitize.
+ * @returns The sanitized object or value.
+ */
+export function sanitizeData<T>(data: T): T {
+  if (typeof data === 'string') {
+    return escapeHtml(data) as T;
+  }
+
+  if (Array.isArray(data)) {
+    return data.map(item => sanitizeData(item)) as T;
+  }
+
+  if (data && typeof data === 'object') {
+    const sanitizedObj: { [key: string]: any } = {};
+    for (const key in data) {
+      if (Object.prototype.hasOwnProperty.call(data, key)) {
+        sanitizedObj[key] = sanitizeData((data as any)[key]);
+      }
+    }
+    return sanitizedObj as T;
+  }
+  
+  return data;
 }

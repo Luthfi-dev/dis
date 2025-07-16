@@ -1,11 +1,12 @@
 
 'use server';
 
-import { studentFormSchema, completeStudentFormSchema, StudentFormData } from '@/lib/schema';
 import type { Siswa } from './data';
 import type { Pegawai } from './pegawai-data';
-import { mergeDeep } from './utils';
+import { mergeDeep, sanitizeData } from './utils';
 import type { PegawaiFormData } from '@/lib/pegawai-data';
+import type { StudentFormData } from '@/lib/student-data-t';
+
 
 // --- Server-side Storage Simulation ---
 if (typeof global.students === 'undefined') {
@@ -42,27 +43,15 @@ export async function deleteSiswa(id: string): Promise<{ success: boolean; messa
 
 export async function submitStudentData(data: StudentFormData, studentId?: string) {
     try {
-        const validationResult = studentFormSchema.safeParse(data);
-
-        if (!validationResult.success) {
-            const errorPath = validationResult.error.issues[0]?.path.join('.') || 'unknown';
-            const errorMessage = `Data Tidak Valid. Silakan periksa kolom berikut: ${errorPath}`;
-            console.error("Student validation failed:", validationResult.error.flatten());
-            return {
-                success: false,
-                message: errorMessage
-            };
-        }
-
-        const validatedData = validationResult.data;
+        const sanitizedData = sanitizeData(data);
         const id = studentId || crypto.randomUUID();
-
-        const isComplete = completeStudentFormSchema.safeParse(validatedData).success;
+        
+        // Simple completeness check
+        const isComplete = sanitizedData.siswa_namaLengkap && sanitizedData.siswa_nis && sanitizedData.siswa_nisn;
         const status = isComplete ? 'Lengkap' : 'Belum Lengkap';
         
-        const existingData = await getSiswaById(id);
-        const finalData: Siswa = mergeDeep(existingData || {}, { ...validatedData, id, status });
-
+        const finalData: Siswa = { ...sanitizedData, id, status };
+        
         const existingStudentIndex = allStudents.findIndex(s => s.id === id);
 
         if (existingStudentIndex !== -1) {
@@ -103,14 +92,13 @@ export async function deletePegawai(id: string): Promise<{ success: boolean; mes
 
 export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: string) {
     try {
-        // No more Zod validation on the server for pegawai. Just save the data.
+        const sanitizedData = sanitizeData(data);
         const id = pegawaiId || crypto.randomUUID();
         
         // A very simple check for completeness. We can make this more robust later.
-        const status = data.pegawai_nama && data.pegawai_nip ? 'Lengkap' : 'Belum Lengkap';
+        const status = sanitizedData.pegawai_nama && sanitizedData.pegawai_nip ? 'Lengkap' : 'Belum Lengkap';
         
-        const existingData = await getPegawaiById(id);
-        const finalData: Pegawai = mergeDeep(existingData || {}, { ...data, id, status });
+        const finalData: Pegawai = { ...sanitizedData, id, status };
         
         const existingPegawaiIndex = allPegawai.findIndex(p => p.id === id);
 

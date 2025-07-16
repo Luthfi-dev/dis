@@ -1,5 +1,5 @@
 
-import { StudentFormData } from "./schema";
+import type { StudentFormData } from "./student-data-t";
 
 export type Siswa = StudentFormData & {
   id: string;
