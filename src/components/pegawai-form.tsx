@@ -19,12 +19,13 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { submitPegawaiData } from '@/lib/actions';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { Pegawai } from '@/lib/pegawai-data';
 import Image from 'next/image';
 import { Separator } from './ui/separator';
 import { getKabupatens, getKecamatans, getDesas, Wilayah, getProvinces } from '@/lib/wilayah';
 import { Combobox } from './ui/combobox';
+import { logActivity } from '@/lib/activity-log';
 
 const steps = [
   { id: 1, title: 'Identitas Pegawai', fields: [
@@ -36,32 +37,32 @@ const steps = [
 ];
 
 const initialFormValues: PegawaiFormData = {
-    pegawai_phaspoto: undefined,
-    pegawai_nama: '',
-    pegawai_jenisKelamin: undefined,
-    pegawai_tempatLahir: '',
-    pegawai_tanggalLahir: undefined,
-    pegawai_nip: '',
-    pegawai_nuptk: '',
-    pegawai_nrg: '',
-    pegawai_statusPerkawinan: undefined,
-    pegawai_tanggalPerkawinan: undefined,
-    pegawai_namaPasangan: '',
-    pegawai_jumlahAnak: 0,
-    pegawai_jabatan: '',
-    pegawai_bidangStudi: '',
-    pegawai_tugasTambahan: undefined,
-    pegawai_terhitungMulaiTanggal: undefined,
-    pegawai_alamatDusun: '',
-    pegawai_alamatDesa: '',
-    pegawai_alamatKecamatan: '',
-    pegawai_alamatKabupaten: '',
-    pegawai_pendidikanSD: { tamatTahun: '', ijazah: undefined },
-    pegawai_pendidikanSMP: { tamatTahun: '', ijazah: undefined },
-    pegawai_pendidikanSMA: { tamatTahun: '', ijazah: undefined },
+    pegawai_phaspoto: { fileName: "placeholder.png", fileURL: "https://placehold.co/300x400.png" },
+    pegawai_nama: 'Budi Test Pegawai',
+    pegawai_jenisKelamin: 'Laki-laki',
+    pegawai_tempatLahir: 'Bandung',
+    pegawai_tanggalLahir: new Date('1985-05-10'),
+    pegawai_nip: '198505102010011001',
+    pegawai_nuptk: '1234567890123456',
+    pegawai_nrg: '0987654321',
+    pegawai_statusPerkawinan: 'Kawin',
+    pegawai_tanggalPerkawinan: new Date('2010-01-15'),
+    pegawai_namaPasangan: 'Siti Test Pasangan',
+    pegawai_jumlahAnak: 2,
+    pegawai_jabatan: 'Guru Mata Pelajaran',
+    pegawai_bidangStudi: 'Matematika',
+    pegawai_tugasTambahan: 'Wakasek Bidang Kurikulum',
+    pegawai_terhitungMulaiTanggal: new Date('2010-01-01'),
+    pegawai_alamatDusun: 'Dusun Test',
+    pegawai_alamatDesa: '3273011001', // GEGERKALONG
+    pegawai_alamatKecamatan: '327301', // SUKASARI
+    pegawai_alamatKabupaten: '3273', // KOTA BANDUNG
+    pegawai_pendidikanSD: { tamatTahun: '1997', ijazah: undefined },
+    pegawai_pendidikanSMP: { tamatTahun: '2000', ijazah: undefined },
+    pegawai_pendidikanSMA: { tamatTahun: '2003', ijazah: undefined },
     pegawai_pendidikanDiploma: { tamatTahun: '', ijazah: undefined },
-    pegawai_pendidikanS1: { tamatTahun: '', ijazah: undefined },
-    pegawai_pendidikanS2: { tamatTahun: '', ijazah: undefined },
+    pegawai_pendidikanS1: { tamatTahun: '2007', ijazah: undefined },
+    pegawai_pendidikanS2: { tamatTahun: '2012', ijazah: undefined },
     pegawai_skPengangkatan: [],
     pegawai_skNipBaru: undefined,
     pegawai_skFungsional: [],
@@ -97,7 +98,10 @@ async function uploadFile(file: File) {
 
 
 export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & { id: string } }) {
-  const [currentStep, setCurrentStep] = useState(1);
+  const searchParams = useSearchParams();
+  const stepParam = searchParams.get('step');
+
+  const [currentStep, setCurrentStep] = useState(stepParam ? parseInt(stepParam, 10) : 1);
   const [isSubmitting, startTransition] = useTransition();
   const { toast } = useToast();
   const router = useRouter();
@@ -108,7 +112,6 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
     mode: 'onBlur', 
     defaultValues: pegawaiData
       ? {
-        ...initialFormValues,
         ...pegawaiData,
         pegawai_tanggalLahir: pegawaiData.pegawai_tanggalLahir ? new Date(pegawaiData.pegawai_tanggalLahir) : undefined,
         pegawai_tanggalPerkawinan: pegawaiData.pegawai_tanggalPerkawinan ? new Date(pegawaiData.pegawai_tanggalPerkawinan) : undefined,
@@ -119,24 +122,24 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
 
   const { handleSubmit, trigger, getValues, formState: { errors } } = methods;
   
-  const processDraftSave = async (isFinalSubmit: boolean = false) => {
+  const processDraftSave = async () => {
     const data = getValues();
-    const result = await submitPegawaiData(data, pegawaiId, !isFinalSubmit);
+    const result = await submitPegawaiData(data, pegawaiId, true);
     
-    if (result.success) {
-      toast({
-          title: 'Sukses!',
-          description: result.message,
-      });
-      if (result.pegawai && !pegawaiId) {
+    if (result.success && result.pegawai) {
+      if (!pegawaiId) {
           setPegawaiId(result.pegawai.id);
           router.replace(`/pegawai/${result.pegawai.id}/edit?step=${currentStep + 1}`, { scroll: false });
       }
+      toast({
+          title: 'Sukses!',
+          description: `Draf untuk langkah ${currentStep} berhasil disimpan.`,
+      });
       return true;
     } else {
       toast({
           title: 'Gagal Menyimpan Draf',
-          description: result.message || 'Terjadi kesalahan.',
+          description: result.message || 'Terjadi kesalahan saat menyimpan draf.',
           variant: 'destructive',
       });
       return false;
@@ -157,7 +160,7 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
     }
 
     startTransition(async () => {
-      const success = await processDraftSave(false);
+      const success = await processDraftSave();
       if (success && currentStep < steps.length) {
           setCurrentStep((prev) => prev + 1);
       }
@@ -182,43 +185,28 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
             router.push('/pegawai');
             router.refresh();
         } else {
-            toast({
-                title: 'Gagal Menyimpan',
-                description: result.message || 'Terjadi kesalahan. Periksa kembali isian formulir Anda.',
-                variant: 'destructive',
-            });
-             if (result.errors) {
-                const errorFields = Object.keys(result.errors);
-                const firstErrorField = errorFields[0];
-                const stepWithError = steps.find(step => step.fields.includes(firstErrorField));
-                if (stepWithError) {
-                    setCurrentStep(stepWithError.id);
-                }
-            }
+            onInvalid(result.errors || {});
         }
     });
   };
 
    const onInvalid = (errors: FieldErrors<PegawaiFormData>) => {
-    const errorKeys = Object.keys(errors);
-    const fieldLabels: {[key: string]: string} = {
-        pegawai_nama: 'Nama',
-        pegawai_jenisKelamin: 'Jenis Kelamin',
-        pegawai_tempatLahir: 'Tempat Lahir',
-        pegawai_tanggalLahir: 'Tanggal Lahir',
-        pegawai_statusPerkawinan: 'Status Perkawinan',
-        pegawai_jabatan: 'Jabatan',
-        pegawai_terhitungMulaiTanggal: 'TMT',
-    };
-
-    const errorMessages = errorKeys.map(key => fieldLabels[key] || key).join(', ');
+    const errorMessages: string[] = [];
+    
+    for (const key in errors) {
+        if (Object.prototype.hasOwnProperty.call(errors, key)) {
+            const fieldName = key.replace('pegawai_', '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+            errorMessages.push(fieldName);
+        }
+    }
 
     toast({
         title: 'Gagal Menyimpan: Data Tidak Valid',
-        description: `Silakan periksa kolom berikut: ${errorMessages}`,
+        description: `Silakan periksa kolom berikut: ${errorMessages.join(', ')}.`,
         variant: 'destructive',
     });
 
+    const errorKeys = Object.keys(errors);
     const stepWithError = steps.find(step =>
       step.fields.some(field => errorKeys.includes(field))
     );
@@ -297,13 +285,11 @@ function DataIdentitasPegawaiForm() {
   }, [watch, getValues, preview]);
 
   const [allKabupatens, setAllKabupatens] = useState<Wilayah[]>([]);
-  const [allProvinces, setAllProvinces] = useState<Wilayah[]>([]);
   
   const alamatKabupaten = watch('pegawai_alamatKabupaten');
   const alamatKecamatan = watch('pegawai_alamatKecamatan');
   
   useEffect(() => {
-    setAllProvinces(getProvinces());
     setAllKabupatens(getKabupatens());
   }, []);
 

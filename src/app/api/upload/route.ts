@@ -1,7 +1,7 @@
 
 import { writeFile, mkdir } from 'fs/promises';
 import { NextRequest, NextResponse } from 'next/server';
-import { join } from 'path';
+import { join, extname } from 'path';
 import sharp from 'sharp';
 
 export async function POST(request: NextRequest) {
@@ -18,8 +18,9 @@ export async function POST(request: NextRequest) {
   // Define the path for the uploads directory
   const uploadsDir = join(process.cwd(), 'public/uploads');
   
-  // Generate a unique filename
-  const filename = `${Date.now()}-${file.name.replace(/\s/g, '_')}`;
+  // Generate a unique filename using timestamp and extension
+  const fileExtension = extname(file.name);
+  const filename = `${Date.now()}${fileExtension}`;
   const path = join(uploadsDir, filename);
 
   try {

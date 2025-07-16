@@ -59,6 +59,7 @@ export async function getCategorySuggestion(description: string) {
 
 export async function submitStudentData(data: Partial<StudentFormData>, studentId?: string, isDraft: boolean = false) {
   try {
+    // For drafts, we use a much more lenient schema
     const schemaToUse = isDraft ? studentFormSchema.deepPartial() : studentFormSchema;
     const parsedData = schemaToUse.parse(data);
 
@@ -84,10 +85,9 @@ export async function submitStudentData(data: Partial<StudentFormData>, studentI
       allStudents[existingStudentIndex] = finalData;
     } else {
       // Create new student
-      const newStudentData = { ...(data as StudentFormData), ...parsedData };
-      const completionResult = completeStudentFormSchema.safeParse(newStudentData);
+      const completionResult = completeStudentFormSchema.safeParse(parsedData);
       const status = isDraft ? 'Belum Lengkap' : (completionResult.success ? 'Lengkap' : 'Belum Lengkap');
-      finalData = { ...newStudentData, id, status };
+      finalData = { ...(parsedData as StudentFormData), id, status };
       allStudents.push(finalData);
     }
     
@@ -158,16 +158,17 @@ export async function submitPegawaiData(data: Partial<PegawaiFormData>, pegawaiI
         let finalData: Pegawai;
 
         if (existingPegawaiIndex !== -1) {
+            // Update existing record
             const updatedData = { ...allPegawai[existingPegawaiIndex], ...parsedData };
             const completionResult = completePegawaiFormSchema.safeParse(updatedData);
             const status = isDraft ? 'Belum Lengkap' : (completionResult.success ? 'Lengkap' : 'Belum Lengkap');
             finalData = { ...updatedData, id, status };
             allPegawai[existingPegawaiIndex] = finalData;
         } else {
-            const newPegawaiData = { ...(data as PegawaiFormData), ...parsedData };
-            const completionResult = completePegawaiFormSchema.safeParse(newPegawaiData);
+            // Create new record
+            const completionResult = completePegawaiFormSchema.safeParse(parsedData);
             const status = isDraft ? 'Belum Lengkap' : (completionResult.success ? 'Lengkap' : 'Belum Lengkap');
-            finalData = { ...newPegawaiData, id, status };
+            finalData = { ...(parsedData as PegawaiFormData), id, status };
             allPegawai.push(finalData);
         }
 
@@ -183,10 +184,11 @@ export async function submitPegawaiData(data: Partial<PegawaiFormData>, pegawaiI
 
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("Zod Validation Error:", error.flatten().fieldErrors);
         const errorMessages = Object.entries(error.flatten().fieldErrors).map(([field, errors]) => `${field}: ${errors.join(', ')}`).join('; ');
-        return { success: false, message: `Data tidak valid. Periksa kembali isian Anda. Kesalahan: ${errorMessages}`, errors: error.flatten().fieldErrors };
+        return { success: false, message: `Data tidak valid. Kesalahan: ${errorMessages}`, errors: error.flatten().fieldErrors };
       }
       console.error('Pegawai submission error:', error);
-      return { success: false, message: 'Gagal menyimpan data pegawai.' };
+      return { success: false, message: 'Gagal menyimpan data pegawai karena kesalahan server.' };
     }
   }
