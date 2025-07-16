@@ -1,4 +1,6 @@
 
+'use client';
+
 import { z } from 'zod';
 
 const fileSchema = z.object({
@@ -12,7 +14,7 @@ const requiredFileSchema = z.object({
 });
 
 // Base schema object without transformation
-const baseStudentSchema = z.object({
+export const baseStudentSchema = z.object({
   siswa_fotoProfil: fileSchema,
   siswa_namaLengkap: z.string().min(1, "Nama lengkap wajib diisi."),
   siswa_nis: z.string().min(1, "Nomor Induk Sekolah wajib diisi."),
@@ -69,10 +71,10 @@ const baseStudentSchema = z.object({
   // Perkembangan (opsional)
   siswa_asalSekolah: z.string().optional(),
   siswa_nomorSttb: z.string().optional(),
-  siswa_tanggalSttb: z.date().optional().nullable(),
+  siswa_tanggalSttb: z.date().optional(),
   siswa_pindahanAsalSekolah: z.string().optional(),
   siswa_pindahanDariTingkat: z.string().optional(),
-  siswa_pindahanDiterimaTanggal: z.date().optional().nullable(),
+  siswa_pindahanDiterimaTanggal: z.date().optional(),
 
   // Meninggalkan Sekolah (opsional)
   siswa_lulusTahun: z.string().optional(),
@@ -82,7 +84,7 @@ const baseStudentSchema = z.object({
   siswa_pindahTingkatKelas: z.string().optional(),
   siswa_pindahKeTingkat: z.string().optional(),
   siswa_keluarAlasan: z.string().optional(),
-  siswa_keluarTanggal: z.date().optional().nullable(),
+  siswa_keluarTanggal: z.date().optional(),
 
   // Dokumen (opsional)
   documents: z.object({
@@ -104,6 +106,7 @@ const baseStudentSchema = z.object({
     transkripSmp: fileSchema,
   }).optional(),
 });
+
 
 // Skema utama yang digunakan oleh form resolver.
 export const studentFormSchema = baseStudentSchema;

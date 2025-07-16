@@ -28,7 +28,7 @@ export const pegawaiFormSchema = z.object({
   pegawai_nuptk: z.string().optional(),
   pegawai_nrg: z.string().optional(),
   pegawai_statusPerkawinan: z.enum(['Belum Kawin', 'Kawin', 'Cerai Hidup', 'Cerai Mati'], { required_error: "Status perkawinan wajib dipilih." }),
-  pegawai_tanggalPerkawinan: z.date().optional().nullable(),
+  pegawai_tanggalPerkawinan: z.date().optional(),
   pegawai_namaPasangan: z.string().optional(),
   pegawai_jumlahAnak: z.preprocess(
     (val) => (val === '' || val === null || val === undefined ? undefined : Number(val)),
