@@ -76,8 +76,7 @@ function MultiDocumentItem({ label, documents }: { label: string; documents?: { 
 }
 
 
-export default function LihatPegawaiPage({ params }: { params: { id: string } }) {
-    const { id } = params;
+function LihatPegawaiClient({ id }: { id: string }) {
     const [pegawai, setPegawai] = useState<Pegawai | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -249,4 +248,10 @@ export default function LihatPegawaiPage({ params }: { params: { id: string } })
       </div>
     </div>
   );
+}
+
+// This is the new Server Component wrapper
+export default function LihatPegawaiPage({ params }: { params: { id: string } }) {
+  const { id } = params;
+  return <LihatPegawaiClient id={id} />;
 }
