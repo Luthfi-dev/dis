@@ -32,7 +32,7 @@ export const pegawaiFormSchema = z.object({
   pegawai_namaPasangan: z.string().optional(),
   pegawai_jumlahAnak: z.preprocess(
     (val) => (val === '' || val === null || val === undefined ? 0 : Number(val)),
-    z.coerce.number().nonnegative("Jumlah anak tidak boleh negatif.").optional()
+    z.coerce.number().int().nonnegative("Jumlah anak tidak boleh negatif.").optional()
   ),
   pegawai_jabatan: z.string().min(1, "Jabatan wajib dipilih."),
   pegawai_bidangStudi: z.string().optional(),

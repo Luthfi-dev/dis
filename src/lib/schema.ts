@@ -24,7 +24,7 @@ const baseStudentSchema = z.object({
   siswa_kewarganegaraan: z.enum(['WNI', 'WNA'], { required_error: "Kewarganegaraan wajib dipilih." }),
   siswa_jumlahSaudara: z.preprocess(
     (val) => (val === '' || val === null || val === undefined ? 0 : Number(val)),
-    z.coerce.number().nonnegative("Jumlah saudara tidak boleh negatif.")
+    z.coerce.number().int().nonnegative("Jumlah saudara tidak boleh negatif.")
   ),
   siswa_bahasa: z.string().min(1, "Bahasa sehari-hari wajib diisi."),
   siswa_golonganDarah: z.enum(['A', 'B', 'AB', 'O'], { required_error: "Golongan darah wajib dipilih." }),
@@ -108,7 +108,6 @@ const baseStudentSchema = z.object({
 // Skema utama yang digunakan oleh form resolver.
 export const studentFormSchema = baseStudentSchema;
 
-
 // Skema ketat ini HANYA digunakan di server untuk menentukan status 'Lengkap'
 export const completeStudentFormSchema = baseStudentSchema.extend({
     // Semua yang wajib untuk status lengkap
@@ -150,6 +149,5 @@ export const completeStudentFormSchema = baseStudentSchema.extend({
     
     siswa_asalSekolah: z.string().min(1, "Asal sekolah wajib diisi."),
 });
-
 
 export type StudentFormData = z.infer<typeof studentFormSchema>;
