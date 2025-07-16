@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { getDesaName, getKecamatanName, getKabupatenName } from '@/lib/wilayah';
 
 function InfoRow({ label, value, icon, className }: { label: string, value?: React.ReactNode, icon?: React.ElementType, className?: string }) {
     const Icon = icon;
@@ -149,10 +150,10 @@ export default function PreviewPegawaiPage({ params: { id } }: { params: { id: s
                 <section>
                     <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">C. Alamat Rumah</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                         <InfoRow label="Kabupaten" value={getKabupatenName(pegawai.alamatKabupaten)} icon={MapPin} />
+                         <InfoRow label="Kecamatan" value={getKecamatanName(pegawai.alamatKecamatan)} icon={MapPin} />
+                         <InfoRow label="Desa" value={getDesaName(pegawai.alamatDesa)} icon={Home} />
                          <InfoRow label="Dusun" value={pegawai.alamatDusun} icon={Home} />
-                         <InfoRow label="Desa" value={pegawai.alamatDesa} icon={Home} />
-                         <InfoRow label="Kecamatan" value={pegawai.alamatKecamatan} icon={MapPin} />
-                         <InfoRow label="Kabupaten" value={pegawai.alamatKabupaten} icon={MapPin} />
                     </div>
                 </section>
 

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useEffect, useMemo } from 'react';
 import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { pegawaiFormSchema, PegawaiFormData, dataIdentitasPegawaiSchema } from '@/lib/pegawai-schema';
@@ -23,6 +23,8 @@ import { useRouter } from 'next/navigation';
 import type { Pegawai } from '@/lib/pegawai-data';
 import Image from 'next/image';
 import { Separator } from './ui/separator';
+import { getKabupatens, getKecamatans, getDesas, Wilayah } from '@/lib/wilayah';
+import { Combobox } from './ui/combobox';
 
 const steps = [
   { id: 1, title: 'Identitas Pegawai', schema: dataIdentitasPegawaiSchema },
@@ -215,6 +217,28 @@ function DataIdentitasPegawaiForm() {
     });
     return () => subscription.unsubscribe();
   }, [watch, getValues, preview]);
+
+  const [allKabupatens, setAllKabupatens] = useState<Wilayah[]>([]);
+  
+  const alamatKabupaten = watch('alamatKabupaten');
+  const alamatKecamatan = watch('alamatKecamatan');
+  
+  useEffect(() => {
+    setAllKabupatens(getKabupatens());
+  }, []);
+
+  const kecamatans = useMemo(() => getKecamatans(alamatKabupaten), [alamatKabupaten]);
+  const desas = useMemo(() => getDesas(alamatKecamatan), [alamatKecamatan]);
+
+  const wilayahToOptions = (wilayah: Wilayah[]) => wilayah.map(w => ({ value: w.id, label: w.name }));
+
+  useEffect(() => {
+     if(!getValues('alamatKecamatan')) setValue('alamatKecamatan', '');
+  }, [alamatKabupaten, setValue, getValues]);
+
+  useEffect(() => {
+    if(!getValues('alamatDesa')) setValue('alamatDesa', '');
+  }, [alamatKecamatan, setValue, getValues]);
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -362,20 +386,46 @@ function DataIdentitasPegawaiForm() {
       <Separator className="my-6" />
         <div className="space-y-4">
             <h3 className="text-lg font-semibold">Alamat Rumah</h3>
-            <Grid>
-                <FormField control={control} name="alamatDusun" render={({ field }) => (
-                    <FormItem><FormLabelRequired>Dusun</FormLabelRequired><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                 <FormField control={control} name="alamatDesa" render={({ field }) => (
-                    <FormItem><FormLabelRequired>Desa</FormLabelRequired><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <FormField control={control} name="alamatKabupaten" render={({ field }) => (
+                    <FormItem><FormLabelRequired>Kabupaten</FormLabelRequired><FormControl>
+                        <Combobox
+                          options={wilayahToOptions(allKabupatens)}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Pilih Kabupaten..."
+                          searchPlaceholder="Cari kabupaten..."
+                        />
+                    </FormControl><FormMessage /></FormItem>
                 )} />
                  <FormField control={control} name="alamatKecamatan" render={({ field }) => (
-                    <FormItem><FormLabelRequired>Kecamatan</FormLabelRequired><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabelRequired>Kecamatan</FormLabelRequired><FormControl>
+                        <Combobox
+                          options={wilayahToOptions(kecamatans)}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Pilih Kecamatan..."
+                          searchPlaceholder="Cari kecamatan..."
+                          disabled={!alamatKabupaten}
+                        />
+                    </FormControl><FormMessage /></FormItem>
                 )} />
-                 <FormField control={control} name="alamatKabupaten" render={({ field }) => (
-                    <FormItem><FormLabelRequired>Kabupaten</FormLabelRequired><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                 <FormField control={control} name="alamatDesa" render={({ field }) => (
+                    <FormItem><FormLabelRequired>Desa</FormLabelRequired><FormControl>
+                        <Combobox
+                          options={wilayahToOptions(desas)}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Pilih Desa..."
+                          searchPlaceholder="Cari desa..."
+                          disabled={!alamatKecamatan}
+                        />
+                    </FormControl><FormMessage /></FormItem>
                 )} />
-            </Grid>
+                <FormField control={control} name="alamatDusun" render={({ field }) => (
+                    <FormItem><FormLabelRequired>Dusun</FormLabelRequired><FormControl><Input placeholder="Nama Dusun" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+            </div>
         </div>
         <Separator className="my-6" />
         <div className="space-y-4">

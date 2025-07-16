@@ -32,10 +32,10 @@ export const dataIdentitasPegawaiSchema = z.object({
     'Kepala Perpustakaan',
   ]).optional(),
   terhitungMulaiTanggal: z.date({ required_error: "TMT wajib diisi." }),
+  alamatKabupaten: z.string().min(1, "Kabupaten wajib dipilih."),
+  alamatKecamatan: z.string().min(1, "Kecamatan wajib dipilih."),
+  alamatDesa: z.string().min(1, "Desa wajib dipilih."),
   alamatDusun: z.string().min(1, "Dusun wajib diisi."),
-  alamatDesa: z.string().min(1, "Desa wajib diisi."),
-  alamatKecamatan: z.string().min(1, "Kecamatan wajib diisi."),
-  alamatKabupaten: z.string().min(1, "Kabupaten wajib diisi."),
   
   pendidikanSD: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
   pendidikanSMP: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),

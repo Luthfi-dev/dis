@@ -11,6 +11,8 @@ import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
+import { getDesaName, getKecamatanName, getKabupatenName } from '@/lib/wilayah';
+
 
 function DetailItem({ label, value, icon }: { label: string; value: React.ReactNode; icon: React.ElementType }) {
   const Icon = icon;
@@ -148,10 +150,10 @@ export default function LihatPegawaiPage({ params: { id } }: { params: { id: str
              <div>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">Alamat Rumah</h3>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                    <DetailItem label="Kabupaten" value={getKabupatenName(pegawai.alamatKabupaten)} icon={Home}/>
+                    <DetailItem label="Kecamatan" value={getKecamatanName(pegawai.alamatKecamatan)} icon={Home}/>
+                    <DetailItem label="Desa" value={getDesaName(pegawai.alamatDesa)} icon={Home}/>
                     <DetailItem label="Dusun" value={pegawai.alamatDusun} icon={Home}/>
-                    <DetailItem label="Desa" value={pegawai.alamatDesa} icon={Home}/>
-                    <DetailItem label="Kecamatan" value={pegawai.alamatKecamatan} icon={Home}/>
-                    <DetailItem label="Kabupaten" value={pegawai.alamatKabupaten} icon={Home}/>
                 </div>
              </div>
           </CardContent>
