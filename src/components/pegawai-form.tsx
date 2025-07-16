@@ -107,7 +107,7 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
   const router = useRouter();
 
   const methods = useForm<PegawaiFormData>({
-    resolver: zodResolver(pegawaiFormSchema),
+    // resolver: zodResolver(pegawaiFormSchema), // REMOVING ZOD RESOLVER
     mode: 'onBlur', 
     defaultValues: pegawaiData ? pegawaiData : initialFormValues,
   });
@@ -115,17 +115,9 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
   const { handleSubmit, trigger, formState: { errors } } = methods;
   
   const handleNext = async () => {
+    // We only trigger validation visually, not for blocking progress.
     const fieldsToValidate = steps.find(s => s.id === currentStep)?.fields as FieldPath<PegawaiFormData>[] | undefined;
-    const isValid = await trigger(fieldsToValidate, { shouldFocus: true });
-    
-    if (!isValid) {
-        toast({
-            title: 'Data Belum Lengkap',
-            description: 'Silakan isi semua kolom yang wajib diisi pada langkah ini.',
-            variant: 'destructive'
-        });
-        return;
-    }
+    await trigger(fieldsToValidate); 
 
     if (currentStep < steps.length) {
         setCurrentStep((prev) => prev + 1);
@@ -150,41 +142,22 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
             router.push('/pegawai');
             router.refresh();
         } else {
-            onInvalid(result.errors || {});
+             toast({
+                title: 'Gagal Menyimpan',
+                description: result.message || 'Terjadi kesalahan di server.',
+                variant: 'destructive',
+            });
         }
     });
   };
 
-   const onInvalid = (errors: FieldErrors<PegawaiFormData>) => {
-    let errorMessages: string[] = [];
-    let firstErrorStep = Infinity;
-
-    for (const key of Object.keys(errors) as (keyof PegawaiFormData)[]) {
-        const stepWithError = steps.find(step => step.fields.includes(key));
-        if (stepWithError && stepWithError.id < firstErrorStep) {
-            firstErrorStep = stepWithError.id;
-        }
-        const fieldName = key.replace('pegawai_', '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-        errorMessages.push(fieldName);
-    }
-    
-    let description;
-    if (errorMessages.length > 0) {
-        description = `Silakan periksa kolom berikut: ${errorMessages.join(', ')}.`;
-    } else {
-        description = "Terjadi kesalahan validasi umum. Silakan periksa kembali seluruh data.";
-    }
-
+  const onInvalid = (errors: FieldErrors<PegawaiFormData>) => {
+    let errorMessages = Object.keys(errors);
     toast({
         title: 'Gagal Menyimpan: Data Tidak Valid',
-        description: description,
+        description: `Silakan periksa kolom berikut: ${errorMessages.join(', ')}.`,
         variant: 'destructive',
     });
-
-    if (firstErrorStep !== Infinity && firstErrorStep !== currentStep) {
-      setCurrentStep(firstErrorStep);
-    }
-    trigger(Object.keys(errors) as FieldPath<PegawaiFormData>[], { shouldFocus: true });
   };
 
   return (
@@ -211,8 +184,7 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
             Kembali
           </Button>
           {currentStep < steps.length ? (
-            <Button type="button" onClick={handleNext} disabled={isSubmitting}>
-               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button type="button" onClick={handleNext}>
               Lanjut
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
