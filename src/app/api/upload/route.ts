@@ -1,5 +1,5 @@
 
-import { writeFile } from 'fs/promises';
+import { writeFile, mkdir } from 'fs/promises';
 import { NextRequest, NextResponse } from 'next/server';
 import { join } from 'path';
 
@@ -14,19 +14,26 @@ export async function POST(request: NextRequest) {
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
+  // Define the path for the uploads directory
+  const uploadsDir = join(process.cwd(), 'public/uploads');
+  
   // Generate a unique filename
   const filename = `${Date.now()}-${file.name.replace(/\s/g, '_')}`;
-  const path = join(process.cwd(), 'public/uploads', filename);
+  const path = join(uploadsDir, filename);
 
   try {
+    // Ensure the uploads directory exists, create it if it doesn't
+    await mkdir(uploadsDir, { recursive: true });
+
+    // Write the file to the specified path
     await writeFile(path, buffer);
     console.log(`File uploaded to ${path}`);
     
     // Return the public URL
     const url = `/uploads/${filename}`;
     return NextResponse.json({ success: true, url: url });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error writing file:', error);
-    return NextResponse.json({ success: false, error: 'Failed to save file' }, { status: 500 });
+    return NextResponse.json({ success: false, error: `Failed to save file: ${error.message}` }, { status: 500 });
   }
 }
