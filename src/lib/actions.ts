@@ -8,9 +8,9 @@ import { z } from 'zod';
 import type { Siswa } from './data';
 import type { Pegawai } from './pegawai-data';
 import { logActivity } from './activity-log';
+import { merge } from 'lodash';
 
 // --- Server-side Storage Simulation ---
-// In a real app, this would be a database.
 if (typeof global.students === 'undefined') {
     (global as any).students = [];
 }
@@ -59,11 +59,9 @@ export async function getCategorySuggestion(description: string) {
 
 export async function submitStudentData(data: Partial<StudentFormData>, studentId?: string, isDraft: boolean = false) {
   try {
-    // For drafts, we use a much more lenient schema
     const schemaToUse = isDraft ? studentFormSchema.deepPartial() : studentFormSchema;
     const parsedData = schemaToUse.parse(data);
 
-    // Check for NISN duplicates
     if (parsedData.siswa_nisn) {
       const existingStudent = allStudents.find(s => s.siswa_nisn === parsedData.siswa_nisn);
       if (existingStudent && existingStudent.id !== studentId) {
@@ -77,14 +75,12 @@ export async function submitStudentData(data: Partial<StudentFormData>, studentI
     let finalData: Siswa;
 
     if (existingStudentIndex !== -1) {
-      // Update existing student
-      const updatedData = { ...allStudents[existingStudentIndex], ...parsedData };
-      const completionResult = completeStudentFormSchema.safeParse(updatedData);
+      const mergedData = merge({}, allStudents[existingStudentIndex], parsedData);
+      const completionResult = completeStudentFormSchema.safeParse(mergedData);
       const status = isDraft ? 'Belum Lengkap' : (completionResult.success ? 'Lengkap' : 'Belum Lengkap');
-      finalData = { ...updatedData, id, status };
+      finalData = { ...mergedData, id, status };
       allStudents[existingStudentIndex] = finalData;
     } else {
-      // Create new student
       const completionResult = completeStudentFormSchema.safeParse(parsedData);
       const status = isDraft ? 'Belum Lengkap' : (completionResult.success ? 'Lengkap' : 'Belum Lengkap');
       finalData = { ...(parsedData as StudentFormData), id, status };
@@ -93,7 +89,7 @@ export async function submitStudentData(data: Partial<StudentFormData>, studentI
     
     let message: string;
     if (isDraft) {
-        message = `Draf untuk ${finalData.siswa_namaLengkap} berhasil disimpan.`;
+        message = `Draf untuk ${finalData.siswa_namaLengkap || 'siswa baru'} berhasil disimpan.`;
     } else {
         message = studentId ? `Data siswa ${finalData.siswa_namaLengkap} berhasil diperbarui!` : `Data siswa ${finalData.siswa_namaLengkap} berhasil disimpan!`;
         logActivity(message);
@@ -103,10 +99,11 @@ export async function submitStudentData(data: Partial<StudentFormData>, studentI
 
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error("Zod Validation Error in submitStudentData:", error.flatten().fieldErrors);
       return { success: false, message: 'Data tidak valid. Periksa kembali isian Anda.', errors: error.flatten().fieldErrors };
     }
     console.error('Student submission error:', error);
-    return { success: false, message: 'Gagal menyimpan data siswa.' };
+    return { success: false, message: 'Gagal menyimpan data siswa karena kesalahan server.' };
   }
 }
 
@@ -138,7 +135,6 @@ export async function submitPegawaiData(data: Partial<PegawaiFormData>, pegawaiI
         const schemaToUse = isDraft ? pegawaiFormSchema.deepPartial() : pegawaiFormSchema;
         const parsedData = schemaToUse.parse(data);
 
-        // Check for duplicates
         if (parsedData.pegawai_nip) {
             const existingPegawai = allPegawai.find(p => p.pegawai_nip === parsedData.pegawai_nip);
             if (existingPegawai && existingPegawai.id !== pegawaiId) {
@@ -158,14 +154,12 @@ export async function submitPegawaiData(data: Partial<PegawaiFormData>, pegawaiI
         let finalData: Pegawai;
 
         if (existingPegawaiIndex !== -1) {
-            // Update existing record
-            const updatedData = { ...allPegawai[existingPegawaiIndex], ...parsedData };
-            const completionResult = completePegawaiFormSchema.safeParse(updatedData);
+            const mergedData = merge({}, allPegawai[existingPegawaiIndex], parsedData);
+            const completionResult = completePegawaiFormSchema.safeParse(mergedData);
             const status = isDraft ? 'Belum Lengkap' : (completionResult.success ? 'Lengkap' : 'Belum Lengkap');
-            finalData = { ...updatedData, id, status };
+            finalData = { ...mergedData, id, status };
             allPegawai[existingPegawaiIndex] = finalData;
         } else {
-            // Create new record
             const completionResult = completePegawaiFormSchema.safeParse(parsedData);
             const status = isDraft ? 'Belum Lengkap' : (completionResult.success ? 'Lengkap' : 'Belum Lengkap');
             finalData = { ...(parsedData as PegawaiFormData), id, status };
@@ -174,7 +168,7 @@ export async function submitPegawaiData(data: Partial<PegawaiFormData>, pegawaiI
 
         let message: string;
         if (isDraft) {
-            message = `Draf untuk ${finalData.pegawai_nama} berhasil disimpan.`;
+            message = `Draf untuk ${finalData.pegawai_nama || 'pegawai baru'} berhasil disimpan.`;
         } else {
             message = pegawaiId ? `Data pegawai ${finalData.pegawai_nama} berhasil diperbarui!` : `Data pegawai ${finalData.pegawai_nama} berhasil disimpan!`;
             logActivity(message);
@@ -184,7 +178,7 @@ export async function submitPegawaiData(data: Partial<PegawaiFormData>, pegawaiI
 
     } catch (error) {
       if (error instanceof z.ZodError) {
-        console.error("Zod Validation Error:", error.flatten().fieldErrors);
+        console.error("Zod Validation Error in submitPegawaiData:", error.flatten().fieldErrors);
         const errorMessages = Object.entries(error.flatten().fieldErrors).map(([field, errors]) => `${field}: ${errors.join(', ')}`).join('; ');
         return { success: false, message: `Data tidak valid. Kesalahan: ${errorMessages}`, errors: error.flatten().fieldErrors };
       }
