@@ -3,7 +3,6 @@
 
 import { useState, useTransition, useEffect, useMemo } from 'react';
 import { useForm, FormProvider, useFormContext, useFieldArray, FieldErrors, FieldPath } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { pegawaiFormSchema, PegawaiFormData } from '@/lib/pegawai-schema';
 import { FormStepper } from './form-stepper';
 import { Button } from '@/components/ui/button';
@@ -25,7 +24,6 @@ import Image from 'next/image';
 import { Separator } from './ui/separator';
 import { getKabupatens, getKecamatans, getDesas, Wilayah, getProvinces } from '@/lib/wilayah';
 import { Combobox } from './ui/combobox';
-import { logActivity } from '@/lib/activity-log';
 
 const steps = [
   { id: 1, title: 'Identitas Pegawai', fields: [
@@ -107,7 +105,7 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
   const router = useRouter();
 
   const methods = useForm<PegawaiFormData>({
-    // resolver: zodResolver(pegawaiFormSchema), // REMOVING ZOD RESOLVER
+    // resolver: zodResolver(pegawaiFormSchema), // Zod resolver removed
     mode: 'onBlur', 
     defaultValues: pegawaiData ? pegawaiData : initialFormValues,
   });
@@ -115,7 +113,7 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
   const { handleSubmit, trigger, formState: { errors } } = methods;
   
   const handleNext = async () => {
-    // We only trigger validation visually, not for blocking progress.
+    // Visually trigger validation for current step's fields without blocking
     const fieldsToValidate = steps.find(s => s.id === currentStep)?.fields as FieldPath<PegawaiFormData>[] | undefined;
     await trigger(fieldsToValidate); 
 
@@ -151,21 +149,13 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
     });
   };
 
-  const onInvalid = (errors: FieldErrors<PegawaiFormData>) => {
-    let errorMessages = Object.keys(errors);
-    toast({
-        title: 'Gagal Menyimpan: Data Tidak Valid',
-        description: `Silakan periksa kolom berikut: ${errorMessages.join(', ')}.`,
-        variant: 'destructive',
-    });
-  };
 
   return (
     <FormProvider {...methods}>
       <div className="mt-12">
         <FormStepper steps={steps} currentStep={currentStep} />
       </div>
-      <form onSubmit={handleSubmit(processFinalSubmit, onInvalid)}>
+      <form onSubmit={handleSubmit(processFinalSubmit)}>
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>{steps[currentStep - 1].title}</CardTitle>

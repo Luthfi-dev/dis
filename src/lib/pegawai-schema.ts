@@ -3,29 +3,24 @@
 
 import { z } from 'zod';
 
-// Skema yang paling sederhana untuk memastikan tidak ada lagi konflik tipe data.
-// Semua kolom kecuali yang paling dasar dibuat `z.any()` untuk melewati validasi tipe.
+// This is the simplest possible schema to avoid validation conflicts.
+// Only the most basic fields have minimal checks. Everything else is `any`.
 const fileSchema = z.object({
   fileName: z.string(),
   fileURL: z.string().url(),
 }).optional();
 
-const multiFileSchema = z.array(z.object({
-    fileName: z.string(),
-    fileURL: z.string().url(),
-})).optional();
-
 export const pegawaiFormSchema = z.object({
-  // --- Kolom Wajib dengan Validasi Minimal ---
+  // --- Required fields with minimal validation ---
   pegawai_nama: z.string().min(1, "Nama lengkap wajib diisi."),
-  pegawai_jenisKelamin: z.enum(['Laki-laki', 'Perempuan'], { required_error: "Jenis kelamin wajib dipilih." }),
+  pegawai_jenisKelamin: z.string().min(1, "Jenis kelamin wajib dipilih."),
   pegawai_tempatLahir: z.string().min(1, "Tempat lahir wajib diisi."),
   pegawai_tanggalLahir: z.string().min(1, 'Tanggal lahir wajib diisi.'),
-  pegawai_statusPerkawinan: z.enum(['Belum Kawin', 'Kawin', 'Cerai Hidup', 'Cerai Mati'], { required_error: "Status perkawinan wajib dipilih." }),
+  pegawai_statusPerkawinan: z.string().min(1, "Status perkawinan wajib dipilih."),
   pegawai_jabatan: z.string().min(1, "Jabatan wajib dipilih."),
   pegawai_terhitungMulaiTanggal: z.string().min(1, 'TMT wajib diisi.'),
 
-  // --- Semua kolom lain dibuat `z.any().optional()` untuk menghindari error validasi tipe ---
+  // --- All other fields are optional and accept any type to prevent validation errors ---
   pegawai_phaspoto: z.any().optional(),
   pegawai_nip: z.any().optional(),
   pegawai_nuptk: z.any().optional(),
@@ -69,8 +64,7 @@ export const pegawaiFormSchema = z.object({
 
 export type PegawaiFormData = z.infer<typeof pegawaiFormSchema>;
 
-// Skema untuk status "Lengkap" tetap menggunakan validasi yang lebih ketat,
-// tapi tidak akan memblokir penyimpanan.
+// This schema is for checking "Lengkap" status. It's not used for blocking saves.
 export const completePegawaiFormSchema = pegawaiFormSchema.extend({
     pegawai_nip: z.string().min(1, 'NIP wajib diisi untuk status Lengkap.'),
     pegawai_nuptk: z.string().min(1, 'NUPTK wajib diisi untuk status Lengkap.'),
