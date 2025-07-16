@@ -83,22 +83,26 @@ export type PegawaiFormData = z.infer<typeof pegawaiFormSchema>;
 // Schema for checking completion status
 export const completePegawaiFormSchema = pegawai_IdentitasSchema.merge(
   z.object({
-    pegawai_pendidikanSD: z.object({ tamatTahun: z.string().min(1), ijazah: requiredFileSchema }),
-    pegawai_pendidikanSMP: z.object({ tamatTahun: z.string().min(1), ijazah: requiredFileSchema }),
-    pegawai_pendidikanSMA: z.object({ tamatTahun: z.string().min(1), ijazah: requiredFileSchema }),
-    pegawai_pendidikanDiploma: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema.optional() }),
-    pegawai_pendidikanS1: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema.optional() }),
-    pegawai_pendidikanS2: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema.optional() }),
+    // All education levels now require tamatTahun and ijazah for completion.
+    // Making them stricter.
+    pegawai_pendidikanSD: z.object({ tamatTahun: z.string().min(1, 'Tahun tamat SD wajib diisi'), ijazah: requiredFileSchema }),
+    pegawai_pendidikanSMP: z.object({ tamatTahun: z.string().min(1, 'Tahun tamat SMP wajib diisi'), ijazah: requiredFileSchema }),
+    pegawai_pendidikanSMA: z.object({ tamatTahun: z.string().min(1, 'Tahun tamat SMA wajib diisi'), ijazah: requiredFileSchema }),
+    // Diploma, S1, S2 remain optional for completion.
+    pegawai_pendidikanDiploma: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema.optional() }).optional(),
+    pegawai_pendidikanS1: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema.optional() }).optional(),
+    pegawai_pendidikanS2: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema.optional() }).optional(),
   })
 ).merge(
   z.object({
-    pegawai_skPengangkatan: z.array(requiredFileSchema).min(1),
+    // All files are required for completion.
+    pegawai_skPengangkatan: z.array(requiredFileSchema).min(1, "SK Pengangkatan wajib diunggah"),
     pegawai_skNipBaru: requiredFileSchema,
-    pegawai_skFungsional: z.array(requiredFileSchema).min(1),
+    pegawai_skFungsional: z.array(requiredFileSchema).min(1, "SK Fungsional wajib diunggah"),
     pegawai_beritaAcaraSumpah: requiredFileSchema,
     pegawai_sertifikatPendidik: requiredFileSchema,
-    pegawai_sertifikatPelatihan: z.array(requiredFileSchema).min(1),
-    pegawai_skp: z.array(requiredFileSchema).min(1),
+    pegawai_sertifikatPelatihan: z.array(requiredFileSchema).min(1, "Sertifikat Pelatihan wajib diunggah"),
+    pegawai_skp: z.array(requiredFileSchema).min(1, "SKP wajib diunggah"),
     pegawai_karpeg: requiredFileSchema,
     pegawai_karisKarsu: requiredFileSchema,
     pegawai_bukuNikah: requiredFileSchema,

@@ -119,16 +119,13 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
   const handleNext = async () => {
     const currentStepConfig = steps[currentStep - 1];
     let isValid = true;
-
+  
     if (currentStepConfig.schema) {
-      const fieldsToValidate = Object.keys(currentStepConfig.schema.shape).filter(field => get(formState.dirtyFields, field));
-      if (fieldsToValidate.length > 0) {
-        isValid = await trigger(fieldsToValidate as any, { shouldFocus: true });
-      }
+      isValid = await trigger(Object.keys(currentStepConfig.schema.shape) as any, { shouldFocus: true });
     }
-    
+  
     if (isValid && currentStep < steps.length) {
-      setCurrentStep(prev => prev + 1);
+      setCurrentStep((prev) => prev + 1);
     }
   };
 
@@ -254,7 +251,7 @@ function DataIdentitasPegawaiForm() {
     if (file) {
       try {
         const fileURL = await uploadFile(file);
-        setValue(fieldName as any, { fileName: file.name, fileURL: fileURL });
+        setValue(fieldName as any, { fileName: file.name, fileURL: fileURL }, { shouldValidate: true });
         setPreview(fileURL);
       } catch (error) {
         toast({ title: 'Upload Gagal', description: 'Gagal mengunggah file.', variant: 'destructive' });
