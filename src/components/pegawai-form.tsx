@@ -2,8 +2,7 @@
 'use client';
 
 import { useState, useTransition, useEffect, useMemo } from 'react';
-import { useForm, FormProvider, useFormContext, useFieldArray, FieldErrors, FieldPath } from 'react-hook-form';
-import { pegawaiFormSchema, PegawaiFormData } from '@/lib/pegawai-schema';
+import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { FormStepper } from './form-stepper';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -19,22 +18,16 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { submitPegawaiData } from '@/lib/actions';
 import { useRouter, useSearchParams } from 'next/navigation';
-import type { Pegawai } from '@/lib/pegawai-data';
+import type { Pegawai, PegawaiFormData } from '@/lib/pegawai-data';
 import Image from 'next/image';
 import { Separator } from './ui/separator';
 import { getKabupatens, getKecamatans, getDesas, Wilayah, getProvinces } from '@/lib/wilayah';
 import { Combobox } from './ui/combobox';
-import { logActivity } from '@/lib/activity-log';
-import { get } from 'react-hook-form';
-
 
 const steps = [
-  { id: 1, title: 'Identitas Pegawai', fields: [
-      'pegawai_nama', 'pegawai_jenisKelamin', 'pegawai_tempatLahir', 'pegawai_tanggalLahir',
-      'pegawai_statusPerkawinan', 'pegawai_jabatan', 'pegawai_terhitungMulaiTanggal'
-  ] },
-  { id: 2, title: 'File Pegawai', fields: [] },
-  { id: 3, title: 'Validasi', fields: [] },
+  { id: 1, title: 'Identitas Pegawai' },
+  { id: 2, title: 'File Pegawai' },
+  { id: 3, title: 'Validasi' },
 ];
 
 const initialFormValues: PegawaiFormData = {
@@ -112,7 +105,7 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
     defaultValues: pegawaiData ? pegawaiData : initialFormValues,
   });
 
-  const { handleSubmit, trigger, formState: { errors } } = methods;
+  const { handleSubmit } = methods;
   
   const handleNext = async () => {
     if (currentStep < steps.length) {
@@ -135,7 +128,6 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
                 title: 'Sukses!',
                 description: result.message,
             });
-            logActivity(result.message || (pegawaiData?.id ? 'Data pegawai diperbarui' : 'Pegawai baru ditambahkan'));
             router.push('/pegawai');
             router.refresh();
         } else {
@@ -250,7 +242,7 @@ function DataIdentitasPegawaiForm() {
     }
   };
 
-  const handlePendidikanFileChange = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof Pick<PegawaiFormData, 'pegawai_pendidikanSD' | 'pegawai_pendidikanSMP' | 'pegawai_pendidikanSMA' | 'pegawai_pendidikanDiploma' | 'pegawai_pendidikanS1' | 'pegawai_pendidikanS2'>) => {
+  const handlePendidikanFileChange = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: any) => {
     const file = e.target.files?.[0];
     if (file) {
       try {
@@ -596,7 +588,7 @@ function DataIdentitasPegawaiForm() {
   );
 }
 
-function SingleFileUpload({ name, label }: { name: keyof PegawaiFormData, label: string }) {
+function SingleFileUpload({ name, label }: { name: any, label: string }) {
     const { control, watch, setValue } = useFormContext<PegawaiFormData>();
     const { toast } = useToast();
     const watchedFile = watch(name as any);
@@ -652,7 +644,7 @@ function SingleFileUpload({ name, label }: { name: keyof PegawaiFormData, label:
     );
 }
 
-function MultiFileUpload({ name, label }: { name: keyof Pick<PegawaiFormData, 'pegawai_skPengangkatan' | 'pegawai_skFungsional' | 'pegawai_sertifikatPelatihan' | 'pegawai_skp'>, label: string }) {
+function MultiFileUpload({ name, label }: { name: any, label: string }) {
     const { control, getValues, setValue } = useFormContext<PegawaiFormData>();
     const { toast } = useToast();
     const { fields, append, remove } = useFieldArray({

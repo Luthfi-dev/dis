@@ -2,11 +2,10 @@
 'use server';
 
 import { studentFormSchema, completeStudentFormSchema, StudentFormData } from '@/lib/schema';
-import { pegawaiFormSchema, completePegawaiFormSchema, PegawaiFormData } from '@/lib/pegawai-schema';
-import { z } from 'zod';
 import type { Siswa } from './data';
 import type { Pegawai } from './pegawai-data';
 import { mergeDeep } from './utils';
+import type { PegawaiFormData } from '@/lib/pegawai-data';
 
 // --- Server-side Storage Simulation ---
 if (typeof global.students === 'undefined') {
@@ -103,65 +102,15 @@ export async function deletePegawai(id: string): Promise<{ success: boolean; mes
 }
 
 export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: string) {
-    // SMOKE TEST: Ignore incoming data and try to validate a "perfect" hardcoded object.
-    const perfectData: PegawaiFormData = {
-        pegawai_nama: 'Pegawai Tes Sukses',
-        pegawai_jenisKelamin: 'Laki-laki',
-        pegawai_tempatLahir: 'Jakarta',
-        pegawai_tanggalLahir: '1990-01-01',
-        pegawai_statusPerkawinan: 'Kawin',
-        pegawai_jabatan: 'Guru Mata Pelajaran',
-        pegawai_terhitungMulaiTanggal: '2020-01-01',
-        pegawai_phaspoto: undefined,
-        pegawai_nip: '123456789012345678',
-        pegawai_nuptk: '1234567890123456',
-        pegawai_nrg: '0987654321',
-        pegawai_tanggalPerkawinan: '2015-01-01',
-        pegawai_namaPasangan: 'Pasangan Tes',
-        pegawai_jumlahAnak: 2,
-        pegawai_bidangStudi: 'Fisika',
-        pegawai_tugasTambahan: 'Kepala LAB',
-        pegawai_alamatDusun: 'Dusun ABC',
-        pegawai_alamatDesa: '3273011001',
-        pegawai_alamatKecamatan: '327301',
-        pegawai_alamatKabupaten: '3273',
-        pegawai_pendidikanSD: { tamatTahun: '2002' },
-        pegawai_pendidikanSMP: { tamatTahun: '2005' },
-        pegawai_pendidikanSMA: { tamatTahun: '2008' },
-        pegawai_pendidikanS1: { tamatTahun: '2012' },
-        pegawai_skPengangkatan: [],
-        pegawai_skFungsional: [],
-        pegawai_sertifikatPelatihan: [],
-        pegawai_skp: [],
-    };
-
     try {
-        console.log('--- STARTING SMOKE TEST ---');
-        const validationResult = pegawaiFormSchema.safeParse(perfectData);
-
-        if (!validationResult.success) {
-            const flatErrors = validationResult.error.flatten();
-            const errorMessages = Object.entries(flatErrors.fieldErrors)
-                .map(([key, value]) => `${key}: ${value.join(', ')}`)
-                .join('; ');
-
-            console.error("SMOKE TEST FAILED:", JSON.stringify(validationResult.error, null, 2));
-            return {
-                success: false,
-                message: `Tes validasi gagal: ${errorMessages || 'Error tidak diketahui'}`
-            };
-        }
-
-        console.log('--- SMOKE TEST VALIDATION PASSED ---');
+        // No more Zod validation on the server for pegawai. Just save the data.
+        const id = pegawaiId || crypto.randomUUID();
         
-        const validatedData = validationResult.data;
-        const id = pegawaiId || 'smoke-test-pegawai';
-
-        const isComplete = completePegawaiFormSchema.safeParse(validatedData).success;
-        const status = isComplete ? 'Lengkap' : 'Belum Lengkap';
+        // A very simple check for completeness. We can make this more robust later.
+        const status = data.pegawai_nama && data.pegawai_nip ? 'Lengkap' : 'Belum Lengkap';
         
         const existingData = await getPegawaiById(id);
-        const finalData: Pegawai = mergeDeep(existingData || {}, { ...validatedData, id, status });
+        const finalData: Pegawai = mergeDeep(existingData || {}, { ...data, id, status });
         
         const existingPegawaiIndex = allPegawai.findIndex(p => p.id === id);
 
@@ -171,11 +120,11 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
             allPegawai.push(finalData);
         }
 
-        const message = "Tes Asap Berhasil! Data dummy berhasil disimpan.";
+        const message = pegawaiId ? `Data pegawai ${finalData.pegawai_nama} berhasil diperbarui!` : `Data pegawai ${finalData.pegawai_nama} berhasil disimpan!`;
 
         return { success: true, message, pegawai: finalData };
     } catch (error: any) {
-        console.error("SMOKE TEST CAUGHT UNEXPECTED ERROR:", error);
-        return { success: false, message: `Tes validasi mengalami kesalahan tak terduga: ${error.message}` };
+        console.error("Pegawai submission server error:", error);
+        return { success: false, message: `Gagal menyimpan data pegawai karena kesalahan server: ${error.message}` };
     }
 }
