@@ -8,7 +8,7 @@ import { z } from 'zod';
 import type { Siswa } from './data';
 import type { Pegawai } from './pegawai-data';
 import { logActivity } from './activity-log';
-import { merge } from 'lodash';
+import merge from 'lodash/merge';
 
 // --- Server-side Storage Simulation ---
 if (typeof global.students === 'undefined') {
@@ -100,7 +100,8 @@ export async function submitStudentData(data: Partial<StudentFormData>, studentI
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error("Zod Validation Error in submitStudentData:", error.flatten().fieldErrors);
-      return { success: false, message: 'Data tidak valid. Periksa kembali isian Anda.', errors: error.flatten().fieldErrors };
+      const errorMessages = Object.entries(error.flatten().fieldErrors).map(([field, errors]) => `${field}: ${errors.join(', ')}`).join('; ');
+      return { success: false, message: `Data tidak valid. Kesalahan: ${errorMessages}`, errors: error.flatten().fieldErrors };
     }
     console.error('Student submission server error:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
@@ -188,3 +189,4 @@ export async function submitPegawaiData(data: Partial<PegawaiFormData>, pegawaiI
       return { success: false, message: `Gagal menyimpan data draf karena kesalahan server: ${errorMessage}` };
     }
   }
+
