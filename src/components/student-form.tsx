@@ -168,7 +168,9 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
                 title: 'Sukses!',
                 description: result.message,
             });
-            logActivity(result.message || (studentData?.id ? 'Data siswa diperbarui' : 'Siswa baru ditambahkan'));
+            if (result.message) {
+              logActivity(result.message);
+            }
             router.push('/siswa');
             router.refresh();
         } else {
@@ -595,7 +597,7 @@ function DataOrangTuaForm() {
                     <FormItem><FormLabel>Alamat Orang Tua/Wali</FormLabel><FormControl><Textarea placeholder="Alamat lengkap orang tua/wali" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={control} name="siswa_teleponOrangTua" render={({ field }) => (
-                    <FormItem><FormLabel>Telepon Orang Tua/Wali</FormLabel><FormControl><Input placeholder="Nomor telepon" {...field} /></FormControl><FormMessage /></FormMessage>
+                    <FormItem><FormLabel>Telepon Orang Tua/Wali</FormLabel><FormControl><Input placeholder="Nomor telepon" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
              </Grid>
         </div>
