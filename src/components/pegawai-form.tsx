@@ -94,7 +94,7 @@ async function uploadFile(file: File) {
 }
 
 
-export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & { id: string, pegawai_tanggalLahir?: string | Date, pegawai_tanggalPerkawinan?: string | Date, pegawai_terhitungMulaiTanggal?: string | Date } }) {
+export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & { id: string } }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, startTransition] = useTransition();
   const { toast } = useToast();
@@ -114,7 +114,7 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
       : initialFormValues,
   });
 
-  const { trigger, handleSubmit } = methods;
+  const { trigger, handleSubmit, getValues } = methods;
 
   const handleNext = async () => {
     const currentStepConfig = steps[currentStep - 1];
@@ -137,25 +137,48 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
   const processForm = (data: PegawaiFormData) => {
     startTransition(async () => {
         try {
-            const submissionResult = await submitPegawaiData(data, pegawaiData?.id);
-            if (submissionResult.success) {
-                toast({
-                    title: 'Sukses!',
-                    description: submissionResult.message,
-                });
-                router.push('/pegawai');
-                router.refresh();
-            } else {
-                 toast({
-                    title: 'Error Validasi',
-                    description: submissionResult.message,
-                    variant: 'destructive',
-                });
+            const result = completePegawaiFormSchema.safeParse(data);
+            const status = result.success ? 'Lengkap' : 'Belum Lengkap';
+            const finalData = { ...data, status };
+
+            let existingPegawai: Pegawai[] = JSON.parse(localStorage.getItem('pegawaiData') || '[]');
+            
+            if (pegawaiData?.id) { // Editing existing pegawai
+                // Check for NIP/NUPTK duplication, excluding the current pegawai
+                if (finalData.pegawai_nip && existingPegawai.some(p => p.pegawai_nip === finalData.pegawai_nip && p.id !== pegawaiData.id)) {
+                    toast({ title: "Error", description: "NIP sudah digunakan oleh pegawai lain.", variant: "destructive" });
+                    return;
+                }
+                if (finalData.pegawai_nuptk && existingPegawai.some(p => p.pegawai_nuptk === finalData.pegawai_nuptk && p.id !== pegawaiData.id)) {
+                    toast({ title: "Error", description: "NUPTK sudah digunakan oleh pegawai lain.", variant: "destructive" });
+                    return;
+                }
+                existingPegawai = existingPegawai.map(p => p.id === pegawaiData.id ? { ...p, ...finalData } : p);
+                logActivity(`Data pegawai ${finalData.pegawai_nama} berhasil diperbarui.`);
+                toast({ title: 'Sukses!', description: "Data pegawai berhasil diperbarui." });
+            } else { // Adding new pegawai
+                if (finalData.pegawai_nip && existingPegawai.some(p => p.pegawai_nip === finalData.pegawai_nip)) {
+                    toast({ title: "Error", description: "NIP sudah digunakan.", variant: "destructive" });
+                    return;
+                }
+                if (finalData.pegawai_nuptk && existingPegawai.some(p => p.pegawai_nuptk === finalData.pegawai_nuptk)) {
+                    toast({ title: "Error", description: "NUPTK sudah digunakan.", variant: "destructive" });
+                    return;
+                }
+                const newPegawai: Pegawai = { ...finalData, id: crypto.randomUUID() };
+                existingPegawai.push(newPegawai);
+                logActivity(`Data pegawai baru ${finalData.pegawai_nama} berhasil ditambahkan.`);
+                toast({ title: 'Sukses!', description: "Data pegawai berhasil ditambahkan." });
             }
+            
+            localStorage.setItem('pegawaiData', JSON.stringify(existingPegawai));
+            router.push('/pegawai');
+            router.refresh();
+
         } catch (error) {
              toast({
                 title: 'Error',
-                description: 'Terjadi kesalahan tak terduga.',
+                description: 'Terjadi kesalahan tak terduga saat menyimpan data.',
                 variant: 'destructive',
             });
         }
@@ -213,6 +236,7 @@ function FormLabelRequired({ children }: { children: React.ReactNode }) {
 function DataIdentitasPegawaiForm() {
   const { control, watch, setValue, getValues } = useFormContext<PegawaiFormData>();
   const [preview, setPreview] = useState<string | null>(getValues('pegawai_phaspoto.fileURL') || null);
+  const { toast } = useToast();
   
   useEffect(() => {
     const fileURL = getValues('pegawai_phaspoto.fileURL');
@@ -348,11 +372,11 @@ function DataIdentitasPegawaiForm() {
             <FormItem className="flex flex-col"><FormLabelRequired>Tanggal Lahir</FormLabelRequired><Popover>
             <PopoverTrigger asChild><FormControl>
                 <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                {field.value ? format(field.value, "PPP") : <span>Pilih tanggal</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                {field.value ? format(new Date(field.value), "PPP") : <span>Pilih tanggal</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                 </Button>
             </FormControl></PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
+                <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
             </PopoverContent>
             </Popover><FormMessage /></FormItem>
         )} />
@@ -380,11 +404,11 @@ function DataIdentitasPegawaiForm() {
             <FormItem className="flex flex-col"><FormLabel>Tanggal Perkawinan</FormLabel><Popover>
             <PopoverTrigger asChild><FormControl>
                 <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                {field.value ? format(field.value, "PPP") : <span>Pilih tanggal</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                {field.value ? format(new Date(field.value), "PPP") : <span>Pilih tanggal</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                 </Button>
             </FormControl></PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date()} initialFocus />
+                <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} disabled={(date) => date > new Date()} initialFocus />
             </PopoverContent>
             </Popover><FormMessage /></FormItem>
         )} />
@@ -432,11 +456,11 @@ function DataIdentitasPegawaiForm() {
             <FormItem className="flex flex-col"><FormLabelRequired>Terhitung Mulai Tanggal</FormLabelRequired><Popover>
             <PopoverTrigger asChild><FormControl>
                 <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                {field.value ? format(field.value, "PPP") : <span>Pilih tanggal</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                {field.value ? format(new Date(field.value), "PPP") : <span>Pilih tanggal</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                 </Button>
             </FormControl></PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date > new Date()} initialFocus />
+                <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} disabled={(date) => date > new Date()} initialFocus />
             </PopoverContent>
             </Popover><FormMessage /></FormItem>
         )} />
@@ -766,3 +790,5 @@ function DataValidasiForm() {
     </div>
   )
 }
+
+    
