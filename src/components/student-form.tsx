@@ -49,7 +49,7 @@ const initialFormValues: StudentFormData = {
   siswa_tanggalLahir: undefined,
   siswa_agama: undefined,
   siswa_kewarganegaraan: undefined,
-  siswa_jumlahSaudara: 0,
+  siswa_jumlahSaudara: undefined,
   siswa_bahasa: '',
   siswa_golonganDarah: undefined,
   siswa_telepon: '',
@@ -424,13 +424,13 @@ function DataSiswaForm() {
             </Select><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="siswa_jumlahSaudara" render={({ field }) => (
-            <FormItem><FormLabelRequired>Jumlah Saudara</FormLabelRequired><FormControl><Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Jumlah Saudara</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="siswa_bahasa" render={({ field }) => (
-            <FormItem><FormLabelRequired>Bahasa Sehari-hari</FormLabelRequired><FormControl><Input placeholder="Contoh: Indonesia" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Bahasa Sehari-hari</FormLabel><FormControl><Input placeholder="Contoh: Indonesia" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="siswa_golonganDarah" render={({ field }) => (
-        <FormItem><FormLabelRequired>Golongan Darah</FormLabelRequired><Select onValueChange={field.onChange} value={field.value}>
+        <FormItem><FormLabel>Golongan Darah</FormLabel><Select onValueChange={field.onChange} value={field.value}>
           <FormControl><SelectTrigger><SelectValue placeholder="Pilih Gol. Darah" /></SelectTrigger></FormControl>
           <SelectContent><SelectItem value="A">A</SelectItem><SelectItem value="B">B</SelectItem><SelectItem value="AB">AB</SelectItem><SelectItem value="O">O</SelectItem></SelectContent>
         </Select><FormMessage /></FormItem>
@@ -625,10 +625,10 @@ function DataRincianKesehatanForm() {
             </p>
             <Grid>
                 <FormField control={control} name="siswa_tinggiBadan" render={({ field }) => (
-                    <FormItem><FormLabel>Tinggi Badan (cm)</FormLabel><FormControl><Input type="number" placeholder="Contoh: 160" {...field} value={field.value || ''} onChange={e => field.onChange(parseInt(e.target.value) || undefined)} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Tinggi Badan (cm)</FormLabel><FormControl><Input type="number" placeholder="Contoh: 160" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={control} name="siswa_beratBadan" render={({ field }) => (
-                    <FormItem><FormLabel>Berat Badan (kg)</FormLabel><FormControl><Input type="number" placeholder="Contoh: 50" {...field} value={field.value || ''} onChange={e => field.onChange(parseInt(e.target.value) || undefined)}/></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Berat Badan (kg)</FormLabel><FormControl><Input type="number" placeholder="Contoh: 50" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))}/></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={control} name="siswa_penyakit" render={({ field }) => (
                     <FormItem className="md:col-span-2"><FormLabel>Riwayat Penyakit</FormLabel><FormControl><Textarea placeholder="Jelaskan riwayat penyakit yang pernah diderita" {...field} /></FormControl><FormMessage /></FormItem>

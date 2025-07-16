@@ -13,8 +13,8 @@ const requiredFileSchema = z.object({
   fileURL: z.string().url('URL tidak valid'),
 });
 
-// Base schema object without transformation
-export const baseStudentSchema = z.object({
+// Skema utama yang digunakan oleh form resolver.
+export const studentFormSchema = z.object({
   siswa_fotoProfil: fileSchema,
   siswa_namaLengkap: z.string().min(1, "Nama lengkap wajib diisi."),
   siswa_nis: z.string().min(1, "Nomor Induk Sekolah wajib diisi."),
@@ -24,14 +24,10 @@ export const baseStudentSchema = z.object({
   siswa_tanggalLahir: z.date({ required_error: "Tanggal lahir wajib diisi." }),
   siswa_agama: z.enum(['Islam', 'Kristen', 'Hindu', 'Budha'], { required_error: "Agama wajib dipilih." }),
   siswa_kewarganegaraan: z.enum(['WNI', 'WNA'], { required_error: "Kewarganegaraan wajib dipilih." }),
-  siswa_jumlahSaudara: z.preprocess(
-    (val) => (val === '' || val === null || val === undefined ? undefined : Number(val)),
-    z.coerce.number().int().nonnegative("Jumlah saudara tidak boleh negatif.").optional()
-  ),
-  siswa_bahasa: z.string().min(1, "Bahasa sehari-hari wajib diisi."),
-  siswa_golonganDarah: z.enum(['A', 'B', 'AB', 'O'], { required_error: "Golongan darah wajib dipilih." }),
+  siswa_jumlahSaudara: z.coerce.number().int().nonnegative("Jumlah saudara tidak boleh negatif.").optional(),
+  siswa_bahasa: z.string().optional(),
+  siswa_golonganDarah: z.enum(['A', 'B', 'AB', 'O']).optional(),
   
-  // Dibuat opsional
   siswa_alamatKkProvinsi: z.string().optional(),
   siswa_alamatKkKabupaten: z.string().optional(),
   siswa_alamatKkKecamatan: z.string().optional(),
@@ -57,14 +53,8 @@ export const baseStudentSchema = z.object({
   siswa_teleponOrangTua: z.string().optional(),
 
   // Rincian (opsional)
-  siswa_tinggiBadan: z.preprocess(
-    (val) => (val === '' || val === null || val === undefined ? undefined : Number(val)),
-    z.coerce.number().optional()
-  ),
-  siswa_beratBadan: z.preprocess(
-    (val) => (val === '' || val === null || val === undefined ? undefined : Number(val)),
-    z.coerce.number().optional()
-  ),
+  siswa_tinggiBadan: z.coerce.number().optional(),
+  siswa_beratBadan: z.coerce.number().optional(),
   siswa_penyakit: z.string().optional(),
   siswa_kelainanJasmani: z.string().optional(),
 
@@ -108,12 +98,11 @@ export const baseStudentSchema = z.object({
 });
 
 
-// Skema utama yang digunakan oleh form resolver.
-export const studentFormSchema = baseStudentSchema;
-
 // Skema ketat ini HANYA digunakan di server untuk menentukan status 'Lengkap'
-export const completeStudentFormSchema = baseStudentSchema.extend({
+export const completeStudentFormSchema = studentFormSchema.extend({
     // Semua yang wajib untuk status lengkap
+    siswa_bahasa: z.string().min(1, "Bahasa sehari-hari wajib diisi."),
+    siswa_golonganDarah: z.enum(['A', 'B', 'AB', 'O'], { required_error: "Golongan darah wajib dipilih." }),
     siswa_alamatKkProvinsi: z.string().min(1, "Provinsi (KK) wajib dipilih."),
     siswa_alamatKkKabupaten: z.string().min(1, "Kabupaten (KK) wajib dipilih."),
     siswa_alamatKkKecamatan: z.string().min(1, "Kecamatan (KK) wajib dipilih."),

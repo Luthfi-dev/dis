@@ -45,7 +45,7 @@ const initialFormValues: PegawaiFormData = {
     pegawai_statusPerkawinan: undefined,
     pegawai_tanggalPerkawinan: undefined,
     pegawai_namaPasangan: '',
-    pegawai_jumlahAnak: 0,
+    pegawai_jumlahAnak: undefined,
     pegawai_jabatan: '',
     pegawai_bidangStudi: '',
     pegawai_tugasTambahan: undefined,
@@ -391,7 +391,7 @@ function DataIdentitasPegawaiForm() {
             <FormItem><FormLabel>Nama Istri / Suami</FormLabel><FormControl><Input placeholder="Nama lengkap pasangan" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="pegawai_jumlahAnak" render={({ field }) => (
-            <FormItem><FormLabel>Jumlah Anak</FormLabel><FormControl><Input type="number" placeholder="0" {...field} onChange={e => field.onChange(parseInt(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Jumlah Anak</FormLabel><FormControl><Input type="number" placeholder="0" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="pegawai_jabatan" render={({ field }) => (
             <FormItem><FormLabelRequired>Jabatan</FormLabelRequired>
