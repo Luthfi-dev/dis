@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useTransition, useEffect, useMemo } from 'react';
-import { useForm, FormProvider, useFormContext, useFieldArray, get } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext, useFieldArray, get, FieldPath } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { pegawaiFormSchema, PegawaiFormData, pegawai_IdentitasSchema, pegawai_FileSchema, completePegawaiFormSchema } from '@/lib/pegawai-schema';
 import { FormStepper } from './form-stepper';
@@ -121,15 +121,15 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
     let isValid = true;
   
     if (currentStepConfig.schema) {
-      const allOptional = Object.values(currentStepConfig.schema.shape).every(
-          (field: any) => field.isOptional()
-      );
+      const fieldsInSchema = Object.keys(currentStepConfig.schema.shape);
+      const dirtyFields = Object.keys(formState.dirtyFields);
+      
+      const fieldsToValidate = fieldsInSchema.filter(field => 
+        dirtyFields.includes(field)
+      ) as FieldPath<PegawaiFormData>[];
 
-      if (allOptional && Object.keys(formState.dirtyFields).filter(df => df.startsWith('pegawai_')).length === 0) {
-          isValid = true;
-      } else {
-        const fieldsToValidate = Object.keys(currentStepConfig.schema.shape);
-        isValid = await trigger(fieldsToValidate as any, { shouldFocus: true });
+      if (fieldsToValidate.length > 0) {
+        isValid = await trigger(fieldsToValidate, { shouldFocus: true });
       }
     }
   
@@ -260,7 +260,7 @@ function DataIdentitasPegawaiForm() {
     if (file) {
       try {
         const fileURL = await uploadFile(file);
-        setValue(fieldName as any, { fileName: file.name, fileURL: fileURL }, { shouldValidate: true });
+        setValue(fieldName as any, { fileName: file.name, fileURL: fileURL }, { shouldValidate: true, shouldDirty: true });
         setPreview(fileURL);
       } catch (error) {
         toast({ title: 'Upload Gagal', description: 'Gagal mengunggah file.', variant: 'destructive' });
@@ -274,7 +274,7 @@ function DataIdentitasPegawaiForm() {
       try {
         const fileURL = await uploadFile(file);
         const currentPendidikan = getValues(fieldName as any);
-        setValue(fieldName as any, { ...currentPendidikan, ijazah: { fileName: file.name, fileURL: fileURL } });
+        setValue(fieldName as any, { ...currentPendidikan, ijazah: { fileName: file.name, fileURL: fileURL } }, { shouldDirty: true });
       } catch (error) {
          toast({ title: 'Upload Gagal', description: 'Gagal mengunggah file.', variant: 'destructive' });
       }
@@ -612,7 +612,7 @@ function SingleFileUpload({ name, label }: { name: keyof PegawaiFormData, label:
         if (file) {
             try {
                 const fileURL = await uploadFile(file);
-                setValue(name as any, { fileName: file.name, fileURL: fileURL });
+                setValue(name as any, { fileName: file.name, fileURL: fileURL }, { shouldDirty: true });
             } catch (error) {
                  toast({ title: 'Upload Gagal', description: 'Gagal mengunggah file.', variant: 'destructive' });
             }
@@ -659,7 +659,7 @@ function SingleFileUpload({ name, label }: { name: keyof PegawaiFormData, label:
 }
 
 function MultiFileUpload({ name, label }: { name: keyof PegawaiFormData, label: string }) {
-    const { control, getValues } = useFormContext<PegawaiFormData>();
+    const { control, getValues, setValue } = useFormContext<PegawaiFormData>();
     const { toast } = useToast();
     const { fields, append, remove } = useFieldArray({
         control,
@@ -672,6 +672,7 @@ function MultiFileUpload({ name, label }: { name: keyof PegawaiFormData, label: 
             try {
                 const fileURL = await uploadFile(file);
                 append({ fileName: file.name, fileURL: fileURL });
+                setValue(name as any, getValues(name as any), { shouldDirty: true });
             } catch (error) {
                  toast({ title: 'Upload Gagal', description: 'Gagal mengunggah file.', variant: 'destructive' });
             }

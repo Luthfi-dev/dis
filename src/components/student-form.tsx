@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useTransition, useCallback, useEffect, useMemo } from 'react';
-import { useForm, FormProvider, useFormContext, get } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext, get, FieldPath } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { studentFormSchema, StudentFormData, completeStudentFormSchema, dataSiswaSchema, dataRincianSchema, dataPerkembanganSchema, dataMeninggalkanSekolahSchema, dataDokumenSchema, dataOrangTuaSchema } from '@/lib/schema';
 import { FormStepper } from './form-stepper';
@@ -152,11 +152,17 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
   const handleNext = async () => {
     const currentStepConfig = steps[currentStep - 1];
     let isValid = true;
-
+  
     if (currentStepConfig.schema) {
-      const fieldsToValidate = Object.keys(currentStepConfig.schema.shape).filter(field => get(formState.dirtyFields, field));
+      const fieldsInSchema = Object.keys(currentStepConfig.schema.shape);
+      const dirtyFields = Object.keys(formState.dirtyFields);
+      
+      const fieldsToValidate = fieldsInSchema.filter(field => 
+        dirtyFields.includes(field)
+      ) as FieldPath<StudentFormData>[];
+  
       if (fieldsToValidate.length > 0) {
-        isValid = await trigger(fieldsToValidate as any, { shouldFocus: true });
+        isValid = await trigger(fieldsToValidate, { shouldFocus: true });
       }
     }
     
@@ -331,7 +337,7 @@ function DataSiswaForm() {
     if (file) {
       try {
         const fileURL = await uploadFile(file);
-        setValue('siswa_fotoProfil', { fileName: file.name, fileURL: fileURL });
+        setValue('siswa_fotoProfil', { fileName: file.name, fileURL: fileURL }, { shouldDirty: true });
       } catch (error) {
         toast({ title: 'Upload Gagal', description: 'Gagal mengunggah file.', variant: 'destructive' });
       }
@@ -608,7 +614,7 @@ function DataOrangTuaForm() {
                     <FormItem><FormLabel>Alamat Orang Tua/Wali</FormLabel><FormControl><Textarea placeholder="Alamat lengkap orang tua/wali" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={control} name="siswa_teleponOrangTua" render={({ field }) => (
-                    <FormItem><FormLabel>Telepon Orang Tua/Wali</FormLabel><FormControl><Input placeholder="Nomor telepon" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Telepon Orang Tua/Wali</FormLabel><FormControl><Input placeholder="Nomor telepon" {...field} /></FormControl><FormMessage /></FormMessage>
                 )} />
              </Grid>
         </div>
@@ -795,7 +801,7 @@ function DocumentUploadField({ name, label }: DocumentUploadFieldProps) {
       if (file) {
         try {
           const fileURL = await uploadFile(file);
-          setValue(fieldName as any, { fileName: file.name, fileURL: fileURL });
+          setValue(fieldName as any, { fileName: file.name, fileURL: fileURL }, { shouldDirty: true });
         } catch (error) {
           toast({ title: 'Upload Gagal', description: 'Gagal mengunggah file.', variant: 'destructive' });
         }
