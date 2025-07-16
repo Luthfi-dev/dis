@@ -2,14 +2,14 @@
 'use client';
 
 import { useState, useTransition, useEffect, useMemo } from 'react';
-import { useForm, FormProvider, useFormContext } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { pegawaiFormSchema, PegawaiFormData, dataIdentitasPegawaiSchema } from '@/lib/pegawai-schema';
+import { pegawaiFormSchema, PegawaiFormData, dataIdentitasPegawaiSchema, filePegawaiSchema } from '@/lib/pegawai-schema';
 import { FormStepper } from './form-stepper';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, ArrowRight, CalendarIcon, UploadCloud, User } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, CalendarIcon, UploadCloud, User, FileCheck2, Trash2 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -28,7 +28,8 @@ import { Combobox } from './ui/combobox';
 
 const steps = [
   { id: 1, title: 'Identitas Pegawai', schema: dataIdentitasPegawaiSchema },
-  // { id: 2, title: 'Validasi' },
+  { id: 2, title: 'File Pegawai', schema: filePegawaiSchema },
+  { id: 3, title: 'Validasi' },
 ];
 
 const initialFormValues: PegawaiFormData = {
@@ -58,6 +59,23 @@ const initialFormValues: PegawaiFormData = {
     pendidikanDiploma: { tamatTahun: '', ijazah: { fileName: '' } },
     pendidikanS1: { tamatTahun: '', ijazah: { fileName: '' } },
     pendidikanS2: { tamatTahun: '', ijazah: { fileName: '' } },
+    skPengangkatan: [],
+    skNipBaru: undefined,
+    skFungsional: [],
+    beritaAcaraSumpah: undefined,
+    sertifikatPendidik: undefined,
+    sertifikatPelatihan: [],
+    skp: [],
+    karpeg: undefined,
+    karisKarsu: undefined,
+    bukuNikah: undefined,
+    kartuKeluarga: undefined,
+    ktp: undefined,
+    akteKelahiran: undefined,
+    kartuTaspen: undefined,
+    npwp: undefined,
+    kartuBpjs: undefined,
+    bukuRekening: undefined,
 };
 
 
@@ -105,13 +123,48 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
     startTransition(async () => {
         const dataWithURLs = { ...data };
 
-        // Manually create temporary file URLs for preview if new files are uploaded
-        if (data.phaspoto?.file instanceof File) {
-            dataWithURLs.phaspoto.fileURL = URL.createObjectURL(data.phaspoto.file);
-        }
-        
-        const finalData = { ...dataWithURLs, id: pegawaiData?.id, status: 'Lengkap' as const };
+        const processFile = (fileData: any) => {
+            if (fileData?.file instanceof File) {
+                fileData.fileURL = URL.createObjectURL(fileData.file);
+            }
+        };
 
+        const processMultiFile = (files: any[]) => {
+            if (Array.isArray(files)) {
+                files.forEach(fileData => processFile(fileData));
+            }
+        };
+
+        processFile(dataWithURLs.phaspoto);
+        processFile(dataWithURLs.pendidikanSD?.ijazah);
+        processFile(dataWithURLs.pendidikanSMP?.ijazah);
+        processFile(dataWithURLs.pendidikanSMA?.ijazah);
+        processFile(dataWithURLs.pendidikanDiploma?.ijazah);
+        processFile(dataWithURLs.pendidikanS1?.ijazah);
+        processFile(dataWithURLs.pendidikanS2?.ijazah);
+
+        processMultiFile(dataWithURLs.skPengangkatan);
+        processFile(dataWithURLs.skNipBaru);
+        processMultiFile(dataWithURLs.skFungsional);
+        processFile(dataWithURLs.beritaAcaraSumpah);
+        processFile(dataWithURLs.sertifikatPendidik);
+        processMultiFile(dataWithURLs.sertifikatPelatihan);
+        processMultiFile(dataWithURLs.skp);
+        processFile(dataWithURLs.karpeg);
+        processFile(dataWithURLs.karisKarsu);
+        processFile(dataWithURLs.bukuNikah);
+        processFile(dataWithURLs.kartuKeluarga);
+        processFile(dataWithURLs.ktp);
+        processFile(dataWithURLs.akteKelahiran);
+        processFile(dataWithURLs.kartuTaspen);
+        processFile(dataWithURLs.npwp);
+        processFile(dataWithURLs.kartuBpjs);
+        processFile(dataWithURLs.bukuRekening);
+
+        const result = await pegawaiFormSchema.safeParseAsync(data);
+        const status = result.success ? 'Lengkap' : 'Belum Lengkap';
+        const finalData = { ...dataWithURLs, id: pegawaiData?.id, status };
+        
         const submissionResult = await submitPegawaiData(finalData);
 
         if (submissionResult.success) {
@@ -121,15 +174,12 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
                 variant: 'default',
             });
 
-            // Update localStorage
             let existingPegawai: Pegawai[] = JSON.parse(localStorage.getItem('pegawaiData') || '[]');
             const newPegawai: Pegawai = { ...finalData, id: submissionResult.id };
 
             if (pegawaiData?.id) {
-                // Update existing
                 existingPegawai = existingPegawai.map(p => p.id === pegawaiData.id ? newPegawai : p);
             } else {
-                // Add new
                 existingPegawai.push(newPegawai);
             }
             localStorage.setItem('pegawaiData', JSON.stringify(existingPegawai));
@@ -160,6 +210,8 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
           </CardHeader>
           <CardContent>
             {currentStep === 1 && <DataIdentitasPegawaiForm />}
+            {currentStep === 2 && <FilePegawaiForm />}
+            {currentStep === 3 && <DataValidasiForm />}
           </CardContent>
         </Card>
 
@@ -537,4 +589,138 @@ function DataIdentitasPegawaiForm() {
         </div>
     </div>
   );
+}
+
+function SingleFileUpload({ name, label }: { name: keyof PegawaiFormData, label: string }) {
+    const { control, watch, setValue } = useFormContext<PegawaiFormData>();
+    const watchedFile = watch(name as any);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setValue(name as any, { fileName: file.name, file: file, fileURL: URL.createObjectURL(file) });
+        }
+    };
+
+    return (
+        <FormField
+            control={control}
+            name={name as any}
+            render={() => (
+                <FormItem>
+                    <FormLabel>{label}</FormLabel>
+                    <div className="flex items-center gap-4">
+                        <FormControl>
+                            <Button asChild variant="outline" className="w-full justify-start text-left font-normal">
+                                <label htmlFor={`file-upload-${name}`} className="cursor-pointer">
+                                    <UploadCloud className="mr-2 h-4 w-4" />
+                                    <span className="truncate">
+                                        {watchedFile?.fileName || 'Pilih file (PDF)...'}
+                                    </span>
+                                    <input
+                                        id={`file-upload-${name}`}
+                                        type="file"
+                                        accept=".pdf"
+                                        className="hidden"
+                                        onChange={handleFileChange}
+                                    />
+                                </label>
+                            </Button>
+                        </FormControl>
+                        {watchedFile?.fileName && (
+                            <div className="flex items-center gap-2 text-green-600">
+                                <FileCheck2 className="h-5 w-5" />
+                                <span className="sr-only">Terunggah</span>
+                            </div>
+                        )}
+                    </div>
+                    <FormMessage />
+                </FormItem>
+            )}
+        />
+    );
+}
+
+function MultiFileUpload({ name, label }: { name: keyof PegawaiFormData, label: string }) {
+    const { control, setValue, getValues } = useFormContext<PegawaiFormData>();
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name: name as any,
+    });
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            append({ fileName: file.name, file: file, fileURL: URL.createObjectURL(file) });
+        }
+        // Reset input value to allow uploading the same file again after removing
+        e.target.value = '';
+    };
+
+    return (
+        <div className="md:col-span-2 space-y-2">
+            <FormLabel>{label}</FormLabel>
+            <div className="space-y-3">
+                {fields.map((field, index) => (
+                    <div key={field.id} className="flex items-center gap-2 p-2 border rounded-md">
+                        <FileCheck2 className="h-5 w-5 text-green-600" />
+                        <a href={getValues(`${name as any}.${index}.fileURL`)} target="_blank" rel="noopener noreferrer" className="flex-1 text-sm truncate hover:underline">
+                            {getValues(`${name as any}.${index}.fileName`)}
+                        </a>
+                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => remove(index)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                    </div>
+                ))}
+            </div>
+            <Button asChild variant="outline" size="sm" className="mt-2">
+                <label htmlFor={`multifile-upload-${name}`} className="cursor-pointer">
+                    <UploadCloud className="mr-2 h-4 w-4" /> Tambah File
+                    <input
+                        id={`multifile-upload-${name}`}
+                        type="file"
+                        accept=".pdf"
+                        className="hidden"
+                        onChange={handleFileChange}
+                    />
+                </label>
+            </Button>
+        </div>
+    );
+}
+
+
+function FilePegawaiForm() {
+    return (
+        <div className="space-y-6">
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                <MultiFileUpload name="skPengangkatan" label="SK Pengangkatan Pegawai (dari 80% s.d Sekarang)" />
+                <SingleFileUpload name="skNipBaru" label="SK NIP Baru" />
+                <MultiFileUpload name="skFungsional" label="SK Fungsional" />
+                <SingleFileUpload name="beritaAcaraSumpah" label="Berita Acara Pengambilan Sumpah PNS" />
+                <SingleFileUpload name="sertifikatPendidik" label="Sertifikat Pendidik" />
+                <MultiFileUpload name="sertifikatPelatihan" label="Sertifikat Pelatihan" />
+                <MultiFileUpload name="skp" label="SKP" />
+                <SingleFileUpload name="karpeg" label="Karpeg" />
+                <SingleFileUpload name="karisKarsu" label="Karis/Karsu" />
+                <SingleFileUpload name="bukuNikah" label="Buku Nikah" />
+                <SingleFileUpload name="kartuKeluarga" label="Kartu Keluarga" />
+                <SingleFileUpload name="ktp" label="KTP" />
+                <SingleFileUpload name="akteKelahiran" label="Akte Kelahiran" />
+                <SingleFileUpload name="kartuTaspen" label="Kartu Peserta Taspen" />
+                <SingleFileUpload name="npwp" label="NPWP" />
+                <SingleFileUpload name="kartuBpjs" label="Kartu BPJS / ASKES" />
+                <SingleFileUpload name="bukuRekening" label="Buku Rekening Gaji" />
+            </div>
+        </div>
+    )
+}
+
+function DataValidasiForm() {
+  return (
+    <div>
+        <h3 className="text-lg font-semibold">Konfirmasi Data Pegawai</h3>
+        <p className="text-muted-foreground">Harap periksa kembali semua data yang telah diisi. Klik simpan untuk menyelesaikan.</p>
+    </div>
+  )
 }

@@ -35,6 +35,25 @@ function PendidikanRow({ level, data }: { level: string, data?: { tamatTahun?: s
     )
 }
 
+function FileRow({ label, document, isMulti = false }: { label: string, document?: any, isMulti?: boolean }) {
+    let value: React.ReactNode = "Tidak ada";
+
+    if (isMulti && Array.isArray(document) && document.length > 0) {
+        value = (
+            <ul className="list-disc list-inside space-y-1">
+                {document.map((doc, index) => (
+                    <li key={index} className="truncate">{doc.fileName}</li>
+                ))}
+            </ul>
+        );
+    } else if (!isMulti && document && document.fileName) {
+        value = document.fileName;
+    }
+
+    return <InfoRow label={label} value={value} icon={FileText} />;
+}
+
+
 export default function PreviewPegawaiPage({ params: { id } }: { params: { id: string } }) {
   const [pegawai, setPegawai] = useState<Pegawai | null>(null);
   const [loading, setLoading] = useState(true);
@@ -166,6 +185,29 @@ export default function PreviewPegawaiPage({ params: { id } }: { params: { id: s
                         <PendidikanRow level="Diploma" data={pegawai.pendidikanDiploma} />
                         <PendidikanRow level="S1" data={pegawai.pendidikanS1} />
                         <PendidikanRow level="S2" data={pegawai.pendidikanS2} />
+                    </div>
+                </section>
+
+                 <section>
+                    <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">E. File Pegawai</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                        <FileRow label="SK Pengangkatan" document={pegawai.skPengangkatan} isMulti={true} />
+                        <FileRow label="SK NIP Baru" document={pegawai.skNipBaru} />
+                        <FileRow label="SK Fungsional" document={pegawai.skFungsional} isMulti={true} />
+                        <FileRow label="Berita Acara Sumpah" document={pegawai.beritaAcaraSumpah} />
+                        <FileRow label="Sertifikat Pendidik" document={pegawai.sertifikatPendidik} />
+                        <FileRow label="Sertifikat Pelatihan" document={pegawai.sertifikatPelatihan} isMulti={true} />
+                        <FileRow label="SKP" document={pegawai.skp} isMulti={true} />
+                        <FileRow label="Karpeg" document={pegawai.karpeg} />
+                        <FileRow label="Karis/Karsu" document={pegawai.karisKarsu} />
+                        <FileRow label="Buku Nikah" document={pegawai.bukuNikah} />
+                        <FileRow label="Kartu Keluarga" document={pegawai.kartuKeluarga} />
+                        <FileRow label="KTP" document={pegawai.ktp} />
+                        <FileRow label="Akte Kelahiran" document={pegawai.akteKelahiran} />
+                        <FileRow label="Kartu Taspen" document={pegawai.kartuTaspen} />
+                        <FileRow label="NPWP" document={pegawai.npwp} />
+                        <FileRow label="Kartu BPJS" document={pegawai.kartuBpjs} />
+                        <FileRow label="Buku Rekening Gaji" document={pegawai.bukuRekening} />
                     </div>
                 </section>
             </div>

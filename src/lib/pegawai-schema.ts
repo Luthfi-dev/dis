@@ -5,10 +5,12 @@ const fileSchema = z.object({
   fileName: z.string(),
   file: z.any().optional(),
   fileURL: z.string().optional(),
-}).optional();
+});
+
+const multiFileSchema = z.array(fileSchema).optional();
 
 export const dataIdentitasPegawaiSchema = z.object({
-  phaspoto: fileSchema,
+  phaspoto: fileSchema.optional(),
   nama: z.string().min(3, "Nama lengkap minimal 3 karakter."),
   jenisKelamin: z.enum(['Laki-laki', 'Perempuan'], { required_error: "Jenis kelamin wajib dipilih." }),
   tempatLahir: z.string().min(1, "Tempat lahir wajib diisi."),
@@ -37,14 +39,35 @@ export const dataIdentitasPegawaiSchema = z.object({
   alamatDesa: z.string().min(1, "Desa wajib dipilih."),
   alamatDusun: z.string().min(1, "Dusun wajib diisi."),
   
-  pendidikanSD: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
-  pendidikanSMP: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
-  pendidikanSMA: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
-  pendidikanDiploma: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
-  pendidikanS1: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
-  pendidikanS2: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
+  pendidikanSD: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema.optional() }).optional(),
+  pendidikanSMP: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema.optional() }).optional(),
+  pendidikanSMA: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema.optional() }).optional(),
+  pendidikanDiploma: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema.optional() }).optional(),
+  pendidikanS1: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema.optional() }).optional(),
+  pendidikanS2: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema.optional() }).optional(),
 });
 
-export const pegawaiFormSchema = dataIdentitasPegawaiSchema;
+export const filePegawaiSchema = z.object({
+    skPengangkatan: multiFileSchema,
+    skNipBaru: fileSchema.optional(),
+    skFungsional: multiFileSchema,
+    beritaAcaraSumpah: fileSchema.optional(),
+    sertifikatPendidik: fileSchema.optional(),
+    sertifikatPelatihan: multiFileSchema,
+    skp: multiFileSchema,
+    karpeg: fileSchema.optional(),
+    karisKarsu: fileSchema.optional(),
+    bukuNikah: fileSchema.optional(),
+    kartuKeluarga: fileSchema.optional(),
+    ktp: fileSchema.optional(),
+    akteKelahiran: fileSchema.optional(),
+    kartuTaspen: fileSchema.optional(),
+    npwp: fileSchema.optional(),
+    kartuBpjs: fileSchema.optional(),
+    bukuRekening: fileSchema.optional(),
+});
+
+
+export const pegawaiFormSchema = dataIdentitasPegawaiSchema.merge(filePegawaiSchema);
 
 export type PegawaiFormData = z.infer<typeof pegawaiFormSchema>;

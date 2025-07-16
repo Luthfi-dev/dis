@@ -49,8 +49,9 @@ export async function submitPegawaiData(data: Partial<Pegawai>) {
     try {
       const parsedData = pegawaiFormSchema.parse(data);
       const isUpdate = !!data.id;
+      const status = (data as any).status || 'Belum Lengkap';
       
-      console.log(`Form data ${isUpdate ? 'updated' : 'submitted'} successfully`);
+      console.log(`Form data ${isUpdate ? 'updated' : 'submitted'} successfully with status:`, status);
       
       await new Promise(resolve => setTimeout(resolve, 1000));
       

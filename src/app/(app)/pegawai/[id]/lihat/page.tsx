@@ -48,6 +48,33 @@ function DocumentItem({ label, document }: { label: string; document?: { fileNam
     );
 }
 
+function MultiDocumentItem({ label, documents }: { label: string; documents?: { fileName: string, fileURL?: string }[]}) {
+    if (!documents || documents.length === 0) {
+        return <DetailItem label={label} value="-" icon={FileIcon} />;
+    }
+
+    return (
+        <div className="md:col-span-2">
+             <DetailItem 
+                label={label} 
+                value={
+                    <ul className="list-disc list-inside space-y-1">
+                        {documents.map((doc, index) => (
+                             <li key={index}>
+                                <a href={doc.fileURL} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline break-all">
+                                    {doc.fileName}
+                                </a>
+                            </li>
+                        ))}
+                    </ul>
+                } 
+                icon={FileIcon} 
+            />
+        </div>
+    );
+}
+
+
 export default function LihatPegawaiPage({ params: { id } }: { params: { id: string } }) {
     const [pegawai, setPegawai] = useState<Pegawai | null>(null);
     const [loading, setLoading] = useState(true);
@@ -198,6 +225,29 @@ export default function LihatPegawaiPage({ params: { id } }: { params: { id: str
                     <DocumentItem label="Ijazah" document={pegawai.pendidikanS2?.ijazah} />
                  </div>
             </CardContent>
+        </Card>
+
+        <Card className="shadow-lg">
+          <CardHeader><CardTitle>File Pegawai</CardTitle></CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+              <MultiDocumentItem label="SK Pengangkatan Pegawai" documents={pegawai.skPengangkatan} />
+              <DocumentItem label="SK NIP Baru" document={pegawai.skNipBaru} />
+              <MultiDocumentItem label="SK Fungsional" documents={pegawai.skFungsional} />
+              <DocumentItem label="Berita Acara Sumpah PNS" document={pegawai.beritaAcaraSumpah} />
+              <DocumentItem label="Sertifikat Pendidik" document={pegawai.sertifikatPendidik} />
+              <MultiDocumentItem label="Sertifikat Pelatihan" documents={pegawai.sertifikatPelatihan} />
+              <MultiDocumentItem label="SKP" documents={pegawai.skp} />
+              <DocumentItem label="Karpeg" document={pegawai.karpeg} />
+              <DocumentItem label="Karis/Karsu" document={pegawai.karisKarsu} />
+              <DocumentItem label="Buku Nikah" document={pegawai.bukuNikah} />
+              <DocumentItem label="Kartu Keluarga" document={pegawai.kartuKeluarga} />
+              <DocumentItem label="KTP" document={pegawai.ktp} />
+              <DocumentItem label="Akte Kelahiran" document={pegawai.akteKelahiran} />
+              <DocumentItem label="Kartu Peserta Taspen" document={pegawai.kartuTaspen} />
+              <DocumentItem label="NPWP" document={pegawai.npwp} />
+              <DocumentItem label="Kartu BPJS / ASKES" document={pegawai.kartuBpjs} />
+              <DocumentItem label="Buku Rekening Gaji" document={pegawai.bukuRekening} />
+          </CardContent>
         </Card>
       </div>
     </div>
