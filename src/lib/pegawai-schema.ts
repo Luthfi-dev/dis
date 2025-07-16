@@ -6,7 +6,7 @@ import { z } from 'zod';
 const fileSchema = z.object({
   fileName: z.string(),
   fileURL: z.string().url('URL tidak valid'),
-}).optional(); // Hanya .optional() yang diperlukan, bukan .nullable()
+}).optional();
 
 const requiredFileSchema = z.object({
   fileName: z.string().min(1, 'File harus diunggah.'),
@@ -18,21 +18,27 @@ const multiFileSchema = z.array(z.object({
     fileURL: z.string().url('URL tidak valid'),
 })).optional();
 
-export const pegawaiFormSchema = z.object({
+const pendidikanSchema = z.object({
+  tamatTahun: z.string(),
+  ijazah: fileSchema,
+}).optional();
+
+// Skema dasar dengan semua kolom
+const basePegawaiFormSchema = z.object({
   pegawai_phaspoto: fileSchema,
   pegawai_nama: z.string().min(1, "Nama lengkap wajib diisi."),
   pegawai_jenisKelamin: z.enum(['Laki-laki', 'Perempuan'], { required_error: "Jenis kelamin wajib dipilih." }),
   pegawai_tempatLahir: z.string().min(1, "Tempat lahir wajib diisi."),
   pegawai_tanggalLahir: z.date({ required_error: "Tanggal lahir wajib diisi." }),
-  pegawai_nip: z.string().optional(),
-  pegawai_nuptk: z.string().optional(),
-  pegawai_nrg: z.string().optional(),
+  pegawai_nip: z.string(),
+  pegawai_nuptk: z.string(),
+  pegawai_nrg: z.string(),
   pegawai_statusPerkawinan: z.enum(['Belum Kawin', 'Kawin', 'Cerai Hidup', 'Cerai Mati'], { required_error: "Status perkawinan wajib dipilih." }),
   pegawai_tanggalPerkawinan: z.date().optional(),
-  pegawai_namaPasangan: z.string().optional(),
-  pegawai_jumlahAnak: z.coerce.number().int().nonnegative("Jumlah anak tidak boleh negatif.").optional(),
+  pegawai_namaPasangan: z.string(),
+  pegawai_jumlahAnak: z.coerce.number().int().nonnegative("Jumlah anak tidak boleh negatif."),
   pegawai_jabatan: z.string().min(1, "Jabatan wajib dipilih."),
-  pegawai_bidangStudi: z.string().optional(),
+  pegawai_bidangStudi: z.string(),
   pegawai_tugasTambahan: z.enum([
     'Kepala Sekolah',
     'Wakasek Bidang Kesiswaan',
@@ -41,20 +47,20 @@ export const pegawaiFormSchema = z.object({
     'Wakasek Bidang Humas',
     'Kepala LAB',
     'Kepala Perpustakaan',
-  ]).optional().nullable(),
+  ]).nullable(),
   pegawai_terhitungMulaiTanggal: z.date({ required_error: "TMT wajib diisi." }),
   
-  pegawai_alamatKabupaten: z.string().optional(),
-  pegawai_alamatKecamatan: z.string().optional(),
-  pegawai_alamatDesa: z.string().optional(),
-  pegawai_alamatDusun: z.string().optional(),
+  pegawai_alamatKabupaten: z.string(),
+  pegawai_alamatKecamatan: z.string(),
+  pegawai_alamatDesa: z.string(),
+  pegawai_alamatDusun: z.string(),
   
-  pegawai_pendidikanSD: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
-  pegawai_pendidikanSMP: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
-  pegawai_pendidikanSMA: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
-  pegawai_pendidikanDiploma: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
-  pegawai_pendidikanS1: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
-  pegawai_pendidikanS2: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
+  pegawai_pendidikanSD: pendidikanSchema,
+  pegawai_pendidikanSMP: pendidikanSchema,
+  pegawai_pendidikanSMA: pendidikanSchema,
+  pegawai_pendidikanDiploma: pendidikanSchema,
+  pegawai_pendidikanS1: pendidikanSchema,
+  pegawai_pendidikanS2: pendidikanSchema,
 
   pegawai_skPengangkatan: multiFileSchema,
   pegawai_skNipBaru: fileSchema,
@@ -75,10 +81,24 @@ export const pegawaiFormSchema = z.object({
   pegawai_bukuRekening: fileSchema,
 });
 
+// Skema utama yang digunakan oleh form resolver.
+// .deepPartial() membuat semua field, termasuk di nested objects, menjadi optional.
+// Ini menyelesaikan masalah validasi dengan react-hook-form saat field tidak diisi.
+export const pegawaiFormSchema = basePegawaiFormSchema.deepPartial().extend({
+  // Tetapkan field yang benar-benar wajib di sini
+  pegawai_nama: z.string().min(1, "Nama lengkap wajib diisi."),
+  pegawai_jenisKelamin: z.enum(['Laki-laki', 'Perempuan'], { required_error: "Jenis kelamin wajib dipilih." }),
+  pegawai_tempatLahir: z.string().min(1, "Tempat lahir wajib diisi."),
+  pegawai_tanggalLahir: z.date({ required_error: "Tanggal lahir wajib diisi." }),
+  pegawai_statusPerkawinan: z.enum(['Belum Kawin', 'Kawin', 'Cerai Hidup', 'Cerai Mati'], { required_error: "Status perkawinan wajib dipilih." }),
+  pegawai_jabatan: z.string().min(1, "Jabatan wajib dipilih."),
+  pegawai_terhitungMulaiTanggal: z.date({ required_error: "TMT wajib diisi." }),
+});
 
 export type PegawaiFormData = z.infer<typeof pegawaiFormSchema>;
 
-export const completePegawaiFormSchema = pegawaiFormSchema.extend({
+// Skema ketat ini HANYA digunakan di server untuk menentukan status 'Lengkap'
+export const completePegawaiFormSchema = basePegawaiFormSchema.extend({
     pegawai_nip: z.string().min(1, 'NIP wajib diisi untuk status Lengkap.'),
     pegawai_nuptk: z.string().min(1, 'NUPTK wajib diisi untuk status Lengkap.'),
 
