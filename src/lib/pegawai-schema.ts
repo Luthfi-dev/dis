@@ -9,29 +9,24 @@ const fileSchema = z.object({
   fileURL: z.string().url(),
 }).optional();
 
-// Skema untuk file yang wajib ada (hanya untuk status 'Lengkap')
 const requiredFileSchema = z.object({
   fileName: z.string().min(1, 'File harus diunggah.'),
   fileURL: z.string().url('URL tidak valid'),
 });
 
-// Skema untuk array file, sepenuhnya opsional
 const multiFileSchema = z.array(z.object({
     fileName: z.string(),
     fileURL: z.string().url(),
 })).optional();
 
-// Skema untuk riwayat pendidikan, dibuat sepenuhnya opsional
+// Correctly defined optional nested object
 const pendidikanSchema = z.object({
   tamatTahun: z.string().optional(),
   ijazah: fileSchema,
 }).optional();
 
-
 // --- SKEMA UTAMA UNTUK FORMULIR ---
-// Dibuat sangat longgar sesuai permintaan. Hanya kolom identitas yang divalidasi.
 export const pegawaiFormSchema = z.object({
-  // --- Identitas Pegawai (Wajib) ---
   pegawai_nama: z.string().min(1, "Nama lengkap wajib diisi."),
   pegawai_jenisKelamin: z.enum(['Laki-laki', 'Perempuan'], { required_error: "Jenis kelamin wajib dipilih." }),
   pegawai_tempatLahir: z.string().min(1, "Tempat lahir wajib diisi."),
@@ -45,7 +40,7 @@ export const pegawaiFormSchema = z.object({
   pegawai_nip: z.string().optional(),
   pegawai_nuptk: z.string().optional(),
   pegawai_nrg: z.string().optional(),
-  pegawai_tanggalPerkawinan: z.date().optional().nullable(),
+  pegawai_tanggalPerkawinan: z.date().optional(),
   pegawai_namaPasangan: z.string().optional(),
   pegawai_jumlahAnak: z.coerce.number().optional(),
   pegawai_bidangStudi: z.string().optional(),
@@ -93,7 +88,6 @@ export const pegawaiFormSchema = z.object({
 export type PegawaiFormData = z.infer<typeof pegawaiFormSchema>;
 
 // Skema ketat ini HANYA digunakan di server untuk menentukan status 'Lengkap'
-// dan tidak akan pernah memblokir proses simpan data.
 export const completePegawaiFormSchema = pegawaiFormSchema.extend({
     pegawai_nip: z.string().min(1, 'NIP wajib diisi untuk status Lengkap.'),
     pegawai_nuptk: z.string().min(1, 'NUPTK wajib diisi untuk status Lengkap.'),

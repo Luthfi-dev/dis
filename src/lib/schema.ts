@@ -16,7 +16,6 @@ const requiredFileSchema = z.object({
 });
 
 // --- SKEMA UTAMA UNTUK FORMULIR ---
-// Dibuat sangat longgar sesuai permintaan. Hanya kolom identitas yang divalidasi.
 export const studentFormSchema = z.object({
   // --- Data Siswa (Wajib) ---
   siswa_namaLengkap: z.string().min(1, "Nama lengkap wajib diisi."),
@@ -64,10 +63,10 @@ export const studentFormSchema = z.object({
 
   siswa_asalSekolah: z.string().optional(),
   siswa_nomorSttb: z.string().optional(),
-  siswa_tanggalSttb: z.date().optional().nullable(),
+  siswa_tanggalSttb: z.date().optional(),
   siswa_pindahanAsalSekolah: z.string().optional(),
   siswa_pindahanDariTingkat: z.string().optional(),
-  siswa_pindahanDiterimaTanggal: z.date().optional().nullable(),
+  siswa_pindahanDiterimaTanggal: z.date().optional(),
 
   siswa_lulusTahun: z.string().optional(),
   siswa_lulusNomorIjazah: z.string().optional(),
@@ -76,7 +75,7 @@ export const studentFormSchema = z.object({
   siswa_pindahTingkatKelas: z.string().optional(),
   siswa_pindahKeTingkat: z.string().optional(),
   siswa_keluarAlasan: z.string().optional(),
-  siswa_keluarTanggal: z.date().optional().nullable(),
+  siswa_keluarTanggal: z.date().optional(),
 
   documents: z.object({
     kartuKeluarga: fileSchema,
@@ -101,7 +100,6 @@ export const studentFormSchema = z.object({
 export type StudentFormData = z.infer<typeof studentFormSchema>;
 
 // Skema ketat ini HANYA digunakan di server untuk menentukan status 'Lengkap'
-// dan tidak akan pernah memblokir proses simpan data.
 export const completeStudentFormSchema = studentFormSchema.extend({
     siswa_bahasa: z.string().min(1, "Bahasa sehari-hari wajib diisi."),
     siswa_golonganDarah: z.enum(['A', 'B', 'AB', 'O'], { required_error: "Golongan darah wajib dipilih." }),
