@@ -8,7 +8,6 @@ import type { Siswa } from './data';
 import type { Pegawai } from './pegawai-data';
 import { logActivity } from './activity-log';
 
-
 // --- Server-side Storage Simulation ---
 if (typeof global.students === 'undefined') {
     (global as any).students = [];
@@ -114,36 +113,28 @@ export async function deletePegawai(id: string): Promise<{ success: boolean; mes
 
 
 export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: string) {
+    // Menghapus semua validasi Zod untuk isolasi masalah Turbopack.
+    // Logika ini hanya akan menerima data dan menyimpannya.
     try {
-        // We removed client-side validation, so we must validate here.
-        const validationResult = pegawaiFormSchema.safeParse(data);
-        if (!validationResult.success) {
-            const errorMessage = `Data tidak valid. Periksa kolom: ${Object.keys(validationResult.error.flatten().fieldErrors).join(', ')}`;
-            console.error("Zod Validation Error in submitPegawaiData:", {
-                message: errorMessage,
-                errors: validationResult.error.flatten().fieldErrors,
-            });
-            return { success: false, message: errorMessage, errors: validationResult.error.flatten().fieldErrors };
-        }
-
-        const parsedData = validationResult.data;
         const id = pegawaiId || crypto.randomUUID();
-
-        if (parsedData.pegawai_nip && !pegawaiId) {
-            if (allPegawai.some(p => p.pegawai_nip === parsedData.pegawai_nip)) {
+        
+        // Cek NIP duplikat secara manual
+        if (data.pegawai_nip && !pegawaiId) {
+            if (allPegawai.some(p => p.pegawai_nip === data.pegawai_nip)) {
                 return { success: false, message: "NIP sudah digunakan oleh pegawai lain." };
             }
         }
         
+        // Untuk status, kita gunakan skema secara aman di sini saja.
         const completionResult = completePegawaiFormSchema.safeParse(data);
         const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
         
-        const finalData: Pegawai = { ...parsedData, id, status };
+        const finalData: Pegawai = { ...data, id, status };
 
         const existingPegawaiIndex = allPegawai.findIndex(p => p.id === id);
 
         if (existingPegawaiIndex !== -1) {
-            // Simple replacement, no more merging
+            // Langsung ganti data yang ada, tidak ada penggabungan.
             allPegawai[existingPegawaiIndex] = finalData;
         } else {
             allPegawai.push(finalData);
@@ -162,4 +153,4 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
       });
       return { success: false, message: `Gagal menyimpan data karena kesalahan server: ${errorMessage}` };
     }
-  }
+}
