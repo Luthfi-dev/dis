@@ -24,7 +24,6 @@ export async function getCategorySuggestion(description: string) {
 
 export async function submitStudentData(data: Partial<Siswa>) {
   try {
-    // Dates are transmitted as strings, so we need to convert them back to Dates for validation
     const dataWithDates = {
         ...data,
         tanggalLahir: data.tanggalLahir ? new Date(data.tanggalLahir) : undefined,
@@ -36,7 +35,6 @@ export async function submitStudentData(data: Partial<Siswa>) {
     const parsedData = studentFormSchema.parse(dataWithDates);
     const isUpdate = !!data.id;
 
-    // Check completion status
     const completionResult = completeStudentFormSchema.safeParse(dataWithDates);
     const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
     
@@ -58,9 +56,8 @@ export async function submitStudentData(data: Partial<Siswa>) {
   }
 }
 
-export async function submitPegawaiData(data: Partial<Pegawai>) {
+export async function submitPegawaiData(data: Partial<Pegawai> & {id?: string}) {
     try {
-        // Dates are transmitted as strings, so we need to convert them back to Dates for validation
         const dataWithDates = {
             ...data,
             tanggalLahir: data.tanggalLahir ? new Date(data.tanggalLahir) : undefined,
@@ -70,6 +67,21 @@ export async function submitPegawaiData(data: Partial<Pegawai>) {
 
       const parsedData = pegawaiFormSchema.parse(dataWithDates);
       const isUpdate = !!data.id;
+      
+      // In a real app, this would be a database call.
+      const allPegawai: Pegawai[] = typeof window !== 'undefined' 
+        ? JSON.parse(localStorage.getItem('pegawaiData') || '[]')
+        : []; 
+
+      // Check for duplicates only when creating a new pegawai
+      if (!isUpdate) {
+        if (parsedData.nip && allPegawai.some(p => p.nip === parsedData.nip)) {
+            return { success: false, message: 'NIP sudah terdaftar. Harap gunakan NIP yang unik.' };
+        }
+        if (parsedData.nuptk && allPegawai.some(p => p.nuptk === parsedData.nuptk)) {
+            return { success: false, message: 'NUPTK sudah terdaftar. Harap gunakan NUPTK yang unik.' };
+        }
+      }
       
       const completionResult = completePegawaiFormSchema.safeParse(dataWithDates);
       const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
@@ -91,3 +103,4 @@ export async function submitPegawaiData(data: Partial<Pegawai>) {
       return { success: false, message: 'Gagal menyimpan data pegawai.' };
     }
   }
+

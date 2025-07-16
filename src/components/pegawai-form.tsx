@@ -80,7 +80,7 @@ const initialFormValues: PegawaiFormData = {
 };
 
 
-export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & { tanggalLahir?: string | Date, tanggalPerkawinan?: string | Date, terhitungMulaiTanggal?: string | Date } }) {
+export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & { id: string, tanggalLahir?: string | Date, tanggalPerkawinan?: string | Date, terhitungMulaiTanggal?: string | Date } }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, startTransition] = useTransition();
   const { toast } = useToast();
@@ -162,21 +162,16 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
         processFile(dataWithURLs.kartuBpjs);
         processFile(dataWithURLs.bukuRekening);
         
-        const completionResult = completePegawaiFormSchema.safeParse(data);
-        const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
-        const finalData = { ...dataWithURLs, id: pegawaiData?.id, status };
-        
-        const submissionResult = await submitPegawaiData(finalData);
+        const dataToSubmit = { ...dataWithURLs, id: pegawaiData?.id };
+
+        const submissionResult = await submitPegawaiData(dataToSubmit);
 
         if (submissionResult.success) {
-            toast({
-                title: 'Sukses!',
-                description: submissionResult.message,
-                variant: 'default',
-            });
-
             let existingPegawai: Pegawai[] = JSON.parse(localStorage.getItem('pegawaiData') || '[]');
-            const newPegawai: Pegawai = { ...finalData, id: submissionResult.id, status };
+            
+            const completionResult = completePegawaiFormSchema.safeParse(data);
+            const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
+            const newPegawai: Pegawai = { ...dataToSubmit, id: submissionResult.id, status };
 
             if (pegawaiData?.id) {
                 existingPegawai = existingPegawai.map(p => p.id === pegawaiData.id ? newPegawai : p);
@@ -184,7 +179,12 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
                 existingPegawai.push(newPegawai);
             }
             localStorage.setItem('pegawaiData', JSON.stringify(existingPegawai));
-
+            
+            toast({
+                title: 'Sukses!',
+                description: submissionResult.message,
+                variant: 'default',
+            });
             router.push('/pegawai');
             router.refresh();
 
@@ -424,7 +424,7 @@ function DataIdentitasPegawaiForm() {
             <FormItem><FormLabel>Nama Istri / Suami</FormLabel><FormControl><Input placeholder="Nama lengkap pasangan" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="jumlahAnak" render={({ field }) => (
-            <FormItem><FormLabel>Jumlah Anak</FormLabel><FormControl><Input type="number" placeholder="0" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Jumlah Anak</FormLabel><FormControl><Input type="number" placeholder="0" {...field} onChange={e => field.onChange(parseInt(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="jabatan" render={({ field }) => (
             <FormItem><FormLabelRequired>Jabatan</FormLabelRequired>
@@ -691,7 +691,6 @@ function MultiFileUpload({ name, label }: { name: keyof PegawaiFormData, label: 
         if (file) {
             append({ fileName: file.name, file: file, fileURL: URL.createObjectURL(file) });
         }
-        // Reset input value to allow uploading the same file again after removing
         e.target.value = '';
     };
 
