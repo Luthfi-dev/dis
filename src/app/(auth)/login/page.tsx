@@ -73,7 +73,7 @@ export default function LoginPage() {
       const result = await login(data.email, data.password);
       if (result.success) {
         toast({ title: 'Login Berhasil!', description: 'Anda akan diarahkan ke dashboard.' });
-        router.replace('/siswa');
+        router.replace('/dashboard');
       } else {
         toast({
           title: 'Login Gagal',

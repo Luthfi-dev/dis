@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, Eye, FilePen, Trash2, Search } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Eye, FilePen, Trash2, Search, FileSearch } from 'lucide-react';
 import { mockPegawaiData, Pegawai } from '@/lib/pegawai-data';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -53,6 +53,12 @@ function ActionMenu({ pegawai, onDelete }: { pegawai: Pegawai, onDelete: (id: st
             <Link href={`/pegawai/${pegawai.id}/edit`}>
               <FilePen className="mr-2 h-4 w-4" />
               <span>Edit</span>
+            </Link>
+          </DropdownMenuItem>
+           <DropdownMenuItem asChild>
+            <Link href={`/pegawai/${pegawai.id}/preview`}>
+              <FileSearch className="mr-2 h-4 w-4" />
+              <span>Preview</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />

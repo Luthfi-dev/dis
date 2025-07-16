@@ -9,10 +9,10 @@ import { FormStepper } from './form-stepper';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, ArrowRight, CalendarIcon, UploadCloud, User, FileCheck2, Trash2 } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, CalendarIcon, UploadCloud, User, FileCheck2, Trash2, ShieldCheck } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel as RadixSelectLabel } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -25,6 +25,7 @@ import Image from 'next/image';
 import { Separator } from './ui/separator';
 import { getKabupatens, getKecamatans, getDesas, Wilayah } from '@/lib/wilayah';
 import { Combobox } from './ui/combobox';
+import { completePegawaiFormSchema } from '@/lib/pegawai-schema';
 
 const steps = [
   { id: 1, title: 'Identitas Pegawai', schema: dataIdentitasPegawaiSchema },
@@ -33,7 +34,7 @@ const steps = [
 ];
 
 const initialFormValues: PegawaiFormData = {
-    phaspoto: { fileName: '', file: undefined, fileURL: ''},
+    phaspoto: undefined,
     nama: '',
     jenisKelamin: undefined,
     tempatLahir: '',
@@ -53,12 +54,12 @@ const initialFormValues: PegawaiFormData = {
     alamatDesa: '',
     alamatKecamatan: '',
     alamatKabupaten: '',
-    pendidikanSD: { tamatTahun: '', ijazah: { fileName: '' } },
-    pendidikanSMP: { tamatTahun: '', ijazah: { fileName: '' } },
-    pendidikanSMA: { tamatTahun: '', ijazah: { fileName: '' } },
-    pendidikanDiploma: { tamatTahun: '', ijazah: { fileName: '' } },
-    pendidikanS1: { tamatTahun: '', ijazah: { fileName: '' } },
-    pendidikanS2: { tamatTahun: '', ijazah: { fileName: '' } },
+    pendidikanSD: { tamatTahun: '', ijazah: undefined },
+    pendidikanSMP: { tamatTahun: '', ijazah: undefined },
+    pendidikanSMA: { tamatTahun: '', ijazah: undefined },
+    pendidikanDiploma: { tamatTahun: '', ijazah: undefined },
+    pendidikanS1: { tamatTahun: '', ijazah: undefined },
+    pendidikanS2: { tamatTahun: '', ijazah: undefined },
     skPengangkatan: [],
     skNipBaru: undefined,
     skFungsional: [],
@@ -160,9 +161,9 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
         processFile(dataWithURLs.npwp);
         processFile(dataWithURLs.kartuBpjs);
         processFile(dataWithURLs.bukuRekening);
-
-        const result = await pegawaiFormSchema.safeParseAsync(data);
-        const status = result.success ? 'Lengkap' : 'Belum Lengkap';
+        
+        const completionResult = completePegawaiFormSchema.safeParse(data);
+        const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
         const finalData = { ...dataWithURLs, id: pegawaiData?.id, status };
         
         const submissionResult = await submitPegawaiData(finalData);
@@ -175,7 +176,7 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
             });
 
             let existingPegawai: Pegawai[] = JSON.parse(localStorage.getItem('pegawaiData') || '[]');
-            const newPegawai: Pegawai = { ...finalData, id: submissionResult.id };
+            const newPegawai: Pegawai = { ...finalData, id: submissionResult.id, status };
 
             if (pegawaiData?.id) {
                 existingPegawai = existingPegawai.map(p => p.id === pegawaiData.id ? newPegawai : p);
@@ -307,6 +308,29 @@ function DataIdentitasPegawaiForm() {
     }
   };
 
+  const jabatanOptions = {
+    pendidik: [
+        'Guru Mata Pelajaran',
+        'Guru Bimbingan dan Konseling',
+    ],
+    kependidikan: [
+        'Kepala Tenaga Administrasi',
+        'Pelaksana Urusan Administrasi Kepegawaian',
+        'Pelaksana Urusan Administrasi Keuangan',
+        'Pelaksana Urusan Administrasi Persuratan',
+        'Pelaksana Urusan Administrasi Kesiswaan',
+        'Pelaksana Urusan Administrasi Kurikulum',
+        'Pelaksana Urusan Administrasi Sarana dan Prasarana',
+        'Pelaksana Urusan Administrasi Hubungan Masyarakat',
+        'Tenaga Kebersihan',
+        'Tenaga Keamanan / Satpam',
+        'Tukang Kebun',
+        'Pesuruh',
+        'Sopir / Pengemudi',
+        'Penjaga Malam',
+    ]
+  }
+
   return (
     <div className="space-y-6">
        <FormField
@@ -403,7 +427,21 @@ function DataIdentitasPegawaiForm() {
             <FormItem><FormLabel>Jumlah Anak</FormLabel><FormControl><Input type="number" placeholder="0" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="jabatan" render={({ field }) => (
-            <FormItem><FormLabelRequired>Jabatan</FormLabelRequired><FormControl><Input placeholder="Contoh: Guru" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabelRequired>Jabatan</FormLabelRequired>
+                <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Pilih Jabatan" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                        <SelectGroup>
+                            <RadixSelectLabel>Tenaga Pendidik</RadixSelectLabel>
+                            {jabatanOptions.pendidik.map(j => <SelectItem key={j} value={j}>{j}</SelectItem>)}
+                        </SelectGroup>
+                        <SelectGroup>
+                             <RadixSelectLabel>Tenaga Kependidikan</RadixSelectLabel>
+                             {jabatanOptions.kependidikan.map(j => <SelectItem key={j} value={j}>{j}</SelectItem>)}
+                        </SelectGroup>
+                    </SelectContent>
+                </Select>
+            <FormMessage /></FormItem>
         )} />
         <FormField control={control} name="bidangStudi" render={({ field }) => (
             <FormItem><FormLabelRequired>Mengampu Bidang Studi</FormLabelRequired><FormControl><Input placeholder="Contoh: Matematika" {...field} /></FormControl><FormMessage /></FormItem>
@@ -493,7 +531,7 @@ function DataIdentitasPegawaiForm() {
                         <FormField control={control} name="pendidikanSD.ijazah" render={() => (
                              <FormItem><FormControl>
                                 <Button asChild variant="outline"><label htmlFor="ijazah-sd-upload" className="cursor-pointer">
-                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-sd-upload" type="file" accept=".pdf" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pendidikanSD')} />
+                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-sd-upload" type="file" accept=".pdf,image/*" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pendidikanSD')} />
                                 </label></Button>
                             </FormControl><FormMessage /></FormItem>
                         )} />
@@ -510,7 +548,7 @@ function DataIdentitasPegawaiForm() {
                         <FormField control={control} name="pendidikanSMP.ijazah" render={() => (
                              <FormItem><FormControl>
                                 <Button asChild variant="outline"><label htmlFor="ijazah-smp-upload" className="cursor-pointer">
-                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-smp-upload" type="file" accept=".pdf" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pendidikanSMP')} />
+                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-smp-upload" type="file" accept=".pdf,image/*" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pendidikanSMP')} />
                                 </label></Button>
                             </FormControl><FormMessage /></FormItem>
                         )} />
@@ -527,7 +565,7 @@ function DataIdentitasPegawaiForm() {
                         <FormField control={control} name="pendidikanSMA.ijazah" render={() => (
                              <FormItem><FormControl>
                                 <Button asChild variant="outline"><label htmlFor="ijazah-sma-upload" className="cursor-pointer">
-                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-sma-upload" type="file" accept=".pdf" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pendidikanSMA')} />
+                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-sma-upload" type="file" accept=".pdf,image/*" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pendidikanSMA')} />
                                 </label></Button>
                             </FormControl><FormMessage /></FormItem>
                         )} />
@@ -544,7 +582,7 @@ function DataIdentitasPegawaiForm() {
                         <FormField control={control} name="pendidikanDiploma.ijazah" render={() => (
                              <FormItem><FormControl>
                                 <Button asChild variant="outline"><label htmlFor="ijazah-diploma-upload" className="cursor-pointer">
-                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-diploma-upload" type="file" accept=".pdf" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pendidikanDiploma')} />
+                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-diploma-upload" type="file" accept=".pdf,image/*" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pendidikanDiploma')} />
                                 </label></Button>
                             </FormControl><FormMessage /></FormItem>
                         )} />
@@ -561,7 +599,7 @@ function DataIdentitasPegawaiForm() {
                         <FormField control={control} name="pendidikanS1.ijazah" render={() => (
                              <FormItem><FormControl>
                                 <Button asChild variant="outline"><label htmlFor="ijazah-s1-upload" className="cursor-pointer">
-                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-s1-upload" type="file" accept=".pdf" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pendidikanS1')} />
+                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-s1-upload" type="file" accept=".pdf,image/*" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pendidikanS1')} />
                                 </label></Button>
                             </FormControl><FormMessage /></FormItem>
                         )} />
@@ -578,7 +616,7 @@ function DataIdentitasPegawaiForm() {
                         <FormField control={control} name="pendidikanS2.ijazah" render={() => (
                              <FormItem><FormControl>
                                 <Button asChild variant="outline"><label htmlFor="ijazah-s2-upload" className="cursor-pointer">
-                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-s2-upload" type="file" accept=".pdf" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pendidikanS2')} />
+                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-s2-upload" type="file" accept=".pdf,image/*" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pendidikanS2')} />
                                 </label></Button>
                             </FormControl><FormMessage /></FormItem>
                         )} />
@@ -615,12 +653,12 @@ function SingleFileUpload({ name, label }: { name: keyof PegawaiFormData, label:
                                 <label htmlFor={`file-upload-${name}`} className="cursor-pointer">
                                     <UploadCloud className="mr-2 h-4 w-4" />
                                     <span className="truncate">
-                                        {watchedFile?.fileName || 'Pilih file (PDF)...'}
+                                        {watchedFile?.fileName || 'Pilih file...'}
                                     </span>
                                     <input
                                         id={`file-upload-${name}`}
                                         type="file"
-                                        accept=".pdf"
+                                        accept=".pdf,image/*"
                                         className="hidden"
                                         onChange={handleFileChange}
                                     />
@@ -679,7 +717,7 @@ function MultiFileUpload({ name, label }: { name: keyof PegawaiFormData, label: 
                     <input
                         id={`multifile-upload-${name}`}
                         type="file"
-                        accept=".pdf"
+                        accept=".pdf,image/*"
                         className="hidden"
                         onChange={handleFileChange}
                     />
@@ -717,10 +755,35 @@ function FilePegawaiForm() {
 }
 
 function DataValidasiForm() {
+    const { getValues } = useFormContext<PegawaiFormData>();
+    const values = getValues();
+    
+    const allFields = [
+        { label: "Nama Lengkap", value: values.nama },
+        { label: "NIP", value: values.nip },
+        { label: "Jabatan", value: values.jabatan },
+        { label: "Foto Profil", value: values.phaspoto?.fileName },
+    ].filter(field => field.value);
+
   return (
-    <div>
-        <h3 className="text-lg font-semibold">Konfirmasi Data Pegawai</h3>
-        <p className="text-muted-foreground">Harap periksa kembali semua data yang telah diisi. Klik simpan untuk menyelesaikan.</p>
+    <div className="flex flex-col items-center justify-center text-center space-y-6 py-8">
+        <ShieldCheck className="w-16 h-16 text-primary" />
+        <h2 className="text-2xl font-bold">Konfirmasi Akhir</h2>
+        <p className="text-muted-foreground max-w-md">
+            Anda telah mencapai langkah terakhir. Silakan periksa kembali ringkasan data. Jika semua sudah benar, klik "Simpan Data" untuk menyelesaikan.
+        </p>
+         <Card className="w-full max-w-lg text-left">
+            <CardHeader><CardTitle>Ringkasan Data</CardTitle></CardHeader>
+            <CardContent className="space-y-2 text-sm max-h-60 overflow-y-auto">
+                {allFields.map((field, index) => (
+                    <div key={index} className="flex justify-between items-start gap-4">
+                        <span className="font-medium text-muted-foreground shrink-0">{field.label}:</span>
+                        <span className="truncate text-right">{field.value}</span>
+                    </div>
+                ))}
+                 {allFields.length === 0 && <p className="text-center text-muted-foreground">Belum ada data yang diisi.</p>}
+            </CardContent>
+        </Card>
     </div>
   )
 }

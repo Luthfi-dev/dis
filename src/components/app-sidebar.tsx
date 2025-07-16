@@ -19,7 +19,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { BookCopy, GraduationCap, Plus, Users, Settings, LogOut, ChevronsUpDown, Database, ShieldCheck, Briefcase } from 'lucide-react';
+import { BookCopy, GraduationCap, Plus, Users, Settings, LogOut, ChevronsUpDown, Database, ShieldCheck, Briefcase, LayoutDashboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -69,7 +69,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" variant="sidebar">
       <SidebarHeader>
-        <Link href="/siswa" className="flex items-center gap-2.5" onClick={handleLinkClick}>
+        <Link href="/dashboard" className="flex items-center gap-2.5" onClick={handleLinkClick}>
           <Button
             variant="ghost"
             size="icon"
@@ -83,6 +83,23 @@ export function AppSidebar() {
         </Link>
       </SidebarHeader>
       <SidebarContent className="p-2">
+        <SidebarMenu>
+            <SidebarMenuItem>
+                 <Link href="/dashboard" className="w-full" onClick={handleLinkClick}>
+                    <SidebarMenuButton
+                        isActive={pathname === '/dashboard'}
+                        tooltip={{
+                            children: 'Dashboard',
+                            className: 'group-data-[collapsible=icon]:flex hidden',
+                        }}
+                    >
+                         <LayoutDashboard />
+                         <span>Dashboard</span>
+                    </SidebarMenuButton>
+                 </Link>
+            </SidebarMenuItem>
+        </SidebarMenu>
+
         <Collapsible open={isBukuIndukOpen} onOpenChange={setIsBukuIndukOpen} className="w-full">
           <CollapsibleTrigger asChild>
             <SidebarMenuButton

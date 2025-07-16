@@ -2,11 +2,12 @@
 'use server';
 
 import { suggestUploadCategory } from '@/ai/flows/suggest-upload-category';
-import { studentFormSchema } from '@/lib/schema';
-import { pegawaiFormSchema } from '@/lib/pegawai-schema';
+import { studentFormSchema, completeStudentFormSchema } from '@/lib/schema';
+import { pegawaiFormSchema, completePegawaiFormSchema } from '@/lib/pegawai-schema';
 import { z } from 'zod';
 import type { Siswa } from './data';
 import type { Pegawai } from './pegawai-data';
+import { logActivity } from './activity-log';
 
 export async function getCategorySuggestion(description: string) {
   if (!description) {
@@ -25,14 +26,17 @@ export async function submitStudentData(data: Partial<Siswa>) {
   try {
     const parsedData = studentFormSchema.parse(data);
     const isUpdate = !!data.id;
-    const status = (data as any).status || 'Belum Lengkap';
-    
-    console.log(`Form data ${isUpdate ? 'updated' : 'submitted'} successfully with status:`, status);
+
+    // Check completion status
+    const completionResult = completeStudentFormSchema.safeParse(data);
+    const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
     
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     const id = data.id || crypto.randomUUID();
-    const message = isUpdate ? 'Data siswa berhasil diperbarui!' : 'Data siswa berhasil disimpan!';
+    const message = isUpdate ? `Data siswa ${data.namaLengkap} berhasil diperbarui!` : `Data siswa ${data.namaLengkap} berhasil disimpan!`;
+
+    logActivity(message);
 
     return { success: true, message, id };
   } catch (error) {
@@ -49,14 +53,16 @@ export async function submitPegawaiData(data: Partial<Pegawai>) {
     try {
       const parsedData = pegawaiFormSchema.parse(data);
       const isUpdate = !!data.id;
-      const status = (data as any).status || 'Belum Lengkap';
       
-      console.log(`Form data ${isUpdate ? 'updated' : 'submitted'} successfully with status:`, status);
+      const completionResult = completePegawaiFormSchema.safeParse(data);
+      const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
       
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const id = data.id || crypto.randomUUID();
-      const message = isUpdate ? 'Data pegawai berhasil diperbarui!' : 'Data pegawai berhasil disimpan!';
+      const message = isUpdate ? `Data pegawai ${data.nama} berhasil diperbarui!` : `Data pegawai ${data.nama} berhasil disimpan!`;
+
+      logActivity(message);
   
       return { success: true, message, id };
     } catch (error) {
