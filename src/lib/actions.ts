@@ -58,10 +58,9 @@ export async function getCategorySuggestion(description: string) {
   }
 }
 
-export async function submitStudentData(data: Partial<StudentFormData>, studentId?: string, isDraft: boolean = false) {
+export async function submitStudentData(data: StudentFormData, studentId?: string) {
   try {
-    const schemaToUse = isDraft ? studentFormSchema.deepPartial() : studentFormSchema;
-    const parsedData = schemaToUse.parse(data);
+    const parsedData = studentFormSchema.parse(data);
 
     if (parsedData.siswa_nisn) {
       const existingStudent = allStudents.find(s => s.siswa_nisn === parsedData.siswa_nisn);
@@ -72,37 +71,27 @@ export async function submitStudentData(data: Partial<StudentFormData>, studentI
 
     const id = studentId || crypto.randomUUID();
     const existingStudentIndex = allStudents.findIndex(s => s.id === id);
+    
+    const completionResult = completeStudentFormSchema.safeParse(parsedData);
+    const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
 
-    let finalData: Siswa;
+    const finalData: Siswa = { ...parsedData, id, status };
 
     if (existingStudentIndex !== -1) {
-      const mergedData = mergeDeep({}, allStudents[existingStudentIndex], parsedData);
-      const completionResult = completeStudentFormSchema.safeParse(mergedData);
-      const status = isDraft ? 'Belum Lengkap' : (completionResult.success ? 'Lengkap' : 'Belum Lengkap');
-      finalData = { ...mergedData, id, status };
       allStudents[existingStudentIndex] = finalData;
     } else {
-      const completionResult = completeStudentFormSchema.safeParse(parsedData);
-      const status = isDraft ? 'Belum Lengkap' : (completionResult.success ? 'Lengkap' : 'Belum Lengkap');
-      finalData = { ...(parsedData as StudentFormData), id, status };
       allStudents.push(finalData);
     }
     
-    let message: string;
-    if (isDraft) {
-        message = `Draf untuk ${finalData.siswa_namaLengkap || 'siswa baru'} berhasil disimpan.`;
-    } else {
-        message = studentId ? `Data siswa ${finalData.siswa_namaLengkap} berhasil diperbarui!` : `Data siswa ${finalData.siswa_namaLengkap} berhasil disimpan!`;
-        logActivity(message);
-    }
+    const message = studentId ? `Data siswa ${finalData.siswa_namaLengkap} berhasil diperbarui!` : `Data siswa ${finalData.siswa_namaLengkap} berhasil disimpan!`;
+    logActivity(message);
 
     return { success: true, message, student: finalData };
 
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error("Zod Validation Error in submitStudentData:", error.flatten().fieldErrors);
-      const errorMessages = Object.entries(error.flatten().fieldErrors).map(([field, errors]) => `${field}: ${errors.join(', ')}`).join('; ');
-      return { success: false, message: `Data tidak valid. Kesalahan: ${errorMessages}`, errors: error.flatten().fieldErrors };
+      return { success: false, message: `Data tidak valid.`, errors: error.flatten().fieldErrors };
     }
     console.error('Student submission server error:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
@@ -133,10 +122,9 @@ export async function deletePegawai(id: string): Promise<{ success: boolean; mes
 }
 
 
-export async function submitPegawaiData(data: Partial<PegawaiFormData>, pegawaiId?: string, isDraft: boolean = false) {
+export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: string) {
     try {
-        const schemaToUse = isDraft ? pegawaiFormSchema.deepPartial() : pegawaiFormSchema;
-        const parsedData = schemaToUse.parse(data);
+        const parsedData = pegawaiFormSchema.parse(data);
 
         if (parsedData.pegawai_nip) {
             const existingPegawai = allPegawai.find(p => p.pegawai_nip === parsedData.pegawai_nip);
@@ -154,40 +142,28 @@ export async function submitPegawaiData(data: Partial<PegawaiFormData>, pegawaiI
         const id = pegawaiId || crypto.randomUUID();
         const existingPegawaiIndex = allPegawai.findIndex(p => p.id === id);
         
-        let finalData: Pegawai;
+        const completionResult = completePegawaiFormSchema.safeParse(parsedData);
+        const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
+        const finalData: Pegawai = { ...parsedData, id, status };
 
         if (existingPegawaiIndex !== -1) {
-            const mergedData = mergeDeep({}, allPegawai[existingPegawaiIndex], parsedData);
-            const completionResult = completePegawaiFormSchema.safeParse(mergedData);
-            const status = isDraft ? 'Belum Lengkap' : (completionResult.success ? 'Lengkap' : 'Belum Lengkap');
-            finalData = { ...mergedData, id, status };
             allPegawai[existingPegawaiIndex] = finalData;
         } else {
-            const completionResult = completePegawaiFormSchema.safeParse(parsedData);
-            const status = isDraft ? 'Belum Lengkap' : (completionResult.success ? 'Lengkap' : 'Belum Lengkap');
-            finalData = { ...(parsedData as PegawaiFormData), id, status };
             allPegawai.push(finalData);
         }
 
-        let message: string;
-        if (isDraft) {
-            message = `Draf untuk ${finalData.pegawai_nama || 'pegawai baru'} berhasil disimpan.`;
-        } else {
-            message = pegawaiId ? `Data pegawai ${finalData.pegawai_nama} berhasil diperbarui!` : `Data pegawai ${finalData.pegawai_nama} berhasil disimpan!`;
-            logActivity(message);
-        }
+        const message = pegawaiId ? `Data pegawai ${finalData.pegawai_nama} berhasil diperbarui!` : `Data pegawai ${finalData.pegawai_nama} berhasil disimpan!`;
+        logActivity(message);
 
         return { success: true, message: message, pegawai: finalData };
 
     } catch (error) {
       if (error instanceof z.ZodError) {
         console.error("Zod Validation Error in submitPegawaiData:", error.flatten().fieldErrors);
-        const errorMessages = Object.entries(error.flatten().fieldErrors).map(([field, errors]) => `${field}: ${errors.join(', ')}`).join('; ');
-        return { success: false, message: `Data tidak valid. Kesalahan: ${errorMessages}`, errors: error.flatten().fieldErrors };
+        return { success: false, message: `Data tidak valid`, errors: error.flatten().fieldErrors };
       }
       console.error('Pegawai submission server error:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
-      return { success: false, message: `Gagal menyimpan data draf karena kesalahan server: ${errorMessage}` };
+      return { success: false, message: `Gagal menyimpan data karena kesalahan server: ${errorMessage}` };
     }
   }
-

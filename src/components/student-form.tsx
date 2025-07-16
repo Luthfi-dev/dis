@@ -44,45 +44,45 @@ const steps = [
 
 const initialFormValues: StudentFormData = {
   siswa_fotoProfil: undefined,
-  siswa_namaLengkap: '',
-  siswa_nis: '',
-  siswa_nisn: '',
-  siswa_jenisKelamin: undefined,
-  siswa_tempatLahir: '',
-  siswa_tanggalLahir: undefined,
-  siswa_agama: undefined,
-  siswa_kewarganegaraan: undefined,
-  siswa_jumlahSaudara: 0,
-  siswa_bahasa: '',
-  siswa_golonganDarah: undefined,
-  siswa_telepon: '',
-  siswa_alamatKkProvinsi: '',
-  siswa_alamatKkKabupaten: '',
-  siswa_alamatKkKecamatan: '',
-  siswa_alamatKkDesa: '',
-  siswa_domisiliProvinsi: '',
-  siswa_domisiliKabupaten: '',
-  siswa_domisiliKecamatan: '',
-  siswa_domisiliDesa: '',
-  siswa_namaAyah: '',
-  siswa_namaIbu: '',
-  siswa_pendidikanAyah: '',
-  siswa_pendidikanIbu: '',
-  siswa_pekerjaanAyah: '',
-  siswa_pekerjaanIbu: '',
+  siswa_namaLengkap: 'Siti Test Siswa',
+  siswa_nis: '12345',
+  siswa_nisn: '0012345678',
+  siswa_jenisKelamin: 'Perempuan',
+  siswa_tempatLahir: 'Jakarta',
+  siswa_tanggalLahir: '2008-07-12T00:00:00.000Z',
+  siswa_agama: 'Islam',
+  siswa_kewarganegaraan: 'WNI',
+  siswa_jumlahSaudara: 2,
+  siswa_bahasa: 'Indonesia',
+  siswa_golonganDarah: 'A',
+  siswa_telepon: '081234567890',
+  siswa_alamatKkProvinsi: '32',
+  siswa_alamatKkKabupaten: '3273',
+  siswa_alamatKkKecamatan: '327301',
+  siswa_alamatKkDesa: '3273011001',
+  siswa_domisiliProvinsi: '32',
+  siswa_domisiliKabupaten: '3273',
+  siswa_domisiliKecamatan: '327301',
+  siswa_domisiliDesa: '3273011001',
+  siswa_namaAyah: 'Ayah Test',
+  siswa_namaIbu: 'Ibu Test',
+  siswa_pendidikanAyah: 'S1',
+  siswa_pendidikanIbu: 'SMA',
+  siswa_pekerjaanAyah: 'Karyawan Swasta',
+  siswa_pekerjaanIbu: 'Ibu Rumah Tangga',
   siswa_namaWali: '',
   siswa_hubunganWali: '',
   siswa_pendidikanWali: '',
   siswa_pekerjaanWali: '',
-  siswa_alamatOrangTua: '',
-  siswa_teleponOrangTua: '',
-  siswa_tinggiBadan: 0,
-  siswa_beratBadan: 0,
-  siswa_penyakit: '',
-  siswa_kelainanJasmani: '',
-  siswa_asalSekolah: '',
-  siswa_nomorSttb: '',
-  siswa_tanggalSttb: undefined,
+  siswa_alamatOrangTua: 'Jl. Test No. 123',
+  siswa_teleponOrangTua: '089876543210',
+  siswa_tinggiBadan: 160,
+  siswa_beratBadan: 50,
+  siswa_penyakit: 'Tidak ada',
+  siswa_kelainanJasmani: 'Tidak ada',
+  siswa_asalSekolah: 'SMP Test',
+  siswa_nomorSttb: 'STTB123456',
+  siswa_tanggalSttb: '2023-06-01T00:00:00.000Z',
   siswa_pindahanAsalSekolah: '',
   siswa_pindahanDariTingkat: '',
   siswa_pindahanDiterimaTanggal: undefined,
@@ -137,8 +137,6 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
   const [isSubmitting, startTransition] = useTransition();
   const { toast } = useToast();
   const router = useRouter();
-  const [studentId, setStudentId] = useState<string | undefined>(studentData?.id);
-
 
   const methods = useForm<StudentFormData>({
     resolver: zodResolver(studentFormSchema),
@@ -147,48 +145,11 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
       ? {
         ...initialFormValues,
         ...studentData,
-        siswa_tanggalLahir: studentData.siswa_tanggalLahir ? new Date(studentData.siswa_tanggalLahir) : undefined,
-        siswa_tanggalSttb: studentData.siswa_tanggalSttb ? new Date(studentData.siswa_tanggalSttb) : undefined,
-        siswa_pindahanDiterimaTanggal: studentData.siswa_pindahanDiterimaTanggal ? new Date(studentData.siswa_pindahanDiterimaTanggal) : undefined,
-        siswa_keluarTanggal: studentData.siswa_keluarTanggal ? new Date(studentData.siswa_keluarTanggal) : undefined,
       }
       : initialFormValues,
   });
 
   const { handleSubmit, trigger, getValues, formState: { errors } } = methods;
-  
-  const processDraftSave = async (isFinalSubmit: boolean = false) => {
-    // Convert Date objects to ISO strings before submission
-    const data = getValues();
-    const dataToSend = { ...data };
-    Object.keys(dataToSend).forEach(key => {
-        const value = (dataToSend as any)[key];
-        if (value instanceof Date) {
-            (dataToSend as any)[key] = value.toISOString();
-        }
-    });
-
-    const result = await submitStudentData(dataToSend, studentId, !isFinalSubmit);
-    
-    if (result.success) {
-      toast({
-          title: 'Sukses!',
-          description: result.message,
-      });
-      if (result.student && !studentId) {
-          setStudentId(result.student.id);
-          router.replace(`/siswa/${result.student.id}/edit?step=${currentStep}`, { scroll: false });
-      }
-      return true;
-    } else {
-      toast({
-          title: 'Gagal Menyimpan Draf',
-          description: result.message || 'Terjadi kesalahan.',
-          variant: 'destructive',
-      });
-      return false;
-    }
-  };
   
   const handleNext = async () => {
     const fieldsToValidate = steps.find(s => s.id === currentStep)?.fields as FieldPath<StudentFormData>[] | undefined;
@@ -203,12 +164,9 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
         return;
     }
 
-    startTransition(async () => {
-        const success = await processDraftSave(false);
-        if (success && currentStep < steps.length) {
-            setCurrentStep((prev) => prev + 1);
-        }
-    });
+    if (currentStep < steps.length) {
+        setCurrentStep((prev) => prev + 1);
+    }
   };
 
   const handlePrev = () => {
@@ -219,16 +177,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
 
   const processFinalSubmit = (data: StudentFormData) => {
     startTransition(async () => {
-        // Convert Date objects to ISO strings before submission
-        const dataToSend = { ...data };
-        Object.keys(dataToSend).forEach(key => {
-            const value = (dataToSend as any)[key];
-            if (value instanceof Date) {
-                (dataToSend as any)[key] = value.toISOString();
-            }
-        });
-
-        const result = await submitStudentData(dataToSend, studentId, false);
+        const result = await submitStudentData(data, studentData?.id);
 
         if (result.success) {
             toast({
@@ -244,34 +193,27 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
   };
 
   const onInvalid = (errors: FieldErrors<StudentFormData>) => {
-    const errorKeys = Object.keys(errors);
-    const fieldLabels: {[key: string]: string} = {
-      siswa_namaLengkap: 'Nama Lengkap',
-      siswa_nis: 'NIS',
-      siswa_nisn: 'NISN',
-      siswa_jenisKelamin: 'Jenis Kelamin',
-      siswa_tempatLahir: 'Tempat Lahir',
-      siswa_tanggalLahir: 'Tanggal Lahir',
-      siswa_agama: 'Agama',
-      siswa_kewarganegaraan: 'Kewarganegaraan',
-    };
+    let errorMessages: string[] = [];
+    let firstErrorStep = Infinity;
 
-    const errorMessages = errorKeys.map(key => fieldLabels[key] || key).join(', ');
+    for (const key of Object.keys(errors) as (keyof StudentFormData)[]) {
+        const stepWithError = steps.find(step => step.fields.includes(key));
+        if (stepWithError && stepWithError.id < firstErrorStep) {
+            firstErrorStep = stepWithError.id;
+        }
+        const fieldName = key.replace('siswa_', '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+        errorMessages.push(fieldName);
+    }
     
     toast({
         title: 'Gagal Menyimpan: Data Tidak Valid',
-        description: `Silakan periksa kolom berikut: ${errorMessages}`,
+        description: `Silakan periksa kolom berikut: ${errorMessages.join(', ')}`,
         variant: 'destructive',
     });
 
-    const stepWithError = steps.find(step =>
-      step.fields.some(field => errorKeys.includes(field))
-    );
-
-    if (stepWithError) {
-      setCurrentStep(stepWithError.id);
-      // Let's trigger validation again to show field-specific errors
-      trigger(errorKeys as FieldPath<StudentFormData>[], { shouldFocus: true });
+    if (firstErrorStep !== Infinity) {
+      setCurrentStep(firstErrorStep);
+      trigger(Object.keys(errors) as FieldPath<StudentFormData>[], { shouldFocus: true });
     }
   };
 
@@ -471,7 +413,7 @@ function DataSiswaForm() {
                         </Button>
                     </FormControl></PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
+                        <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date?.toISOString())} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
                     </PopoverContent>
                     </Popover><FormMessage /></FormItem>
                 )} />
@@ -759,7 +701,7 @@ function DataPerkembanganForm() {
                             </Button>
                         </FormControl></PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} initialFocus />
+                            <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date?.toISOString())} initialFocus />
                         </PopoverContent>
                         </Popover><FormMessage /></FormItem>
                     )} />
@@ -783,7 +725,7 @@ function DataPerkembanganForm() {
                             </Button>
                         </FormControl></PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} initialFocus />
+                            <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date?.toISOString())} initialFocus />
                         </PopoverContent>
                         </Popover><FormMessage /></FormItem>
                     )} />
@@ -841,7 +783,7 @@ function DataMeninggalkanSekolahForm() {
                             </Button>
                         </FormControl></PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} initialFocus />
+                            <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date?.toISOString())} initialFocus />
                         </PopoverContent>
                         </Popover><FormMessage /></FormItem>
                     )} />
@@ -1014,5 +956,3 @@ function DataValidasiForm() {
     </div>
   )
 }
-
-    

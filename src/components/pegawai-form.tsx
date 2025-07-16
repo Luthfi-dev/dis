@@ -41,18 +41,18 @@ const initialFormValues: PegawaiFormData = {
     pegawai_nama: 'Budi Test Pegawai',
     pegawai_jenisKelamin: 'Laki-laki',
     pegawai_tempatLahir: 'Bandung',
-    pegawai_tanggalLahir: new Date('1985-05-10'),
+    pegawai_tanggalLahir: '1985-05-10T00:00:00.000Z',
     pegawai_nip: '198505102010011001',
     pegawai_nuptk: '1234567890123456',
     pegawai_nrg: '0987654321',
     pegawai_statusPerkawinan: 'Kawin',
-    pegawai_tanggalPerkawinan: new Date('2010-01-15'),
+    pegawai_tanggalPerkawinan: '2010-01-15T00:00:00.000Z',
     pegawai_namaPasangan: 'Siti Test Pasangan',
     pegawai_jumlahAnak: 2,
     pegawai_jabatan: 'Guru Mata Pelajaran',
     pegawai_bidangStudi: 'Matematika',
     pegawai_tugasTambahan: 'Wakasek Bidang Kurikulum',
-    pegawai_terhitungMulaiTanggal: new Date('2010-01-01'),
+    pegawai_terhitungMulaiTanggal: '2010-01-01T00:00:00.000Z',
     pegawai_alamatDusun: 'Dusun Test',
     pegawai_alamatDesa: '3273011001', // GEGERKALONG
     pegawai_alamatKecamatan: '327301', // SUKASARI
@@ -105,47 +105,15 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
   const [isSubmitting, startTransition] = useTransition();
   const { toast } = useToast();
   const router = useRouter();
-  const [pegawaiId, setPegawaiId] = useState<string | undefined>(pegawaiData?.id);
 
   const methods = useForm<PegawaiFormData>({
     resolver: zodResolver(pegawaiFormSchema),
     mode: 'onBlur', 
-    defaultValues: pegawaiData
-      ? {
-        ...pegawaiData,
-        pegawai_tanggalLahir: pegawaiData.pegawai_tanggalLahir ? new Date(pegawaiData.pegawai_tanggalLahir) : undefined,
-        pegawai_tanggalPerkawinan: pegawaiData.pegawai_tanggalPerkawinan ? new Date(pegawaiData.pegawai_tanggalPerkawinan) : undefined,
-        pegawai_terhitungMulaiTanggal: pegawaiData.pegawai_terhitungMulaiTanggal ? new Date(pegawaiData.pegawai_terhitungMulaiTanggal) : undefined,
-      }
-      : initialFormValues,
+    defaultValues: pegawaiData ? pegawaiData : initialFormValues,
   });
 
-  const { handleSubmit, trigger, getValues, formState: { errors } } = methods;
+  const { handleSubmit, trigger, formState: { errors } } = methods;
   
-  const processDraftSave = async () => {
-    const data = getValues();
-    const result = await submitPegawaiData(data, pegawaiId, true);
-    
-    if (result.success && result.pegawai) {
-      if (!pegawaiId) {
-          setPegawaiId(result.pegawai.id);
-          router.replace(`/pegawai/${result.pegawai.id}/edit?step=${currentStep + 1}`, { scroll: false });
-      }
-      toast({
-          title: 'Sukses!',
-          description: `Draf untuk langkah ${currentStep} berhasil disimpan.`,
-      });
-      return true;
-    } else {
-      toast({
-          title: 'Gagal Menyimpan Draf',
-          description: result.message || 'Terjadi kesalahan saat menyimpan draf.',
-          variant: 'destructive',
-      });
-      return false;
-    }
-  };
-
   const handleNext = async () => {
     const fieldsToValidate = steps.find(s => s.id === currentStep)?.fields as FieldPath<PegawaiFormData>[] | undefined;
     const isValid = await trigger(fieldsToValidate, { shouldFocus: true });
@@ -159,12 +127,9 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
         return;
     }
 
-    startTransition(async () => {
-      const success = await processDraftSave();
-      if (success && currentStep < steps.length) {
-          setCurrentStep((prev) => prev + 1);
-      }
-    });
+    if (currentStep < steps.length) {
+        setCurrentStep((prev) => prev + 1);
+    }
   };
 
   const handlePrev = () => {
@@ -175,7 +140,7 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
 
   const processFinalSubmit = (data: PegawaiFormData) => {
     startTransition(async () => {
-        const result = await submitPegawaiData(data, pegawaiId, false);
+        const result = await submitPegawaiData(data, pegawaiData?.id);
 
         if (result.success) {
             toast({
@@ -191,13 +156,16 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
   };
 
    const onInvalid = (errors: FieldErrors<PegawaiFormData>) => {
-    const errorMessages: string[] = [];
-    
-    for (const key in errors) {
-        if (Object.prototype.hasOwnProperty.call(errors, key)) {
-            const fieldName = key.replace('pegawai_', '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-            errorMessages.push(fieldName);
+    let errorMessages: string[] = [];
+    let firstErrorStep = Infinity;
+
+    for (const key of Object.keys(errors) as (keyof PegawaiFormData)[]) {
+        const stepWithError = steps.find(step => step.fields.includes(key));
+        if (stepWithError && stepWithError.id < firstErrorStep) {
+            firstErrorStep = stepWithError.id;
         }
+        const fieldName = key.replace('pegawai_', '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+        errorMessages.push(fieldName);
     }
 
     toast({
@@ -206,14 +174,9 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
         variant: 'destructive',
     });
 
-    const errorKeys = Object.keys(errors);
-    const stepWithError = steps.find(step =>
-      step.fields.some(field => errorKeys.includes(field))
-    );
-
-    if (stepWithError) {
-      setCurrentStep(stepWithError.id);
-      trigger(errorKeys as FieldPath<PegawaiFormData>[], { shouldFocus: true });
+    if (firstErrorStep !== Infinity) {
+      setCurrentStep(firstErrorStep);
+      trigger(Object.keys(errors) as FieldPath<PegawaiFormData>[], { shouldFocus: true });
     }
   };
 
@@ -408,7 +371,7 @@ function DataIdentitasPegawaiForm() {
                 </Button>
             </FormControl></PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
+                <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date?.toISOString())} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
             </PopoverContent>
             </Popover><FormMessage /></FormItem>
         )} />
@@ -440,7 +403,7 @@ function DataIdentitasPegawaiForm() {
                 </Button>
             </FormControl></PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} disabled={(date) => date > new Date()} initialFocus />
+                <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date?.toISOString())} disabled={(date) => date > new Date()} initialFocus />
             </PopoverContent>
             </Popover><FormMessage /></FormItem>
         )} />
@@ -503,7 +466,7 @@ function DataIdentitasPegawaiForm() {
                 </Button>
             </FormControl></PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} disabled={(date) => date > new Date()} initialFocus />
+                <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date?.toISOString())} disabled={(date) => date > new Date()} initialFocus />
             </PopoverContent>
             </Popover><FormMessage /></FormItem>
         )} />
