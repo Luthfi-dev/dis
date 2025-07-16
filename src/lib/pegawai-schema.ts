@@ -6,7 +6,7 @@ import { z } from 'zod';
 const fileSchema = z.object({
   fileName: z.string(),
   fileURL: z.string().url('URL tidak valid'),
-}).nullable().optional();
+}).optional(); // Hanya .optional() yang diperlukan, bukan .nullable()
 
 const requiredFileSchema = z.object({
   fileName: z.string().min(1, 'File harus diunggah.'),

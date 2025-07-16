@@ -6,7 +6,7 @@ import { z } from 'zod';
 const fileSchema = z.object({
   fileName: z.string(),
   fileURL: z.string().url(),
-}).nullable().optional();
+}).optional(); // Hanya .optional() yang diperlukan, bukan .nullable()
 
 const requiredFileSchema = z.object({
   fileName: z.string().min(1, 'File harus diunggah.'),
@@ -24,7 +24,7 @@ export const studentFormSchema = z.object({
   siswa_tanggalLahir: z.date({ required_error: "Tanggal lahir wajib diisi." }),
   siswa_agama: z.enum(['Islam', 'Kristen', 'Hindu', 'Budha'], { required_error: "Agama wajib dipilih." }),
   siswa_kewarganegaraan: z.enum(['WNI', 'WNA'], { required_error: "Kewarganegaraan wajib dipilih." }),
-  siswa_jumlahSaudara: z.coerce.number().int().nonnegative("Jumlah saudara tidak boleh negatif.").optional(),
+  siswa_jumlahSaudara: z.coerce.number().optional(),
   siswa_bahasa: z.string().optional(),
   siswa_golonganDarah: z.enum(['A', 'B', 'AB', 'O']).optional(),
   
