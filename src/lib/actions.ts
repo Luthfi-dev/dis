@@ -24,11 +24,20 @@ export async function getCategorySuggestion(description: string) {
 
 export async function submitStudentData(data: Partial<Siswa>) {
   try {
-    const parsedData = studentFormSchema.parse(data);
+    // Dates are transmitted as strings, so we need to convert them back to Dates for validation
+    const dataWithDates = {
+        ...data,
+        tanggalLahir: data.tanggalLahir ? new Date(data.tanggalLahir) : undefined,
+        tanggalSttb: data.tanggalSttb ? new Date(data.tanggalSttb) : undefined,
+        pindahanDiterimaTanggal: data.pindahanDiterimaTanggal ? new Date(data.pindahanDiterimaTanggal) : undefined,
+        keluarTanggal: data.keluarTanggal ? new Date(data.keluarTanggal) : undefined,
+    };
+
+    const parsedData = studentFormSchema.parse(dataWithDates);
     const isUpdate = !!data.id;
 
     // Check completion status
-    const completionResult = completeStudentFormSchema.safeParse(data);
+    const completionResult = completeStudentFormSchema.safeParse(dataWithDates);
     const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
     
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -51,10 +60,18 @@ export async function submitStudentData(data: Partial<Siswa>) {
 
 export async function submitPegawaiData(data: Partial<Pegawai>) {
     try {
-      const parsedData = pegawaiFormSchema.parse(data);
+        // Dates are transmitted as strings, so we need to convert them back to Dates for validation
+        const dataWithDates = {
+            ...data,
+            tanggalLahir: data.tanggalLahir ? new Date(data.tanggalLahir) : undefined,
+            tanggalPerkawinan: data.tanggalPerkawinan ? new Date(data.tanggalPerkawinan) : undefined,
+            terhitungMulaiTanggal: data.terhitungMulaiTanggal ? new Date(data.terhitungMulaiTanggal) : undefined,
+        };
+
+      const parsedData = pegawaiFormSchema.parse(dataWithDates);
       const isUpdate = !!data.id;
       
-      const completionResult = completePegawaiFormSchema.safeParse(data);
+      const completionResult = completePegawaiFormSchema.safeParse(dataWithDates);
       const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
       
       await new Promise(resolve => setTimeout(resolve, 1000));
