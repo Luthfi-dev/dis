@@ -17,7 +17,7 @@ const multiFileSchema = z.array(z.object({
 })).optional();
 
 export const pegawai_IdentitasSchema = z.object({
-  pegawai_phaspoto: fileSchema,
+  pegawai_phaspoto: z.any().optional(),
   pegawai_nama: z.string().min(3, "Nama lengkap minimal 3 karakter."),
   pegawai_jenisKelamin: z.enum(['Laki-laki', 'Perempuan'], { required_error: "Jenis kelamin wajib dipilih." }),
   pegawai_tempatLahir: z.string().min(1, "Tempat lahir wajib diisi."),
@@ -81,8 +81,7 @@ export type PegawaiFormData = z.infer<typeof pegawaiFormSchema>;
 
 
 // Schema for checking completion status
-export const completePegawaiFormSchema = pegawai_IdentitasSchema.merge(
-  z.object({
+export const completePegawaiFormSchema = pegawai_IdentitasSchema.extend({
     // All education levels now require tamatTahun and ijazah for completion.
     // Making them stricter.
     pegawai_pendidikanSD: z.object({ tamatTahun: z.string().min(1, 'Tahun tamat SD wajib diisi'), ijazah: requiredFileSchema }),
@@ -92,8 +91,7 @@ export const completePegawaiFormSchema = pegawai_IdentitasSchema.merge(
     pegawai_pendidikanDiploma: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema.optional() }).optional(),
     pegawai_pendidikanS1: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema.optional() }).optional(),
     pegawai_pendidikanS2: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema.optional() }).optional(),
-  })
-).merge(
+  }).merge(
   z.object({
     // All files are required for completion.
     pegawai_skPengangkatan: z.array(requiredFileSchema).min(1, "SK Pengangkatan wajib diunggah"),
