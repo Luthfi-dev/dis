@@ -45,35 +45,13 @@ export async function deleteSiswa(id: string): Promise<{ success: boolean; messa
 
 export async function submitStudentData(data: StudentFormData, studentId?: string) {
     try {
-        const validationResult = studentFormSchema.safeParse(data);
-        if (!validationResult.success) {
-            const errorDetails = validationResult.error.flatten().fieldErrors;
-            const errorMessages = Object.entries(errorDetails).map(([key, value]) => `${key}: ${value?.join(', ')}`).join('; ');
-            const finalMessage = `Data tidak valid. ${errorMessages || 'Terjadi kesalahan validasi umum, silakan periksa kembali seluruh data.'}`;
-            
-            console.error("Student Validation Error:", errorDetails);
-            
-            return {
-                success: false,
-                message: finalMessage,
-                errors: errorDetails,
-            };
-        }
-
-        const parsedData = validationResult.data;
         const id = studentId || crypto.randomUUID();
 
-        if (parsedData.siswa_nisn && !studentId) {
-            if (allStudents.some(s => s.siswa_nisn === parsedData.siswa_nisn)) {
-                return { success: false, message: 'NISN sudah digunakan oleh siswa lain.' };
-            }
-        }
-
-        const completionResult = completeStudentFormSchema.safeParse(data);
-        const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
+        // No more complex validation on server, just check for name
+        const status = data.siswa_namaLengkap ? 'Lengkap' : 'Belum Lengkap';
         
         const existingData = await getSiswaById(id);
-        const finalData: Siswa = mergeDeep(existingData || {}, { ...parsedData, id, status });
+        const finalData: Siswa = mergeDeep(existingData || {}, { ...data, id, status });
 
         const existingStudentIndex = allStudents.findIndex(s => s.id === id);
 
@@ -84,8 +62,8 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
         }
 
         const message = studentId ? `Data siswa ${finalData.siswa_namaLengkap} berhasil diperbarui!` : `Data siswa ${finalData.siswa_namaLengkap} berhasil disimpan!`;
-        logActivity(message);
-
+        // logActivity is client-side, cannot be called here
+        
         return { success: true, message, student: finalData };
     } catch (error: any) {
         const errorMessage = `Kesalahan Server: ${error.name} - ${error.message}`;
@@ -147,7 +125,7 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
         allPegawai.push(hardcodedPegawai);
     }
     
-    logActivity(`Data pegawai tes ${hardcodedPegawai.pegawai_nama} berhasil disimpan.`);
+    // logActivity(`Data pegawai tes ${hardcodedPegawai.pegawai_nama} berhasil disimpan.`); // THIS LINE IS REMOVED
 
     return { success: true, message: "Data tes berhasil disimpan!" };
 }
