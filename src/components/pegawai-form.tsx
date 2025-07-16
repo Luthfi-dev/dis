@@ -2,9 +2,9 @@
 'use client';
 
 import { useState, useTransition, useEffect, useMemo } from 'react';
-import { useForm, FormProvider, useFormContext, useFieldArray, get, FieldPath } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { pegawaiFormSchema, PegawaiFormData, pegawai_IdentitasSchema, pegawai_FileSchema, completePegawaiFormSchema } from '@/lib/pegawai-schema';
+import { pegawaiFormSchema, PegawaiFormData } from '@/lib/pegawai-schema';
 import { FormStepper } from './form-stepper';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -28,8 +28,8 @@ import { Combobox } from './ui/combobox';
 import { logActivity } from '@/lib/activity-log';
 
 const steps = [
-  { id: 1, title: 'Identitas Pegawai', schema: pegawai_IdentitasSchema },
-  { id: 2, title: 'File Pegawai', schema: pegawai_FileSchema },
+  { id: 1, title: 'Identitas Pegawai' },
+  { id: 2, title: 'File Pegawai' },
   { id: 3, title: 'Validasi' },
 ];
 
@@ -114,7 +114,7 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
       : initialFormValues,
   });
 
-  const { trigger, handleSubmit, formState, getValues } = methods;
+  const { handleSubmit } = methods;
 
   const handleNext = async () => {
     // No validation on next, just proceed to the next step

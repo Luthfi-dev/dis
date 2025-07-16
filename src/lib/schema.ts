@@ -11,8 +11,9 @@ const requiredFileSchema = z.object({
   fileURL: z.string().url('URL tidak valid'),
 });
 
-// Base schema with minimum requirements for Step 1
-export const dataSiswaSchema = z.object({
+// Skema utama yang digunakan oleh form resolver.
+// Hanya kolom di "Data Siswa" yang wajib. Sisanya opsional.
+export const studentFormSchema = z.object({
   siswa_fotoProfil: fileSchema,
   siswa_namaLengkap: z.string().min(3, "Nama lengkap minimal 3 karakter."),
   siswa_nis: z.string().min(1, "Nomor Induk Sekolah wajib diisi."),
@@ -34,10 +35,8 @@ export const dataSiswaSchema = z.object({
   siswa_domisiliKabupaten: z.string().min(1, "Kabupaten domisili wajib dipilih."),
   siswa_domisiliKecamatan: z.string().min(1, "Kecamatan domisili wajib dipilih."),
   siswa_domisiliDesa: z.string().min(1, "Desa domisili wajib dipilih."),
-});
 
-// Schemas for other steps (mostly optional for draft saving)
-export const dataOrangTuaSchema = z.object({
+  // Orang Tua (opsional)
   siswa_namaAyah: z.string().optional(),
   siswa_namaIbu: z.string().optional(),
   siswa_pendidikanAyah: z.string().optional(),
@@ -50,42 +49,32 @@ export const dataOrangTuaSchema = z.object({
   siswa_pekerjaanWali: z.string().optional(),
   siswa_alamatOrangTua: z.string().optional(),
   siswa_teleponOrangTua: z.string().optional(),
-});
 
-export const dataRincianSchema = z.object({
+  // Rincian (opsional)
   siswa_tinggiBadan: z.coerce.number().optional(),
   siswa_beratBadan: z.coerce.number().optional(),
   siswa_penyakit: z.string().optional(),
   siswa_kelainanJasmani: z.string().optional(),
-});
 
-export const dataPerkembanganSchema = z.object({
-  // Siswa Baru
+  // Perkembangan (opsional)
   siswa_asalSekolah: z.string().optional(),
   siswa_nomorSttb: z.string().optional(),
   siswa_tanggalSttb: z.date().optional(),
-  // Pindahan
   siswa_pindahanAsalSekolah: z.string().optional(),
   siswa_pindahanDariTingkat: z.string().optional(),
   siswa_pindahanDiterimaTanggal: z.date().optional(),
-});
 
-export const dataMeninggalkanSekolahSchema = z.object({
-    // Lulus
-    siswa_lulusTahun: z.string().optional(),
-    siswa_lulusNomorIjazah: z.string().optional(),
-    siswa_lulusMelanjutkanKe: z.string().optional(),
-    // Pindah
-    siswa_pindahKeSekolah: z.string().optional(),
-    siswa_pindahTingkatKelas: z.string().optional(),
-    siswa_pindahKeTingkat: z.string().optional(),
-    // Keluar
-    siswa_keluarAlasan: z.string().optional(),
-    siswa_keluarTanggal: z.date().optional(),
-});
+  // Meninggalkan Sekolah (opsional)
+  siswa_lulusTahun: z.string().optional(),
+  siswa_lulusNomorIjazah: z.string().optional(),
+  siswa_lulusMelanjutkanKe: z.string().optional(),
+  siswa_pindahKeSekolah: z.string().optional(),
+  siswa_pindahTingkatKelas: z.string().optional(),
+  siswa_pindahKeTingkat: z.string().optional(),
+  siswa_keluarAlasan: z.string().optional(),
+  siswa_keluarTanggal: z.date().optional(),
 
-
-export const dataDokumenSchema = z.object({
+  // Dokumen (opsional)
   documents: z.object({
     kartuKeluarga: fileSchema,
     ktpAyah: fileSchema,
@@ -104,31 +93,16 @@ export const dataDokumenSchema = z.object({
     ijazahSmp: fileSchema,
     transkripSmp: fileSchema,
   }).optional(),
-});
-
-// Merged schema for the entire form, mostly optional for draft saving
-export const studentFormSchema = dataSiswaSchema
-  .merge(dataOrangTuaSchema)
-  .merge(dataRincianSchema)
-  .merge(dataPerkembanganSchema)
-  .merge(dataMeninggalkanSekolahSchema)
-  .merge(dataDokumenSchema)
-  // This transformation ensures that if a field that is supposed to be a number (like jumlahSaudara)
-  // is submitted as an empty string, it gets converted to a number (0) or handled gracefully.
-  .transform((data) => ({
+}).transform((data) => ({
       ...data,
       siswa_jumlahSaudara: Number(data.siswa_jumlahSaudara) || 0,
       siswa_tinggiBadan: Number(data.siswa_tinggiBadan) || undefined,
       siswa_beratBadan: Number(data.siswa_beratBadan) || undefined,
-  }));
+}));
 
-const optionalFile = fileSchema.nullable();
 
-// A stricter schema to check for completion status
-// All fields that are optional in the main form are made required here.
-export const completeStudentFormSchema = dataSiswaSchema.merge(
-    z.object({
-    // Dokumen - All documents are required for status 'Lengkap'
+// Skema ketat ini HANYA digunakan di server untuk menentukan status 'Lengkap'
+export const completeStudentFormSchema = studentFormSchema.extend({
     documents: z.object({
         kartuKeluarga: requiredFileSchema,
         ktpAyah: requiredFileSchema,
@@ -136,8 +110,8 @@ export const completeStudentFormSchema = dataSiswaSchema.merge(
         kartuIndonesiaPintar: requiredFileSchema,
         ijazah: requiredFileSchema,
         aktaKelahiran: requiredFileSchema,
-        akteKematianAyah: optionalFile,
-        akteKematianIbu: optionalFile,
+        akteKematianAyah: fileSchema, // Tetap opsional
+        akteKematianIbu: fileSchema, // Tetap opsional
         raporSmt1: requiredFileSchema,
         raporSmt2: requiredFileSchema,
         raporSmt3: requiredFileSchema,
@@ -148,7 +122,6 @@ export const completeStudentFormSchema = dataSiswaSchema.merge(
         transkripSmp: requiredFileSchema,
     }),
 
-    // Orang Tua - Wali remains optional, but if a wali is named, other details might be needed.
     siswa_namaAyah: z.string().min(1, "Nama Ayah wajib diisi."),
     siswa_namaIbu: z.string().min(1, "Nama Ibu wajib diisi."),
     siswa_pendidikanAyah: z.string().min(1, "Pendidikan Ayah wajib diisi."),
@@ -157,15 +130,82 @@ export const completeStudentFormSchema = dataSiswaSchema.merge(
     siswa_pekerjaanIbu: z.string().min(1, "Pekerjaan Ibu wajib diisi."),
     siswa_alamatOrangTua: z.string().min(1, "Alamat Orang Tua wajib diisi."),
     
-    // Rincian
     siswa_tinggiBadan: z.coerce.number().positive("Tinggi badan harus diisi."),
     siswa_beratBadan: z.coerce.number().positive("Berat badan harus diisi."),
     
-    // Perkembangan
     siswa_asalSekolah: z.string().min(1, "Asal sekolah wajib diisi."),
-})
-);
+});
 
 
 export type StudentFormData = z.infer<typeof studentFormSchema>;
-export type DocumentData = z.infer<typeof dataDokumenSchema>;
+
+// Menghapus schema-schema lama yang tidak diperlukan lagi untuk validasi per langkah
+export const dataSiswaSchema = studentFormSchema.pick({
+  siswa_fotoProfil: true,
+  siswa_namaLengkap: true,
+  siswa_nis: true,
+  siswa_nisn: true,
+  siswa_jenisKelamin: true,
+  siswa_tempatLahir: true,
+  siswa_tanggalLahir: true,
+  siswa_agama: true,
+  siswa_kewarganegaraan: true,
+  siswa_jumlahSaudara: true,
+  siswa_bahasa: true,
+  siswa_golonganDarah: true,
+  siswa_telepon: true,
+  siswa_alamatKkProvinsi: true,
+  siswa_alamatKkKabupaten: true,
+  siswa_alamatKkKecamatan: true,
+  siswa_alamatKkDesa: true,
+  siswa_domisiliProvinsi: true,
+  siswa_domisiliKabupaten: true,
+  siswa_domisiliKecamatan: true,
+  siswa_domisiliDesa: true,
+});
+
+export const dataOrangTuaSchema = studentFormSchema.pick({
+  siswa_namaAyah: true,
+  siswa_namaIbu: true,
+  siswa_pendidikanAyah: true,
+  siswa_pendidikanIbu: true,
+  siswa_pekerjaanAyah: true,
+  siswa_pekerjaanIbu: true,
+  siswa_namaWali: true,
+  siswa_hubunganWali: true,
+  siswa_pendidikanWali: true,
+  siswa_pekerjaanWali: true,
+  siswa_alamatOrangTua: true,
+  siswa_teleponOrangTua: true,
+});
+
+export const dataRincianSchema = studentFormSchema.pick({
+  siswa_tinggiBadan: true,
+  siswa_beratBadan: true,
+  siswa_penyakit: true,
+  siswa_kelainanJasmani: true,
+});
+
+export const dataPerkembanganSchema = studentFormSchema.pick({
+  siswa_asalSekolah: true,
+  siswa_nomorSttb: true,
+  siswa_tanggalSttb: true,
+  siswa_pindahanAsalSekolah: true,
+  siswa_pindahanDariTingkat: true,
+  siswa_pindahanDiterimaTanggal: true,
+});
+
+export const dataMeninggalkanSekolahSchema = studentFormSchema.pick({
+  siswa_lulusTahun: true,
+  siswa_lulusNomorIjazah: true,
+  siswa_lulusMelanjutkanKe: true,
+  siswa_pindahKeSekolah: true,
+  siswa_pindahTingkatKelas: true,
+  siswa_pindahKeTingkat: true,
+  siswa_keluarAlasan: true,
+  siswa_keluarTanggal: true,
+});
+
+export const dataDokumenSchema = studentFormSchema.pick({
+  documents: true
+});

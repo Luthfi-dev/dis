@@ -4,7 +4,7 @@
 import { useState, useTransition, useCallback, useEffect, useMemo } from 'react';
 import { useForm, FormProvider, useFormContext, get, FieldPath } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { studentFormSchema, StudentFormData, completeStudentFormSchema, dataSiswaSchema, dataRincianSchema, dataPerkembanganSchema, dataMeninggalkanSekolahSchema, dataDokumenSchema, dataOrangTuaSchema } from '@/lib/schema';
+import { studentFormSchema, StudentFormData } from '@/lib/schema';
 import { FormStepper } from './form-stepper';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -29,12 +29,12 @@ import { Separator } from './ui/separator';
 import { logActivity } from '@/lib/activity-log';
 
 const steps = [
-  { id: 1, title: 'Data Siswa', schema: dataSiswaSchema },
-  { id: 2, title: 'Dokumen Utama', schema: dataDokumenSchema },
-  { id: 3, title: 'Data Orang Tua', schema: dataOrangTuaSchema },
-  { id: 4, title: 'Rincian Kesehatan', schema: dataRincianSchema },
-  { id: 5, title: 'Perkembangan Siswa', schema: dataPerkembanganSchema },
-  { id: 6, title: 'Meninggalkan Sekolah', schema: dataMeninggalkanSekolahSchema },
+  { id: 1, title: 'Data Siswa' },
+  { id: 2, title: 'Dokumen Utama' },
+  { id: 3, title: 'Data Orang Tua' },
+  { id: 4, title: 'Rincian Kesehatan' },
+  { id: 5, title: 'Perkembangan Siswa' },
+  { id: 6, title: 'Meninggalkan Sekolah' },
   { id: 7, title: 'Laporan Belajar' },
   { id: 8, title: 'Validasi' },
 ];
@@ -147,7 +147,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
       : initialFormValues,
   });
 
-  const { trigger, handleSubmit, formState } = methods;
+  const { handleSubmit } = methods;
 
   const handleNext = async () => {
     // No validation on next, just proceed to the next step
@@ -826,8 +826,7 @@ function DocumentUploadField({ name, label }: DocumentUploadFieldProps) {
               ) : (
                 !error && (
                   <div className="flex items-center gap-2 text-muted-foreground">
-                      <FileX2 className="h-5 w-5" />
-                      <span className="sr-only">Belum diunggah</span>
+                    {/* Placeholder for when no file is uploaded */}
                   </div>
                 )
               )}
