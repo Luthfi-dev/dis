@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useTransition, useEffect, useMemo } from 'react';
-import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext, useFieldArray, FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { pegawaiFormSchema, PegawaiFormData } from '@/lib/pegawai-schema';
 import { FormStepper } from './form-stepper';
@@ -114,7 +114,7 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
       : initialFormValues,
   });
 
-  const { handleSubmit } = methods;
+  const { handleSubmit, trigger, formState: { dirtyFields } } = methods;
 
   const handleNext = async () => {
     // No validation on next, just proceed to the next step
@@ -143,10 +143,19 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
         } else {
             toast({
                 title: 'Gagal Menyimpan',
-                description: result.message || 'Terjadi kesalahan.',
+                description: result.message || 'Terjadi kesalahan. Periksa kembali isian formulir Anda.',
                 variant: 'destructive',
             });
         }
+    });
+  };
+
+   const onInvalid = (errors: FieldErrors<PegawaiFormData>) => {
+    console.error("Validation Errors:", errors);
+    toast({
+        title: 'Gagal Menyimpan',
+        description: 'Data tidak valid. Silakan periksa kembali semua isian formulir Anda.',
+        variant: 'destructive',
     });
   };
 
@@ -155,7 +164,7 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
       <div className="mt-12">
         <FormStepper steps={steps} currentStep={currentStep} />
       </div>
-      <form onSubmit={handleSubmit(processForm)}>
+      <form onSubmit={handleSubmit(processForm, onInvalid)}>
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>{steps[currentStep - 1].title}</CardTitle>
@@ -402,7 +411,7 @@ function DataIdentitasPegawaiForm() {
             <FormMessage /></FormItem>
         )} />
         <FormField control={control} name="pegawai_bidangStudi" render={({ field }) => (
-            <FormItem><FormLabelRequired>Mengampu Bidang Studi</FormLabelRequired><FormControl><Input placeholder="Contoh: Matematika" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Mengampu Bidang Studi</FormLabel><FormControl><Input placeholder="Contoh: Matematika" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="pegawai_tugasTambahan" render={({ field }) => (
             <FormItem><FormLabel>Tugas Tambahan</FormLabel><Select onValueChange={field.onChange} value={field.value}>
@@ -436,7 +445,7 @@ function DataIdentitasPegawaiForm() {
             <h3 className="text-lg font-semibold">Alamat Rumah</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <FormField control={control} name="pegawai_alamatKabupaten" render={({ field }) => (
-                    <FormItem><FormLabelRequired>Kabupaten</FormLabelRequired><FormControl>
+                    <FormItem><FormLabel>Kabupaten</FormLabel><FormControl>
                         <Combobox
                           options={wilayahToOptions(allKabupatens)}
                           value={field.value}
@@ -447,7 +456,7 @@ function DataIdentitasPegawaiForm() {
                     </FormControl><FormMessage /></FormItem>
                 )} />
                  <FormField control={control} name="pegawai_alamatKecamatan" render={({ field }) => (
-                    <FormItem><FormLabelRequired>Kecamatan</FormLabelRequired><FormControl>
+                    <FormItem><FormLabel>Kecamatan</FormLabel><FormControl>
                         <Combobox
                           options={wilayahToOptions(kecamatans)}
                           value={field.value}
@@ -459,7 +468,7 @@ function DataIdentitasPegawaiForm() {
                     </FormControl><FormMessage /></FormItem>
                 )} />
                  <FormField control={control} name="pegawai_alamatDesa" render={({ field }) => (
-                    <FormItem><FormLabelRequired>Desa</FormLabelRequired><FormControl>
+                    <FormItem><FormLabel>Desa</FormLabel><FormControl>
                         <Combobox
                           options={wilayahToOptions(desas)}
                           value={field.value}
@@ -471,7 +480,7 @@ function DataIdentitasPegawaiForm() {
                     </FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={control} name="pegawai_alamatDusun" render={({ field }) => (
-                    <FormItem><FormLabelRequired>Dusun</FormLabelRequired><FormControl><Input placeholder="Nama Dusun" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Dusun</FormLabel><FormControl><Input placeholder="Nama Dusun" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
             </div>
         </div>

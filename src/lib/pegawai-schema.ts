@@ -32,7 +32,7 @@ export const pegawaiFormSchema = z.object({
   pegawai_namaPasangan: z.string().optional(),
   pegawai_jumlahAnak: z.coerce.number().nonnegative("Jumlah anak tidak boleh negatif.").optional(),
   pegawai_jabatan: z.string().min(1, "Jabatan wajib dipilih."),
-  pegawai_bidangStudi: z.string().optional(), // Dibuat opsional
+  pegawai_bidangStudi: z.string().optional(),
   pegawai_tugasTambahan: z.enum([
     'Kepala Sekolah',
     'Wakasek Bidang Kesiswaan',
@@ -84,6 +84,7 @@ export type PegawaiFormData = z.infer<typeof pegawaiFormSchema>;
 export const completePegawaiFormSchema = pegawaiFormSchema.extend({
     pegawai_nip: z.string().min(1, 'NIP wajib diisi untuk status Lengkap.'),
     pegawai_nuptk: z.string().min(1, 'NUPTK wajib diisi untuk status Lengkap.'),
+    pegawai_bidangStudi: z.string().min(1, 'Bidang studi wajib diisi untuk status Lengkap.'),
 
     pegawai_pendidikanSD: z.object({ tamatTahun: z.string().min(1, 'Tahun tamat SD wajib diisi'), ijazah: requiredFileSchema }),
     pegawai_pendidikanSMP: z.object({ tamatTahun: z.string().min(1, 'Tahun tamat SMP wajib diisi'), ijazah: requiredFileSchema }),

@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useTransition, useCallback, useEffect, useMemo } from 'react';
-import { useForm, FormProvider, useFormContext, get, FieldPath } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext, get, FieldPath, FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { studentFormSchema, StudentFormData } from '@/lib/schema';
 import { FormStepper } from './form-stepper';
@@ -147,7 +147,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
       : initialFormValues,
   });
 
-  const { handleSubmit } = methods;
+  const { handleSubmit, trigger, formState: { dirtyFields } } = methods;
 
   const handleNext = async () => {
     // No validation on next, just proceed to the next step
@@ -175,12 +175,21 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
         } else {
             toast({
                 title: 'Gagal Menyimpan',
-                description: result.message || 'Terjadi kesalahan.',
+                description: result.message || 'Terjadi kesalahan. Periksa kembali isian formulir Anda.',
                 variant: 'destructive',
             });
         }
     });
 };
+
+  const onInvalid = (errors: FieldErrors<StudentFormData>) => {
+    console.error("Validation Errors:", errors);
+    toast({
+        title: 'Gagal Menyimpan',
+        description: 'Data tidak valid. Silakan periksa kembali semua isian formulir Anda.',
+        variant: 'destructive',
+    });
+  };
 
 
   useEffect(() => {
@@ -201,7 +210,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
       <div className="mt-12">
         <FormStepper steps={steps} currentStep={currentStep} />
       </div>
-      <form onSubmit={handleSubmit(processForm)}>
+      <form onSubmit={handleSubmit(processForm, onInvalid)}>
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>{steps[currentStep - 1].title}</CardTitle>
@@ -427,11 +436,11 @@ function DataSiswaForm() {
         </Select><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="siswa_telepon" render={({ field }) => (
-            <FormItem><FormLabelRequired>Nomor HP/WA</FormLabelRequired><FormControl><Input placeholder="08xxxxxxxxxx" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Nomor HP/WA</FormLabel><FormControl><Input placeholder="08xxxxxxxxxx" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
         
         <div className="md:col-span-2 space-y-2">
-            <h3 className="text-sm font-medium"><FormLabelRequired>Alamat Sesuai Kartu Keluarga</FormLabelRequired></h3>
+            <h3 className="text-sm font-medium"><FormLabel>Alamat Sesuai Kartu Keluarga</FormLabel></h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                  <FormField control={control} name="siswa_alamatKkProvinsi" render={({ field }) => (
                     <FormItem><FormLabel>Provinsi</FormLabel><FormControl>
@@ -484,7 +493,7 @@ function DataSiswaForm() {
         </div>
 
         <div className="md:col-span-2 space-y-2">
-            <h3 className="text-sm font-medium"><FormLabelRequired>Domisili</FormLabelRequired></h3>
+            <h3 className="text-sm font-medium"><FormLabel>Domisili</FormLabel></h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                  <FormField control={control} name="siswa_domisiliProvinsi" render={({ field }) => (
                     <FormItem><FormLabel>Provinsi</FormLabel><FormControl>
