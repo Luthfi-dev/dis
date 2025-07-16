@@ -164,7 +164,13 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
 
   const processForm = (data: StudentFormData) => {
     startTransition(async () => {
-        const result = await submitStudentData(data, studentData?.id);
+        const dataForServer: any = { ...data };
+        if(data.siswa_tanggalLahir) dataForServer.siswa_tanggalLahir = data.siswa_tanggalLahir.toISOString();
+        if(data.siswa_tanggalSttb) dataForServer.siswa_tanggalSttb = data.siswa_tanggalSttb.toISOString();
+        if(data.siswa_pindahanDiterimaTanggal) dataForServer.siswa_pindahanDiterimaTanggal = data.siswa_pindahanDiterimaTanggal.toISOString();
+        if(data.siswa_keluarTanggal) dataForServer.siswa_keluarTanggal = data.siswa_keluarTanggal.toISOString();
+
+        const result = await submitStudentData(dataForServer, studentData?.id);
         if (result.success) {
             toast({
                 title: 'Sukses!',

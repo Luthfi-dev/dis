@@ -3,31 +3,26 @@
 
 import { z } from 'zod';
 
-// Skema untuk file, dibuat sepenuhnya opsional
 const fileSchema = z.object({
   fileName: z.string(),
   fileURL: z.string().url(),
 }).optional();
 
-// Skema untuk file yang wajib ada (hanya untuk status 'Lengkap')
 const requiredFileSchema = z.object({
   fileName: z.string().min(1, 'File harus diunggah.'),
   fileURL: z.string().url('URL tidak valid'),
 });
 
-// --- SKEMA UTAMA UNTUK FORMULIR ---
 export const studentFormSchema = z.object({
-  // --- Data Siswa (Wajib) ---
   siswa_namaLengkap: z.string().min(1, "Nama lengkap wajib diisi."),
   siswa_nis: z.string().min(1, "Nomor Induk Sekolah wajib diisi."),
   siswa_nisn: z.string().length(10, "NISN harus 10 digit."),
   siswa_jenisKelamin: z.enum(['Laki-laki', 'Perempuan'], { required_error: "Jenis kelamin wajib dipilih." }),
   siswa_tempatLahir: z.string().min(1, "Tempat lahir wajib diisi."),
-  siswa_tanggalLahir: z.date({ required_error: "Tanggal lahir wajib diisi." }),
+  siswa_tanggalLahir: z.string().min(1, "Tanggal lahir wajib diisi.").pipe(z.coerce.date()),
   siswa_agama: z.enum(['Islam', 'Kristen', 'Hindu', 'Budha'], { required_error: "Agama wajib dipilih." }),
   siswa_kewarganegaraan: z.enum(['WNI', 'WNA'], { required_error: "Kewarganegaraan wajib dipilih." }),
 
-  // --- Semua kolom lainnya adalah OPSIONAL ---
   siswa_fotoProfil: fileSchema,
   siswa_jumlahSaudara: z.coerce.number().optional(),
   siswa_bahasa: z.string().optional(),
@@ -63,10 +58,10 @@ export const studentFormSchema = z.object({
 
   siswa_asalSekolah: z.string().optional(),
   siswa_nomorSttb: z.string().optional(),
-  siswa_tanggalSttb: z.date().optional(),
+  siswa_tanggalSttb: z.string().optional().nullable().transform(val => val ? new Date(val) : null),
   siswa_pindahanAsalSekolah: z.string().optional(),
   siswa_pindahanDariTingkat: z.string().optional(),
-  siswa_pindahanDiterimaTanggal: z.date().optional(),
+  siswa_pindahanDiterimaTanggal: z.string().optional().nullable().transform(val => val ? new Date(val) : null),
 
   siswa_lulusTahun: z.string().optional(),
   siswa_lulusNomorIjazah: z.string().optional(),
@@ -75,7 +70,7 @@ export const studentFormSchema = z.object({
   siswa_pindahTingkatKelas: z.string().optional(),
   siswa_pindahKeTingkat: z.string().optional(),
   siswa_keluarAlasan: z.string().optional(),
-  siswa_keluarTanggal: z.date().optional(),
+  siswa_keluarTanggal: z.string().optional().nullable().transform(val => val ? new Date(val) : null),
 
   documents: z.object({
     kartuKeluarga: fileSchema,
@@ -99,7 +94,6 @@ export const studentFormSchema = z.object({
 
 export type StudentFormData = z.infer<typeof studentFormSchema>;
 
-// Skema ketat ini HANYA digunakan di server untuk menentukan status 'Lengkap'
 export const completeStudentFormSchema = studentFormSchema.extend({
     siswa_bahasa: z.string().min(1, "Bahasa sehari-hari wajib diisi."),
     siswa_golonganDarah: z.enum(['A', 'B', 'AB', 'O'], { required_error: "Golongan darah wajib dipilih." }),

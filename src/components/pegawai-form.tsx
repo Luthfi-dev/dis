@@ -114,7 +114,7 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
       : initialFormValues,
   });
 
-  const { handleSubmit, trigger, formState: { dirtyFields } } = methods;
+  const { handleSubmit, trigger, formState: { errors } } = methods;
 
   const handleNext = async () => {
     // No validation on next, just proceed to the next step
@@ -131,7 +131,19 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
 
   const processForm = (data: PegawaiFormData) => {
     startTransition(async () => {
-        const result = await submitPegawaiData(data, pegawaiData?.id);
+        // Convert Date objects to ISO strings for server action
+        const dataForServer: any = { ...data };
+        if (data.pegawai_tanggalLahir) {
+            dataForServer.pegawai_tanggalLahir = data.pegawai_tanggalLahir.toISOString();
+        }
+        if (data.pegawai_tanggalPerkawinan) {
+            dataForServer.pegawai_tanggalPerkawinan = data.pegawai_tanggalPerkawinan.toISOString();
+        }
+        if (data.pegawai_terhitungMulaiTanggal) {
+            dataForServer.pegawai_terhitungMulaiTanggal = data.pegawai_terhitungMulaiTanggal.toISOString();
+        }
+
+        const result = await submitPegawaiData(dataForServer, pegawaiData?.id);
 
         if (result.success) {
             toast({

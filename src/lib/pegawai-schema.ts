@@ -3,7 +3,6 @@
 
 import { z } from 'zod';
 
-// Skema untuk file, dibuat sepenuhnya opsional
 const fileSchema = z.object({
   fileName: z.string(),
   fileURL: z.string().url(),
@@ -19,28 +18,25 @@ const multiFileSchema = z.array(z.object({
     fileURL: z.string().url(),
 })).optional();
 
-// Correctly defined optional nested object
 const pendidikanSchema = z.object({
   tamatTahun: z.string().optional(),
   ijazah: fileSchema,
 }).optional();
 
-// --- SKEMA UTAMA UNTUK FORMULIR ---
 export const pegawaiFormSchema = z.object({
   pegawai_nama: z.string().min(1, "Nama lengkap wajib diisi."),
   pegawai_jenisKelamin: z.enum(['Laki-laki', 'Perempuan'], { required_error: "Jenis kelamin wajib dipilih." }),
   pegawai_tempatLahir: z.string().min(1, "Tempat lahir wajib diisi."),
-  pegawai_tanggalLahir: z.date({ required_error: "Tanggal lahir wajib diisi." }),
+  pegawai_tanggalLahir: z.string().min(1, "Tanggal lahir wajib diisi.").pipe(z.coerce.date()),
   pegawai_statusPerkawinan: z.enum(['Belum Kawin', 'Kawin', 'Cerai Hidup', 'Cerai Mati'], { required_error: "Status perkawinan wajib dipilih." }),
   pegawai_jabatan: z.string().min(1, "Jabatan wajib dipilih."),
-  pegawai_terhitungMulaiTanggal: z.date({ required_error: "TMT wajib diisi." }),
+  pegawai_terhitungMulaiTanggal: z.string().min(1, "TMT wajib diisi.").pipe(z.coerce.date()),
 
-  // --- Semua kolom lainnya adalah OPSIONAL ---
   pegawai_phaspoto: fileSchema,
   pegawai_nip: z.string().optional(),
   pegawai_nuptk: z.string().optional(),
   pegawai_nrg: z.string().optional(),
-  pegawai_tanggalPerkawinan: z.date().optional(),
+  pegawai_tanggalPerkawinan: z.string().optional().nullable().transform(val => val ? new Date(val) : null),
   pegawai_namaPasangan: z.string().optional(),
   pegawai_jumlahAnak: z.coerce.number().optional(),
   pegawai_bidangStudi: z.string().optional(),
@@ -87,7 +83,6 @@ export const pegawaiFormSchema = z.object({
 
 export type PegawaiFormData = z.infer<typeof pegawaiFormSchema>;
 
-// Skema ketat ini HANYA digunakan di server untuk menentukan status 'Lengkap'
 export const completePegawaiFormSchema = pegawaiFormSchema.extend({
     pegawai_nip: z.string().min(1, 'NIP wajib diisi untuk status Lengkap.'),
     pegawai_nuptk: z.string().min(1, 'NUPTK wajib diisi untuk status Lengkap.'),
