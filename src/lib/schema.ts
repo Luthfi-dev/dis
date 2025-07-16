@@ -11,9 +11,8 @@ const requiredFileSchema = z.object({
   fileURL: z.string().url('URL tidak valid'),
 });
 
-// Skema utama yang digunakan oleh form resolver.
-// Hanya kolom di "Data Siswa" yang wajib. Sisanya opsional.
-export const studentFormSchema = z.object({
+// Base schema object without transformation
+const baseStudentSchema = z.object({
   siswa_fotoProfil: fileSchema,
   siswa_namaLengkap: z.string().min(3, "Nama lengkap minimal 3 karakter."),
   siswa_nis: z.string().min(1, "Nomor Induk Sekolah wajib diisi."),
@@ -93,7 +92,11 @@ export const studentFormSchema = z.object({
     ijazahSmp: fileSchema,
     transkripSmp: fileSchema,
   }).optional(),
-}).transform((data) => ({
+});
+
+// Skema utama yang digunakan oleh form resolver.
+// Ini menambahkan transformasi ke skema dasar.
+export const studentFormSchema = baseStudentSchema.transform((data) => ({
       ...data,
       siswa_jumlahSaudara: Number(data.siswa_jumlahSaudara) || 0,
       siswa_tinggiBadan: Number(data.siswa_tinggiBadan) || undefined,
@@ -102,7 +105,8 @@ export const studentFormSchema = z.object({
 
 
 // Skema ketat ini HANYA digunakan di server untuk menentukan status 'Lengkap'
-export const completeStudentFormSchema = studentFormSchema.extend({
+// Sekarang .extend() dipanggil pada baseStudentSchema yang merupakan ZodObject.
+export const completeStudentFormSchema = baseStudentSchema.extend({
     documents: z.object({
         kartuKeluarga: requiredFileSchema,
         ktpAyah: requiredFileSchema,
