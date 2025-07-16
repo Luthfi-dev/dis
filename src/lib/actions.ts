@@ -6,8 +6,9 @@ import { pegawaiFormSchema, completePegawaiFormSchema, PegawaiFormData } from '@
 import { z } from 'zod';
 import type { Siswa } from './data';
 import type { Pegawai } from './pegawai-data';
-import { logActivity } from './activity-log';
 import { mergeDeep } from './utils';
+import { logActivity } from './activity-log';
+
 
 // --- Server-side Storage Simulation ---
 if (typeof global.students === 'undefined') {
@@ -37,21 +38,32 @@ export async function deleteSiswa(id: string): Promise<{ success: boolean; messa
     if (studentIndex > -1) {
         const studentName = allStudents[studentIndex].siswa_namaLengkap;
         allStudents.splice(studentIndex, 1);
-        logActivity(`Data siswa ${studentName} telah dihapus.`);
-        return { success: true, message: 'Data siswa berhasil dihapus.' };
+        // Activity logging should be done on the client after this action returns
+        return { success: true, message: `Data siswa ${studentName} berhasil dihapus.` };
     }
     return { success: false, message: 'Gagal menghapus data siswa.' };
 }
 
 export async function submitStudentData(data: StudentFormData, studentId?: string) {
     try {
+        const validationResult = studentFormSchema.safeParse(data);
+
+        if (!validationResult.success) {
+            console.error("Server validation failed:", validationResult.error.flatten());
+            return {
+                success: false,
+                message: `Validasi gagal: ${validationResult.error.flatten().fieldErrors[Object.keys(validationResult.error.flatten().fieldErrors)[0]]}`
+            };
+        }
+
+        const validatedData = validationResult.data;
         const id = studentId || crypto.randomUUID();
 
-        // No more complex validation on server, just check for name
-        const status = data.siswa_namaLengkap ? 'Lengkap' : 'Belum Lengkap';
+        const isComplete = completeStudentFormSchema.safeParse(validatedData).success;
+        const status = isComplete ? 'Lengkap' : 'Belum Lengkap';
         
         const existingData = await getSiswaById(id);
-        const finalData: Siswa = mergeDeep(existingData || {}, { ...data, id, status });
+        const finalData: Siswa = mergeDeep(existingData || {}, { ...validatedData, id, status });
 
         const existingStudentIndex = allStudents.findIndex(s => s.id === id);
 
@@ -62,18 +74,11 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
         }
 
         const message = studentId ? `Data siswa ${finalData.siswa_namaLengkap} berhasil diperbarui!` : `Data siswa ${finalData.siswa_namaLengkap} berhasil disimpan!`;
-        // logActivity is client-side, cannot be called here
         
         return { success: true, message, student: finalData };
     } catch (error: any) {
-        const errorMessage = `Kesalahan Server: ${error.name} - ${error.message}`;
-        console.error("Student submission server error:", {
-            message: error.message,
-            name: error.name,
-            stack: error.stack,
-            error: error,
-        });
-        return { success: false, message: `Gagal menyimpan data siswa karena ${errorMessage}` };
+        console.error("Student submission server error:", error);
+        return { success: false, message: `Gagal menyimpan data siswa karena kesalahan server: ${error.message}` };
     }
 }
 
@@ -93,39 +98,45 @@ export async function deletePegawai(id: string): Promise<{ success: boolean; mes
     if (pegawaiIndex > -1) {
         const pegawaiName = allPegawai[pegawaiIndex].pegawai_nama;
         allPegawai.splice(pegawaiIndex, 1);
-        logActivity(`Data pegawai ${pegawaiName} telah dihapus.`);
-        return { success: true, message: 'Data pegawai berhasil dihapus.' };
+         // Activity logging should be done on the client after this action returns
+        return { success: true, message: `Data pegawai ${pegawaiName} berhasil dihapus.` };
     }
     return { success: false, message: 'Gagal menghapus data pegawai.' };
 }
 
-
 export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: string) {
-    // SMOKE TEST: Ignore all incoming data and just try to save a hardcoded object.
-    // This is to prove if the client-server action connection itself is working without
-    // any interference from complex data or validation.
-    
-    const hardcodedPegawai: Pegawai = {
-        id: pegawaiId || crypto.randomUUID(),
-        pegawai_nama: 'Pegawai Tes Sukses',
-        pegawai_jenisKelamin: 'Laki-laki',
-        pegawai_tempatLahir: 'Test',
-        pegawai_tanggalLahir: new Date().toISOString(),
-        pegawai_statusPerkawinan: 'Kawin',
-        pegawai_jabatan: 'Guru',
-        pegawai_terhitungMulaiTanggal: new Date().toISOString(),
-        status: 'Lengkap',
-    };
+    try {
+        const validationResult = pegawaiFormSchema.safeParse(data);
+        if (!validationResult.success) {
+             console.error("Server validation failed:", validationResult.error.flatten());
+            return {
+                success: false,
+                message: `Validasi gagal: ${validationResult.error.flatten().fieldErrors[Object.keys(validationResult.error.flatten().fieldErrors)[0]]}`
+            };
+        }
+        
+        const validatedData = validationResult.data;
+        const id = pegawaiId || crypto.randomUUID();
+        
+        const isComplete = completePegawaiFormSchema.safeParse(validatedData).success;
+        const status = isComplete ? 'Lengkap' : 'Belum Lengkap';
+        
+        const existingData = await getPegawaiById(id);
+        const finalData: Pegawai = mergeDeep(existingData || {}, { ...validatedData, id, status });
+        
+        const existingPegawaiIndex = allPegawai.findIndex(p => p.id === id);
 
-    const existingPegawaiIndex = allPegawai.findIndex(p => p.id === hardcodedPegawai.id);
+        if (existingPegawaiIndex !== -1) {
+            allPegawai[existingPegawaiIndex] = finalData;
+        } else {
+            allPegawai.push(finalData);
+        }
 
-    if (existingPegawaiIndex !== -1) {
-        allPegawai[existingPegawaiIndex] = hardcodedPegawai;
-    } else {
-        allPegawai.push(hardcodedPegawai);
+        const message = pegawaiId ? `Data pegawai ${finalData.pegawai_nama} berhasil diperbarui!` : `Data pegawai ${finalData.pegawai_nama} berhasil disimpan!`;
+
+        return { success: true, message, pegawai: finalData };
+    } catch (error: any) {
+        console.error("Pegawai submission server error:", error);
+        return { success: false, message: `Gagal menyimpan data pegawai karena kesalahan server: ${error.message}` };
     }
-    
-    // logActivity(`Data pegawai tes ${hardcodedPegawai.pegawai_nama} berhasil disimpan.`); // THIS LINE IS REMOVED
-
-    return { success: true, message: "Data tes berhasil disimpan!" };
 }

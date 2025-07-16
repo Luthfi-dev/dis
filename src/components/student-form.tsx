@@ -3,7 +3,6 @@
 
 import { useState, useTransition, useCallback, useEffect, useMemo } from 'react';
 import { useForm, FormProvider, useFormContext, get, FieldPath, FieldErrors } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { studentFormSchema, StudentFormData } from '@/lib/schema';
 import { FormStepper } from './form-stepper';
 import { Button } from '@/components/ui/button';
@@ -49,7 +48,7 @@ const initialFormValues: StudentFormData = {
   siswa_nisn: '0012345678',
   siswa_jenisKelamin: 'Perempuan',
   siswa_tempatLahir: 'Jakarta',
-  siswa_tanggalLahir: '2008-07-12T00:00:00.000Z',
+  siswa_tanggalLahir: new Date('2008-07-12').toISOString(),
   siswa_agama: 'Islam',
   siswa_kewarganegaraan: 'WNI',
   siswa_jumlahSaudara: 2,
@@ -82,7 +81,7 @@ const initialFormValues: StudentFormData = {
   siswa_kelainanJasmani: 'Tidak ada',
   siswa_asalSekolah: 'SMP Test',
   siswa_nomorSttb: 'STTB123456',
-  siswa_tanggalSttb: '2023-06-01T00:00:00.000Z',
+  siswa_tanggalSttb: new Date('2023-06-01'),
   siswa_pindahanAsalSekolah: '',
   siswa_pindahanDariTingkat: '',
   siswa_pindahanDiterimaTanggal: undefined,
@@ -139,7 +138,6 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
   const router = useRouter();
 
   const methods = useForm<StudentFormData>({
-    // resolver: zodResolver(studentFormSchema), // REMOVING ZOD RESOLVER
     mode: 'onBlur', 
     defaultValues: studentData
       ? {
@@ -152,9 +150,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
   const { handleSubmit, trigger, getValues, formState: { errors } } = methods;
   
   const handleNext = async () => {
-    const fieldsToValidate = steps.find(s => s.id === currentStep)?.fields as FieldPath<StudentFormData>[] | undefined;
-    await trigger(fieldsToValidate);
-
+    // We only validate on the server, so just move to the next step
     if (currentStep < steps.length) {
         setCurrentStep((prev) => prev + 1);
     }
@@ -175,6 +171,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
                 title: 'Sukses!',
                 description: result.message,
             });
+            logActivity(result.message || (studentData?.id ? 'Data siswa diperbarui' : 'Siswa baru ditambahkan'));
             router.push('/siswa');
             router.refresh();
         } else {
@@ -187,21 +184,12 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
     });
   };
 
-  const onInvalid = (errors: FieldErrors<StudentFormData>) => {
-    const errorMessages = Object.keys(errors);
-    toast({
-        title: 'Gagal Menyimpan: Data Tidak Valid',
-        description: `Silakan periksa kolom berikut: ${errorMessages.join(', ')}`,
-        variant: 'destructive',
-    });
-  };
-
   return (
     <FormProvider {...methods}>
       <div className="mt-12">
         <FormStepper steps={steps} currentStep={currentStep} />
       </div>
-      <form onSubmit={handleSubmit(processFinalSubmit, onInvalid)}>
+      <form onSubmit={handleSubmit(processFinalSubmit)}>
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>{steps[currentStep - 1].title}</CardTitle>
@@ -679,7 +667,7 @@ function DataPerkembanganForm() {
                             </Button>
                         </FormControl></PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date?.toISOString())} initialFocus />
+                            <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date)} initialFocus />
                         </PopoverContent>
                         </Popover><FormMessage /></FormItem>
                     )} />
@@ -703,7 +691,7 @@ function DataPerkembanganForm() {
                             </Button>
                         </FormControl></PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date?.toISOString())} initialFocus />
+                            <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date)} initialFocus />
                         </PopoverContent>
                         </Popover><FormMessage /></FormItem>
                     )} />
@@ -761,7 +749,7 @@ function DataMeninggalkanSekolahForm() {
                             </Button>
                         </FormControl></PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date?.toISOString())} initialFocus />
+                            <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date)} initialFocus />
                         </PopoverContent>
                         </Popover><FormMessage /></FormItem>
                     )} />
@@ -804,7 +792,7 @@ function DocumentUploadField({ name, label }: DocumentUploadFieldProps) {
     const { toast } = useToast();
     const fieldName = `documents.${name}`;
     const watchedFile = watch(fieldName as any);
-    const error = errors.documents?.[name];
+    const error = get(errors, fieldName);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -899,13 +887,10 @@ function DataValidasiForm() {
     const values = getValues();
     
     const allFields = [
-        // Data Siswa
         { label: "Nama Lengkap", value: values.siswa_namaLengkap },
         { label: "NIS", value: values.siswa_nis },
         { label: "NISN", value: values.siswa_nisn },
-        // ... tambahkan field lain yang ingin divalidasi
         { label: "Foto Profil", value: values.siswa_fotoProfil?.fileName },
-        // Dokumen
         ...Object.entries(values.documents || {}).map(([key, value]) => ({
             label: `Dokumen: ${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}`,
             value: value?.fileName

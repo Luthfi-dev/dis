@@ -24,6 +24,9 @@ import Image from 'next/image';
 import { Separator } from './ui/separator';
 import { getKabupatens, getKecamatans, getDesas, Wilayah, getProvinces } from '@/lib/wilayah';
 import { Combobox } from './ui/combobox';
+import { logActivity } from '@/lib/activity-log';
+import { get } from 'react-hook-form';
+
 
 const steps = [
   { id: 1, title: 'Identitas Pegawai', fields: [
@@ -105,7 +108,6 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
   const router = useRouter();
 
   const methods = useForm<PegawaiFormData>({
-    // resolver: zodResolver(pegawaiFormSchema), // Zod resolver removed
     mode: 'onBlur', 
     defaultValues: pegawaiData ? pegawaiData : initialFormValues,
   });
@@ -113,10 +115,6 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
   const { handleSubmit, trigger, formState: { errors } } = methods;
   
   const handleNext = async () => {
-    // Visually trigger validation for current step's fields without blocking
-    const fieldsToValidate = steps.find(s => s.id === currentStep)?.fields as FieldPath<PegawaiFormData>[] | undefined;
-    await trigger(fieldsToValidate); 
-
     if (currentStep < steps.length) {
         setCurrentStep((prev) => prev + 1);
     }
@@ -137,6 +135,7 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
                 title: 'Sukses!',
                 description: result.message,
             });
+            logActivity(result.message || (pegawaiData?.id ? 'Data pegawai diperbarui' : 'Pegawai baru ditambahkan'));
             router.push('/pegawai');
             router.refresh();
         } else {
@@ -251,7 +250,7 @@ function DataIdentitasPegawaiForm() {
     }
   };
 
-  const handlePendidikanFileChange = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof PegawaiFormData) => {
+  const handlePendidikanFileChange = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof Pick<PegawaiFormData, 'pegawai_pendidikanSD' | 'pegawai_pendidikanSMP' | 'pegawai_pendidikanSMA' | 'pegawai_pendidikanDiploma' | 'pegawai_pendidikanS1' | 'pegawai_pendidikanS2'>) => {
     const file = e.target.files?.[0];
     if (file) {
       try {
@@ -653,12 +652,12 @@ function SingleFileUpload({ name, label }: { name: keyof PegawaiFormData, label:
     );
 }
 
-function MultiFileUpload({ name, label }: { name: keyof PegawaiFormData, label: string }) {
+function MultiFileUpload({ name, label }: { name: keyof Pick<PegawaiFormData, 'pegawai_skPengangkatan' | 'pegawai_skFungsional' | 'pegawai_sertifikatPelatihan' | 'pegawai_skp'>, label: string }) {
     const { control, getValues, setValue } = useFormContext<PegawaiFormData>();
     const { toast } = useToast();
     const { fields, append, remove } = useFieldArray({
         control,
-        name: name as any,
+        name: name,
     });
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -667,7 +666,7 @@ function MultiFileUpload({ name, label }: { name: keyof PegawaiFormData, label: 
             try {
                 const fileURL = await uploadFile(file);
                 append({ fileName: file.name, fileURL: fileURL });
-                setValue(name as any, getValues(name as any), { shouldDirty: true });
+                setValue(name, getValues(name), { shouldDirty: true });
             } catch (error) {
                  toast({ title: 'Upload Gagal', description: 'Gagal mengunggah file.', variant: 'destructive' });
             }
@@ -682,8 +681,8 @@ function MultiFileUpload({ name, label }: { name: keyof PegawaiFormData, label: 
                 {fields.map((field, index) => (
                     <div key={field.id} className="flex items-center gap-2 p-2 border rounded-md">
                         <FileCheck2 className="h-5 w-5 text-green-600" />
-                        <a href={getValues(`${name as any}.${index}.fileURL`)} target="_blank" rel="noopener noreferrer" className="flex-1 text-sm truncate hover:underline">
-                            {getValues(`${name as any}.${index}.fileName`)}
+                        <a href={getValues(`${name}.${index}.fileURL`)} target="_blank" rel="noopener noreferrer" className="flex-1 text-sm truncate hover:underline">
+                            {getValues(`${name}.${index}.fileName`)}
                         </a>
                         <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => remove(index)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
