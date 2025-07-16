@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, PlusCircle, Eye, FilePen, Trash2, Search, FileSearch } from 'lucide-react';
-import { mockPegawaiData, Pegawai } from '@/lib/pegawai-data';
+import { Pegawai } from '@/lib/pegawai-data';
 import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
@@ -22,6 +22,21 @@ import {
 } from "@/components/ui/alert-dialog"
 import React, { useState, useEffect, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
+
+// This function now runs on the client and fetches from localStorage,
+// which is populated by the server action via a global variable simulation.
+// This is a common pattern for prototypes that need to work in a server/client env.
+const getPegawaiFromStorage = (): Pegawai[] => {
+    if (typeof window === 'undefined') return [];
+    const data = localStorage.getItem('pegawaiData');
+    return data ? JSON.parse(data) : [];
+}
+
+const savePegawaiToStorage = (data: Pegawai[]) => {
+    if (typeof window !== 'undefined') {
+        localStorage.setItem('pegawaiData', JSON.stringify(data));
+    }
+}
 
 function ActionMenu({ pegawai, onDelete }: { pegawai: Pegawai, onDelete: (id: string) => void }) {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
@@ -93,23 +108,19 @@ export default function PegawaiPage() {
 
   useEffect(() => {
     try {
-      const storedData = localStorage.getItem('pegawaiData');
-      if (storedData) {
-        setPegawaiList(JSON.parse(storedData));
-      } else {
-        setPegawaiList(mockPegawaiData);
-        localStorage.setItem('pegawaiData', JSON.stringify(mockPegawaiData));
-      }
+      // Fetch initial data from server-simulated storage (localStorage)
+      const storedData = getPegawaiFromStorage();
+      setPegawaiList(storedData);
     } catch (error) {
       console.error("Failed to parse pegawai data from localStorage", error);
-      setPegawaiList(mockPegawaiData);
+      setPegawaiList([]);
     }
   }, []);
 
   const handleDeletePegawai = (id: string) => {
     const updatedPegawai = pegawaiList.filter(p => p.id !== id);
     setPegawaiList(updatedPegawai);
-    localStorage.setItem('pegawaiData', JSON.stringify(updatedPegawai));
+    savePegawaiToStorage(updatedPegawai);
   };
 
   const filteredPegawai = useMemo(() => {

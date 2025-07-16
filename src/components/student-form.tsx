@@ -169,40 +169,18 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
 
   const processForm = (data: StudentFormData) => {
     startTransition(async () => {
-        try {
-            const result = completeStudentFormSchema.safeParse(data);
-            const status = result.success ? 'Lengkap' : 'Belum Lengkap';
-            const finalData = { ...data, status };
-            
-            let existingStudents: Siswa[] = JSON.parse(localStorage.getItem('siswaData') || '[]');
-
-            if (studentData?.id) { // Editing existing student
-                if (finalData.siswa_nisn && existingStudents.some(s => s.siswa_nisn === finalData.siswa_nisn && s.id !== studentData.id)) {
-                    toast({ title: "Error", description: "NISN sudah digunakan oleh siswa lain.", variant: "destructive" });
-                    return;
-                }
-                existingStudents = existingStudents.map(s => s.id === studentData.id ? { ...s, ...finalData } : s);
-                logActivity(`Data siswa ${finalData.siswa_namaLengkap} berhasil diperbarui.`);
-                toast({ title: 'Sukses!', description: "Data siswa berhasil diperbarui." });
-            } else { // Adding new student
-                if (finalData.siswa_nisn && existingStudents.some(s => s.siswa_nisn === finalData.siswa_nisn)) {
-                    toast({ title: "Error", description: "NISN sudah digunakan.", variant: "destructive" });
-                    return;
-                }
-                const newStudent: Siswa = { ...finalData, id: crypto.randomUUID() };
-                existingStudents.push(newStudent);
-                logActivity(`Data siswa baru ${finalData.siswa_namaLengkap} berhasil ditambahkan.`);
-                toast({ title: 'Sukses!', description: "Data siswa berhasil ditambahkan." });
-            }
-            
-            localStorage.setItem('siswaData', JSON.stringify(existingStudents));
+        const result = await submitStudentData(data, studentData?.id);
+        if (result.success) {
+            toast({
+                title: 'Sukses!',
+                description: result.message,
+            });
             router.push('/siswa');
             router.refresh();
-
-        } catch (error) {
-             toast({
-                title: 'Error',
-                description: 'Terjadi kesalahan tak terduga saat menyimpan data.',
+        } else {
+            toast({
+                title: 'Gagal Menyimpan',
+                description: result.message || 'Terjadi kesalahan.',
                 variant: 'destructive',
             });
         }
@@ -937,4 +915,3 @@ function DataValidasiForm() {
     </div>
   )
 }
-

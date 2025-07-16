@@ -136,49 +136,19 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
 
   const processForm = (data: PegawaiFormData) => {
     startTransition(async () => {
-        try {
-            const result = completePegawaiFormSchema.safeParse(data);
-            const status = result.success ? 'Lengkap' : 'Belum Lengkap';
-            const finalData = { ...data, status };
+        const result = await submitPegawaiData(data, pegawaiData?.id);
 
-            let existingPegawai: Pegawai[] = JSON.parse(localStorage.getItem('pegawaiData') || '[]');
-            
-            if (pegawaiData?.id) { // Editing existing pegawai
-                // Check for NIP/NUPTK duplication, excluding the current pegawai
-                if (finalData.pegawai_nip && existingPegawai.some(p => p.pegawai_nip === finalData.pegawai_nip && p.id !== pegawaiData.id)) {
-                    toast({ title: "Error", description: "NIP sudah digunakan oleh pegawai lain.", variant: "destructive" });
-                    return;
-                }
-                if (finalData.pegawai_nuptk && existingPegawai.some(p => p.pegawai_nuptk === finalData.pegawai_nuptk && p.id !== pegawaiData.id)) {
-                    toast({ title: "Error", description: "NUPTK sudah digunakan oleh pegawai lain.", variant: "destructive" });
-                    return;
-                }
-                existingPegawai = existingPegawai.map(p => p.id === pegawaiData.id ? { ...p, ...finalData } : p);
-                logActivity(`Data pegawai ${finalData.pegawai_nama} berhasil diperbarui.`);
-                toast({ title: 'Sukses!', description: "Data pegawai berhasil diperbarui." });
-            } else { // Adding new pegawai
-                if (finalData.pegawai_nip && existingPegawai.some(p => p.pegawai_nip === finalData.pegawai_nip)) {
-                    toast({ title: "Error", description: "NIP sudah digunakan.", variant: "destructive" });
-                    return;
-                }
-                if (finalData.pegawai_nuptk && existingPegawai.some(p => p.pegawai_nuptk === finalData.pegawai_nuptk)) {
-                    toast({ title: "Error", description: "NUPTK sudah digunakan.", variant: "destructive" });
-                    return;
-                }
-                const newPegawai: Pegawai = { ...finalData, id: crypto.randomUUID() };
-                existingPegawai.push(newPegawai);
-                logActivity(`Data pegawai baru ${finalData.pegawai_nama} berhasil ditambahkan.`);
-                toast({ title: 'Sukses!', description: "Data pegawai berhasil ditambahkan." });
-            }
-            
-            localStorage.setItem('pegawaiData', JSON.stringify(existingPegawai));
+        if (result.success) {
+            toast({
+                title: 'Sukses!',
+                description: result.message,
+            });
             router.push('/pegawai');
             router.refresh();
-
-        } catch (error) {
-             toast({
-                title: 'Error',
-                description: 'Terjadi kesalahan tak terduga saat menyimpan data.',
+        } else {
+            toast({
+                title: 'Gagal Menyimpan',
+                description: result.message || 'Terjadi kesalahan.',
                 variant: 'destructive',
             });
         }

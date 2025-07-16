@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -6,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, PlusCircle, Upload, Download, FilePen, Eye, FileSearch, Trash2, Search } from 'lucide-react';
-import { mockSiswaData, Siswa } from '@/lib/data';
+import { Siswa } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
@@ -21,6 +22,18 @@ import {
 } from "@/components/ui/alert-dialog"
 import React, { useState, useEffect, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
+
+const getSiswaFromStorage = (): Siswa[] => {
+    if (typeof window === 'undefined') return [];
+    const data = localStorage.getItem('siswaData');
+    return data ? JSON.parse(data) : [];
+}
+
+const saveSiswaToStorage = (data: Siswa[]) => {
+    if (typeof window !== 'undefined') {
+        localStorage.setItem('siswaData', JSON.stringify(data));
+    }
+}
 
 function ActionMenu({ student, onDelete }: { student: Siswa, onDelete: (id: string) => void }) {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
@@ -92,23 +105,18 @@ export default function SiswaPage() {
 
   useEffect(() => {
     try {
-      const storedData = localStorage.getItem('siswaData');
-      if (storedData) {
-        setStudents(JSON.parse(storedData));
-      } else {
-        setStudents(mockSiswaData);
-        localStorage.setItem('siswaData', JSON.stringify(mockSiswaData));
-      }
+      const storedData = getSiswaFromStorage();
+      setStudents(storedData);
     } catch (error) {
       console.error("Failed to parse student data from localStorage", error);
-      setStudents(mockSiswaData);
+      setStudents([]);
     }
   }, []);
 
   const handleDeleteStudent = (id: string) => {
     const updatedStudents = students.filter(student => student.id !== id);
     setStudents(updatedStudents);
-    localStorage.setItem('siswaData', JSON.stringify(updatedStudents));
+    saveSiswaToStorage(updatedStudents);
   };
 
   const filteredStudents = useMemo(() => {
