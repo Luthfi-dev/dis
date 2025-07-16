@@ -23,8 +23,8 @@ const baseStudentSchema = z.object({
   siswa_agama: z.enum(['Islam', 'Kristen', 'Hindu', 'Budha'], { required_error: "Agama wajib dipilih." }),
   siswa_kewarganegaraan: z.enum(['WNI', 'WNA'], { required_error: "Kewarganegaraan wajib dipilih." }),
   siswa_jumlahSaudara: z.preprocess(
-    (val) => (val === '' || val === null || val === undefined ? 0 : Number(val)),
-    z.coerce.number().int().nonnegative("Jumlah saudara tidak boleh negatif.")
+    (val) => (val === '' || val === null || val === undefined ? undefined : Number(val)),
+    z.coerce.number().int().nonnegative("Jumlah saudara tidak boleh negatif.").optional()
   ),
   siswa_bahasa: z.string().min(1, "Bahasa sehari-hari wajib diisi."),
   siswa_golonganDarah: z.enum(['A', 'B', 'AB', 'O'], { required_error: "Golongan darah wajib dipilih." }),

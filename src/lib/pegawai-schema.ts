@@ -31,7 +31,7 @@ export const pegawaiFormSchema = z.object({
   pegawai_tanggalPerkawinan: z.date().optional().nullable(),
   pegawai_namaPasangan: z.string().optional(),
   pegawai_jumlahAnak: z.preprocess(
-    (val) => (val === '' || val === null || val === undefined ? 0 : Number(val)),
+    (val) => (val === '' || val === null || val === undefined ? undefined : Number(val)),
     z.coerce.number().int().nonnegative("Jumlah anak tidak boleh negatif.").optional()
   ),
   pegawai_jabatan: z.string().min(1, "Jabatan wajib dipilih."),
@@ -47,13 +47,11 @@ export const pegawaiFormSchema = z.object({
   ]).optional().nullable(),
   pegawai_terhitungMulaiTanggal: z.date({ required_error: "TMT wajib diisi." }),
   
-  // Alamat dibuat sepenuhnya opsional
   pegawai_alamatKabupaten: z.string().optional(),
   pegawai_alamatKecamatan: z.string().optional(),
   pegawai_alamatDesa: z.string().optional(),
   pegawai_alamatDusun: z.string().optional(),
   
-  // Semua riwayat pendidikan dan file dibuat opsional untuk penyimpanan dasar
   pegawai_pendidikanSD: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
   pegawai_pendidikanSMP: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
   pegawai_pendidikanSMA: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
