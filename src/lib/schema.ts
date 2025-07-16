@@ -151,6 +151,3 @@ export const completeStudentFormSchema = baseStudentSchema.extend({
 
 
 export type StudentFormData = z.infer<typeof studentFormSchema>;
-
-// The per-step validation schemas are no longer used since validation was centralized to the final save action.
-// Removing them to prevent future errors and clean up the code.

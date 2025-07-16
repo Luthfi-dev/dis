@@ -19,7 +19,7 @@ const multiFileSchema = z.array(z.object({
 // Skema utama yang digunakan oleh form resolver.
 // Dibuat sangat longgar untuk memastikan data bisa disimpan kapan saja.
 export const pegawaiFormSchema = z.object({
-  pegawai_phaspoto: z.any().optional(),
+  pegawai_phaspoto: fileSchema,
   pegawai_nama: z.string().min(1, "Nama lengkap wajib diisi."),
   pegawai_jenisKelamin: z.enum(['Laki-laki', 'Perempuan'], { required_error: "Jenis kelamin wajib dipilih." }),
   pegawai_tempatLahir: z.string().min(1, "Tempat lahir wajib diisi."),
@@ -84,7 +84,6 @@ export type PegawaiFormData = z.infer<typeof pegawaiFormSchema>;
 export const completePegawaiFormSchema = pegawaiFormSchema.extend({
     pegawai_nip: z.string().min(1, 'NIP wajib diisi untuk status Lengkap.'),
     pegawai_nuptk: z.string().min(1, 'NUPTK wajib diisi untuk status Lengkap.'),
-    pegawai_bidangStudi: z.string().min(1, 'Bidang studi wajib diisi untuk status Lengkap.'),
 
     pegawai_pendidikanSD: z.object({ tamatTahun: z.string().min(1, 'Tahun tamat SD wajib diisi'), ijazah: requiredFileSchema }),
     pegawai_pendidikanSMP: z.object({ tamatTahun: z.string().min(1, 'Tahun tamat SMP wajib diisi'), ijazah: requiredFileSchema }),
