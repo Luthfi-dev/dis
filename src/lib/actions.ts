@@ -102,8 +102,9 @@ export async function submitStudentData(data: Partial<StudentFormData>, studentI
       console.error("Zod Validation Error in submitStudentData:", error.flatten().fieldErrors);
       return { success: false, message: 'Data tidak valid. Periksa kembali isian Anda.', errors: error.flatten().fieldErrors };
     }
-    console.error('Student submission error:', error);
-    return { success: false, message: 'Gagal menyimpan data siswa karena kesalahan server.' };
+    console.error('Student submission server error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return { success: false, message: `Gagal menyimpan data siswa karena kesalahan server: ${errorMessage}` };
   }
 }
 
@@ -182,7 +183,8 @@ export async function submitPegawaiData(data: Partial<PegawaiFormData>, pegawaiI
         const errorMessages = Object.entries(error.flatten().fieldErrors).map(([field, errors]) => `${field}: ${errors.join(', ')}`).join('; ');
         return { success: false, message: `Data tidak valid. Kesalahan: ${errorMessages}`, errors: error.flatten().fieldErrors };
       }
-      console.error('Pegawai submission error:', error);
-      return { success: false, message: 'Gagal menyimpan data pegawai karena kesalahan server.' };
+      console.error('Pegawai submission server error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      return { success: false, message: `Gagal menyimpan data draf karena kesalahan server: ${errorMessage}` };
     }
   }
