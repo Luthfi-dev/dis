@@ -83,7 +83,6 @@ export type PegawaiFormData = z.infer<typeof pegawaiFormSchema>;
 // Schema for checking completion status
 export const completePegawaiFormSchema = pegawai_IdentitasSchema.merge(
   z.object({
-    pegawai_phaspoto: requiredFileSchema,
     pegawai_pendidikanSD: z.object({ tamatTahun: z.string().min(1), ijazah: requiredFileSchema }),
     pegawai_pendidikanSMP: z.object({ tamatTahun: z.string().min(1), ijazah: requiredFileSchema }),
     pegawai_pendidikanSMA: z.object({ tamatTahun: z.string().min(1), ijazah: requiredFileSchema }),
