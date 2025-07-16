@@ -17,7 +17,7 @@ const multiFileSchema = z.array(z.object({
 })).optional();
 
 // Skema utama yang digunakan oleh form resolver.
-// Hanya kolom di "Identitas Pegawai" yang wajib. Sisanya opsional.
+// Dibuat lebih longgar untuk memungkinkan penyimpanan data yang belum lengkap.
 export const pegawaiFormSchema = z.object({
   pegawai_phaspoto: z.any().optional(),
   pegawai_nama: z.string().min(3, "Nama lengkap minimal 3 karakter."),
