@@ -8,7 +8,8 @@ import { z } from 'zod';
 import type { Siswa } from './data';
 import type { Pegawai } from './pegawai-data';
 import { logActivity } from './activity-log';
-import merge from 'lodash/merge';
+import { mergeDeep } from './utils';
+
 
 // --- Server-side Storage Simulation ---
 if (typeof global.students === 'undefined') {
@@ -75,7 +76,7 @@ export async function submitStudentData(data: Partial<StudentFormData>, studentI
     let finalData: Siswa;
 
     if (existingStudentIndex !== -1) {
-      const mergedData = merge({}, allStudents[existingStudentIndex], parsedData);
+      const mergedData = mergeDeep({}, allStudents[existingStudentIndex], parsedData);
       const completionResult = completeStudentFormSchema.safeParse(mergedData);
       const status = isDraft ? 'Belum Lengkap' : (completionResult.success ? 'Lengkap' : 'Belum Lengkap');
       finalData = { ...mergedData, id, status };
@@ -156,7 +157,7 @@ export async function submitPegawaiData(data: Partial<PegawaiFormData>, pegawaiI
         let finalData: Pegawai;
 
         if (existingPegawaiIndex !== -1) {
-            const mergedData = merge({}, allPegawai[existingPegawaiIndex], parsedData);
+            const mergedData = mergeDeep({}, allPegawai[existingPegawaiIndex], parsedData);
             const completionResult = completePegawaiFormSchema.safeParse(mergedData);
             const status = isDraft ? 'Belum Lengkap' : (completionResult.success ? 'Lengkap' : 'Belum Lengkap');
             finalData = { ...mergedData, id, status };
@@ -185,7 +186,7 @@ export async function submitPegawaiData(data: Partial<PegawaiFormData>, pegawaiI
         return { success: false, message: `Data tidak valid. Kesalahan: ${errorMessages}`, errors: error.flatten().fieldErrors };
       }
       console.error('Pegawai submission server error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      const errorMessage = error instanceof Error ? error.message : String(error);
       return { success: false, message: `Gagal menyimpan data draf karena kesalahan server: ${errorMessage}` };
     }
   }
