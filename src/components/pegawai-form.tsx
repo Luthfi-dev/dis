@@ -4,7 +4,7 @@
 import { useState, useTransition, useEffect, useMemo } from 'react';
 import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { pegawaiFormSchema, PegawaiFormData, dataIdentitasPegawaiSchema, filePegawaiSchema } from '@/lib/pegawai-schema';
+import { pegawaiFormSchema, PegawaiFormData, dataIdentitasPegawaiSchema, filePegawaiSchema, completePegawaiFormSchema } from '@/lib/pegawai-schema';
 import { FormStepper } from './form-stepper';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -23,9 +23,9 @@ import { useRouter } from 'next/navigation';
 import type { Pegawai } from '@/lib/pegawai-data';
 import Image from 'next/image';
 import { Separator } from './ui/separator';
-import { getKabupatens, getKecamatans, getDesas, Wilayah } from '@/lib/wilayah';
+import { getKabupatens, getKecamatans, getDesas, Wilayah, getProvinces } from '@/lib/wilayah';
 import { Combobox } from './ui/combobox';
-import { completePegawaiFormSchema } from '@/lib/pegawai-schema';
+import { logActivity } from '@/lib/activity-log';
 
 const steps = [
   { id: 1, title: 'Identitas Pegawai', schema: dataIdentitasPegawaiSchema },
@@ -120,83 +120,96 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
     }
   };
 
-  const processForm = async (data: PegawaiFormData) => {
+  const processForm = (data: PegawaiFormData) => {
     startTransition(async () => {
-        const dataWithURLs = { ...data };
-
-        const processFile = (fileData: any) => {
-            if (fileData?.file instanceof File) {
-                fileData.fileURL = URL.createObjectURL(fileData.file);
-            }
-        };
-
-        const processMultiFile = (files: any[]) => {
-            if (Array.isArray(files)) {
-                files.forEach(fileData => processFile(fileData));
-            }
-        };
-
-        processFile(dataWithURLs.phaspoto);
-        processFile(dataWithURLs.pendidikanSD?.ijazah);
-        processFile(dataWithURLs.pendidikanSMP?.ijazah);
-        processFile(dataWithURLs.pendidikanSMA?.ijazah);
-        processFile(dataWithURLs.pendidikanDiploma?.ijazah);
-        processFile(dataWithURLs.pendidikanS1?.ijazah);
-        processFile(dataWithURLs.pendidikanS2?.ijazah);
-
-        processMultiFile(dataWithURLs.skPengangkatan);
-        processFile(dataWithURLs.skNipBaru);
-        processMultiFile(dataWithURLs.skFungsional);
-        processFile(dataWithURLs.beritaAcaraSumpah);
-        processFile(dataWithURLs.sertifikatPendidik);
-        processMultiFile(dataWithURLs.sertifikatPelatihan);
-        processMultiFile(dataWithURLs.skp);
-        processFile(dataWithURLs.karpeg);
-        processFile(dataWithURLs.karisKarsu);
-        processFile(dataWithURLs.bukuNikah);
-        processFile(dataWithURLs.kartuKeluarga);
-        processFile(dataWithURLs.ktp);
-        processFile(dataWithURLs.akteKelahiran);
-        processFile(dataWithURLs.kartuTaspen);
-        processFile(dataWithURLs.npwp);
-        processFile(dataWithURLs.kartuBpjs);
-        processFile(dataWithURLs.bukuRekening);
-        
-        const dataToSubmit = { ...dataWithURLs, id: pegawaiData?.id };
-
-        const submissionResult = await submitPegawaiData(dataToSubmit);
-
-        if (submissionResult.success) {
-            let existingPegawai: Pegawai[] = JSON.parse(localStorage.getItem('pegawaiData') || '[]');
-            
-            const completionResult = completePegawaiFormSchema.safeParse(data);
-            const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
-            const newPegawai: Pegawai = { ...dataToSubmit, id: submissionResult.id, status };
-
-            if (pegawaiData?.id) {
-                existingPegawai = existingPegawai.map(p => p.id === pegawaiData.id ? newPegawai : p);
-            } else {
-                existingPegawai.push(newPegawai);
-            }
-            localStorage.setItem('pegawaiData', JSON.stringify(existingPegawai));
-            
-            toast({
-                title: 'Sukses!',
-                description: submissionResult.message,
-                variant: 'default',
-            });
-            router.push('/pegawai');
-            router.refresh();
-
-        } else {
-            toast({
-                title: 'Error',
-                description: submissionResult.message,
-                variant: 'destructive',
-            });
+      // 1. Client-side validation for unique fields before submitting
+      const isUpdate = !!pegawaiData?.id;
+      if (!isUpdate) {
+        const existingPegawai: Pegawai[] = JSON.parse(localStorage.getItem('pegawaiData') || '[]');
+        if (data.nip && existingPegawai.some(p => p.nip === data.nip)) {
+            toast({ title: "Error", description: "NIP sudah terdaftar.", variant: "destructive" });
+            return;
         }
+        if (data.nuptk && existingPegawai.some(p => p.nuptk === data.nuptk)) {
+            toast({ title: "Error", description: "NUPTK sudah terdaftar.", variant: "destructive" });
+            return;
+        }
+      }
+      
+      // 2. Client-side data processing (Create URLs)
+      const dataWithURLs = { ...data };
+      const processFile = (fileData: any) => {
+          if (fileData?.file instanceof File) {
+              fileData.fileURL = URL.createObjectURL(fileData.file);
+          }
+      };
+      const processMultiFile = (files: any[]) => {
+          if (Array.isArray(files)) {
+              files.forEach(fileData => processFile(fileData));
+          }
+      };
+
+      processFile(dataWithURLs.phaspoto);
+      processFile(dataWithURLs.pendidikanSD?.ijazah);
+      processFile(dataWithURLs.pendidikanSMP?.ijazah);
+      processFile(dataWithURLs.pendidikanSMA?.ijazah);
+      processFile(dataWithURLs.pendidikanDiploma?.ijazah);
+      processFile(dataWithURLs.pendidikanS1?.ijazah);
+      processFile(dataWithURLs.pendidikanS2?.ijazah);
+
+      processMultiFile(dataWithURLs.skPengangkatan);
+      processFile(dataWithURLs.skNipBaru);
+      processMultiFile(dataWithURLs.skFungsional);
+      processFile(dataWithURLs.beritaAcaraSumpah);
+      processFile(dataWithURLs.sertifikatPendidik);
+      processMultiFile(dataWithURLs.sertifikatPelatihan);
+      processMultiFile(dataWithURLs.skp);
+      processFile(dataWithURLs.karpeg);
+      processFile(dataWithURLs.karisKarsu);
+      processFile(dataWithURLs.bukuNikah);
+      processFile(dataWithURLs.kartuKeluarga);
+      processFile(dataWithURLs.ktp);
+      processFile(dataWithURLs.akteKelahiran);
+      processFile(dataWithURLs.kartuTaspen);
+      processFile(dataWithURLs.npwp);
+      processFile(dataWithURLs.kartuBpjs);
+      processFile(dataWithURLs.bukuRekening);
+      
+      // 3. Determine status and create final object
+      const completionResult = completePegawaiFormSchema.safeParse(data);
+      const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
+      const id = pegawaiData?.id || crypto.randomUUID();
+      const newPegawai: Pegawai = { ...dataWithURLs, id, status };
+
+      // 4. Save directly to localStorage
+      try {
+        let existingPegawai: Pegawai[] = JSON.parse(localStorage.getItem('pegawaiData') || '[]');
+        if (isUpdate) {
+            existingPegawai = existingPegawai.map(p => p.id === id ? newPegawai : p);
+        } else {
+            existingPegawai.push(newPegawai);
+        }
+        localStorage.setItem('pegawaiData', JSON.stringify(existingPegawai));
+
+        const message = isUpdate ? `Data pegawai ${data.nama} berhasil diperbarui!` : `Data pegawai ${data.nama} berhasil disimpan!`;
+        logActivity(message);
+
+        toast({
+            title: 'Sukses!',
+            description: message,
+            variant: 'default',
+        });
+        router.push('/pegawai');
+        router.refresh();
+      } catch (error) {
+        toast({
+            title: 'Error Penyimpanan',
+            description: 'Gagal menyimpan data ke browser.',
+            variant: 'destructive',
+        });
+      }
     });
-};
+  };
 
   return (
     <FormProvider {...methods}>
@@ -272,11 +285,13 @@ function DataIdentitasPegawaiForm() {
   }, [watch, getValues, preview]);
 
   const [allKabupatens, setAllKabupatens] = useState<Wilayah[]>([]);
+  const [allProvinces, setAllProvinces] = useState<Wilayah[]>([]);
   
   const alamatKabupaten = watch('alamatKabupaten');
   const alamatKecamatan = watch('alamatKecamatan');
   
   useEffect(() => {
+    setAllProvinces(getProvinces());
     setAllKabupatens(getKabupatens());
   }, []);
 
@@ -777,7 +792,7 @@ function DataValidasiForm() {
                 {allFields.map((field, index) => (
                     <div key={index} className="flex justify-between items-start gap-4">
                         <span className="font-medium text-muted-foreground shrink-0">{field.label}:</span>
-                        <span className="truncate text-right">{field.value}</span>
+                        <span className="truncate text-right">{field.value as string}</span>
                     </div>
                 ))}
                  {allFields.length === 0 && <p className="text-center text-muted-foreground">Belum ada data yang diisi.</p>}

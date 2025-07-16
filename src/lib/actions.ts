@@ -57,6 +57,8 @@ export async function submitStudentData(data: Partial<Siswa>) {
 }
 
 export async function submitPegawaiData(data: Partial<Pegawai> & {id?: string}) {
+    // This server action is now primarily for validation and logging, 
+    // as the main storage logic has been moved to the client to handle File objects correctly with localStorage.
     try {
         const dataWithDates = {
             ...data,
@@ -68,30 +70,10 @@ export async function submitPegawaiData(data: Partial<Pegawai> & {id?: string}) 
       const parsedData = pegawaiFormSchema.parse(dataWithDates);
       const isUpdate = !!data.id;
       
-      // In a real app, this would be a database call.
-      const allPegawai: Pegawai[] = typeof window !== 'undefined' 
-        ? JSON.parse(localStorage.getItem('pegawaiData') || '[]')
-        : []; 
-
-      // Check for duplicates only when creating a new pegawai
-      if (!isUpdate) {
-        if (parsedData.nip && allPegawai.some(p => p.nip === parsedData.nip)) {
-            return { success: false, message: 'NIP sudah terdaftar. Harap gunakan NIP yang unik.' };
-        }
-        if (parsedData.nuptk && allPegawai.some(p => p.nuptk === parsedData.nuptk)) {
-            return { success: false, message: 'NUPTK sudah terdaftar. Harap gunakan NUPTK yang unik.' };
-        }
-      }
-      
-      const completionResult = completePegawaiFormSchema.safeParse(dataWithDates);
-      const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       const id = data.id || crypto.randomUUID();
-      const message = isUpdate ? `Data pegawai ${data.nama} berhasil diperbarui!` : `Data pegawai ${data.nama} berhasil disimpan!`;
-
-      logActivity(message);
+      const message = isUpdate ? `Data pegawai ${data.nama} berhasil divalidasi!` : `Data pegawai ${data.nama} berhasil divalidasi!`;
   
       return { success: true, message, id };
     } catch (error) {
@@ -100,7 +82,7 @@ export async function submitPegawaiData(data: Partial<Pegawai> & {id?: string}) 
         return { success: false, message: 'Data tidak valid.', errors: error.errors };
       }
       console.error('Submission error:', error);
-      return { success: false, message: 'Gagal menyimpan data pegawai.' };
+      return { success: false, message: 'Gagal memvalidasi data pegawai.' };
     }
   }
 
