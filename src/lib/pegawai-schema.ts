@@ -31,9 +31,9 @@ export const pegawaiFormSchema = z.object({
   pegawai_nip: z.string().optional(),
   pegawai_nuptk: z.string().optional(),
   pegawai_nrg: z.string().optional(),
-  pegawai_tanggalPerkawinan: z.union([z.string().datetime(), z.date()]).transform(val => new Date(val)).optional(),
+  pegawai_tanggalPerkawinan: z.union([z.string().datetime(), z.date()]).transform(val => new Date(val)).optional().nullable(),
   pegawai_namaPasangan: z.string().optional(),
-  pegawai_jumlahAnak: z.number().optional(),
+  pegawai_jumlahAnak: z.coerce.number().optional(),
   pegawai_bidangStudi: z.string().optional(),
   pegawai_tugasTambahan: z.enum([
     'Kepala Sekolah',

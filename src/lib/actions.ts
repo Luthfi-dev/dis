@@ -59,7 +59,7 @@ export async function getCategorySuggestion(description: string) {
 
 export async function submitStudentData(data: Partial<StudentFormData>, studentId?: string, isDraft: boolean = false) {
   try {
-    const schemaToUse = isDraft ? studentFormSchema.partial() : studentFormSchema;
+    const schemaToUse = isDraft ? studentFormSchema.deepPartial() : studentFormSchema;
     const parsedData = schemaToUse.parse(data);
 
     // Check for NISN duplicates
@@ -135,7 +135,7 @@ export async function deletePegawai(id: string): Promise<{ success: boolean; mes
 
 export async function submitPegawaiData(data: Partial<PegawaiFormData>, pegawaiId?: string, isDraft: boolean = false) {
     try {
-        const schemaToUse = isDraft ? pegawaiFormSchema.partial() : pegawaiFormSchema;
+        const schemaToUse = isDraft ? pegawaiFormSchema.deepPartial() : pegawaiFormSchema;
         const parsedData = schemaToUse.parse(data);
 
         // Check for duplicates
