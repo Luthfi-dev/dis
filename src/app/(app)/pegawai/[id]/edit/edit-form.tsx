@@ -1,29 +1,26 @@
 
 'use client';
 import { PegawaiForm } from '@/components/pegawai-form';
-import { Pegawai, mockPegawaiData } from '@/lib/pegawai-data';
+import { getPegawaiById } from '@/lib/actions';
 import { notFound } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { Pegawai } from '@/lib/pegawai-data';
 
 export function EditPegawaiForm({ pegawaiId }: { pegawaiId: string }) {
   const [pegawai, setPegawai] = useState<Pegawai | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const storedData = localStorage.getItem('pegawaiData');
-      const allPegawai = storedData ? JSON.parse(storedData) : mockPegawaiData;
-      const foundPegawai = allPegawai.find((p: Pegawai) => p.id === pegawaiId);
-      
-      if (foundPegawai) {
-        setPegawai(foundPegawai);
+    const fetchPegawai = async () => {
+      const result = await getPegawaiById(pegawaiId);
+      if (result) {
+        setPegawai(result);
       }
-    } catch (error) {
-      console.error("Failed to parse pegawai data from localStorage", error);
-    } finally {
       setLoading(false);
-    }
+    };
+
+    fetchPegawai();
   }, [pegawaiId]);
 
   if (loading) {
@@ -46,7 +43,7 @@ export function EditPegawaiForm({ pegawaiId }: { pegawaiId: string }) {
     <div className="mx-auto max-w-5xl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Edit Data Pegawai</h1>
-        <p className="text-muted-foreground">Perbarui data untuk {pegawai.nama}.</p>
+        <p className="text-muted-foreground">Perbarui data untuk {pegawai.pegawai_nama}.</p>
       </div>
       <PegawaiForm pegawaiData={pegawai} />
     </div>

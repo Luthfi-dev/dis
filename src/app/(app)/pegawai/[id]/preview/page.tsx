@@ -1,6 +1,7 @@
 
 'use client';
-import { Pegawai, mockPegawaiData } from '@/lib/pegawai-data';
+import { getPegawaiById } from '@/lib/actions';
+import { Pegawai } from '@/lib/pegawai-data';
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -54,25 +55,21 @@ function FileRow({ label, document, isMulti = false }: { label: string, document
 }
 
 
-export default function PreviewPegawaiPage({ params: { id } }: { params: { id: string } }) {
+export default function PreviewPegawaiPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const [pegawai, setPegawai] = useState<Pegawai | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const storedData = localStorage.getItem('pegawaiData');
-      const allPegawai: Pegawai[] = storedData ? JSON.parse(storedData) : mockPegawaiData;
-      const foundPegawai = allPegawai.find(s => s.id === id);
-      
-      if (foundPegawai) {
-        setPegawai(foundPegawai);
-      }
-    } catch (error) {
-      console.error("Failed to parse pegawai data from localStorage", error);
-    } finally {
+    const fetchPegawai = async () => {
+        const result = await getPegawaiById(id);
+        if(result) {
+            setPegawai(result);
+        }
         setLoading(false);
-    }
-}, [id]);
+    };
+    fetchPegawai();
+  }, [id]);
 
 
   if (loading) {
@@ -120,16 +117,16 @@ export default function PreviewPegawaiPage({ params: { id } }: { params: { id: s
         <main className="p-6 sm:p-10">
             {/* Header */}
             <header className="flex flex-col sm:flex-row items-center gap-6 mb-8 text-center sm:text-left">
-                {pegawai.phaspoto?.fileURL ? (
-                    <Image src={pegawai.phaspoto.fileURL} alt="Foto Pegawai" width={128} height={170} className="border-4 border-primary/20 shadow-lg object-cover w-32 h-40" />
+                {pegawai.pegawai_phaspoto?.fileURL ? (
+                    <Image src={pegawai.pegawai_phaspoto.fileURL} alt="Foto Pegawai" width={128} height={170} className="border-4 border-primary/20 shadow-lg object-cover w-32 h-40" />
                 ) : (
                     <div className="w-32 h-40 rounded-lg bg-muted flex items-center justify-center border-4 border-primary/20 shadow-lg">
                         <User className="w-20 h-20 text-muted-foreground" />
                     </div>
                 )}
                 <div>
-                    <h1 className="text-3xl font-bold text-card-foreground">{pegawai.nama}</h1>
-                    <p className="text-lg text-muted-foreground">NIP: {pegawai.nip || '-'}</p>
+                    <h1 className="text-3xl font-bold text-card-foreground">{pegawai.pegawai_nama}</h1>
+                    <p className="text-lg text-muted-foreground">NIP: {pegawai.pegawai_nip || '-'}</p>
                      <Badge variant={pegawaiStatus ? 'default' : 'destructive'} className="mt-2">
                         {pegawaiStatus ? <CheckCircle2 className="mr-2 h-4 w-4" /> : <XCircle className="mr-2 h-4 w-4" />}
                         Status: {pegawai.status}
@@ -143,71 +140,71 @@ export default function PreviewPegawaiPage({ params: { id } }: { params: { id: s
                 <section>
                     <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">A. Identitas Pegawai</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-                        <InfoRow label="Nama Lengkap" value={pegawai.nama} icon={User} />
-                        <InfoRow label="Jenis Kelamin" value={pegawai.jenisKelamin} icon={Users} />
-                        <InfoRow label="Tempat, Tgl Lahir" value={`${pegawai.tempatLahir}, ${formatDate(pegawai.tanggalLahir)}`} icon={Calendar} />
-                        <InfoRow label="NIP" value={pegawai.nip} icon={FileText} />
-                        <InfoRow label="NUPTK" value={pegawai.nuptk} icon={FileText} />
-                        <InfoRow label="NRG" value={pegawai.nrg} icon={FileText} />
-                        <InfoRow label="Jabatan" value={pegawai.jabatan} icon={Briefcase}/>
-                        <InfoRow label="Bidang Studi" value={pegawai.bidangStudi} icon={School}/>
-                        <InfoRow label="Tugas Tambahan" value={pegawai.tugasTambahan} icon={Briefcase}/>
-                        <InfoRow label="TMT" value={formatDate(pegawai.terhitungMulaiTanggal)} icon={Calendar}/>
+                        <InfoRow label="Nama Lengkap" value={pegawai.pegawai_nama} icon={User} />
+                        <InfoRow label="Jenis Kelamin" value={pegawai.pegawai_jenisKelamin} icon={Users} />
+                        <InfoRow label="Tempat, Tgl Lahir" value={`${pegawai.pegawai_tempatLahir}, ${formatDate(pegawai.pegawai_tanggalLahir)}`} icon={Calendar} />
+                        <InfoRow label="NIP" value={pegawai.pegawai_nip} icon={FileText} />
+                        <InfoRow label="NUPTK" value={pegawai.pegawai_nuptk} icon={FileText} />
+                        <InfoRow label="NRG" value={pegawai.pegawai_nrg} icon={FileText} />
+                        <InfoRow label="Jabatan" value={pegawai.pegawai_jabatan} icon={Briefcase}/>
+                        <InfoRow label="Bidang Studi" value={pegawai.pegawai_bidangStudi} icon={School}/>
+                        <InfoRow label="Tugas Tambahan" value={pegawai.pegawai_tugasTambahan} icon={Briefcase}/>
+                        <InfoRow label="TMT" value={formatDate(pegawai.pegawai_terhitungMulaiTanggal)} icon={Calendar}/>
                     </div>
                 </section>
 
                 <section>
                     <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">B. Status Keluarga</h3>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-                        <InfoRow label="Status Perkawinan" value={pegawai.statusPerkawinan} icon={HeartHandshake} />
-                        <InfoRow label="Tgl Perkawinan" value={formatDate(pegawai.tanggalPerkawinan)} icon={Calendar} />
-                        <InfoRow label="Nama Pasangan" value={pegawai.namaPasangan} icon={User} />
-                        <InfoRow label="Jumlah Anak" value={pegawai.jumlahAnak} icon={Users} />
+                        <InfoRow label="Status Perkawinan" value={pegawai.pegawai_statusPerkawinan} icon={HeartHandshake} />
+                        <InfoRow label="Tgl Perkawinan" value={formatDate(pegawai.pegawai_tanggalPerkawinan)} icon={Calendar} />
+                        <InfoRow label="Nama Pasangan" value={pegawai.pegawai_namaPasangan} icon={User} />
+                        <InfoRow label="Jumlah Anak" value={pegawai.pegawai_jumlahAnak} icon={Users} />
                     </div>
                 </section>
                 
                 <section>
                     <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">C. Alamat Rumah</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-                         <InfoRow label="Kabupaten" value={getKabupatenName(pegawai.alamatKabupaten)} icon={MapPin} />
-                         <InfoRow label="Kecamatan" value={getKecamatanName(pegawai.alamatKecamatan)} icon={MapPin} />
-                         <InfoRow label="Desa" value={getDesaName(pegawai.alamatDesa)} icon={Home} />
-                         <InfoRow label="Dusun" value={pegawai.alamatDusun} icon={Home} />
+                         <InfoRow label="Kabupaten" value={getKabupatenName(pegawai.pegawai_alamatKabupaten)} icon={MapPin} />
+                         <InfoRow label="Kecamatan" value={getKecamatanName(pegawai.pegawai_alamatKecamatan)} icon={MapPin} />
+                         <InfoRow label="Desa" value={getDesaName(pegawai.pegawai_alamatDesa)} icon={Home} />
+                         <InfoRow label="Dusun" value={pegawai.pegawai_alamatDusun} icon={Home} />
                     </div>
                 </section>
 
                 <section>
                     <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">D. Riwayat Pendidikan</h3>
                     <div className="space-y-4">
-                        <PendidikanRow level="SD/MI" data={pegawai.pendidikanSD} />
-                        <PendidikanRow level="SMP/MTs" data={pegawai.pendidikanSMP} />
-                        <PendidikanRow level="SMA/MA" data={pegawai.pendidikanSMA} />
-                        <PendidikanRow level="Diploma" data={pegawai.pendidikanDiploma} />
-                        <PendidikanRow level="S1" data={pegawai.pendidikanS1} />
-                        <PendidikanRow level="S2" data={pegawai.pendidikanS2} />
+                        <PendidikanRow level="SD/MI" data={pegawai.pegawai_pendidikanSD} />
+                        <PendidikanRow level="SMP/MTs" data={pegawai.pegawai_pendidikanSMP} />
+                        <PendidikanRow level="SMA/MA" data={pegawai.pegawai_pendidikanSMA} />
+                        <PendidikanRow level="Diploma" data={pegawai.pegawai_pendidikanDiploma} />
+                        <PendidikanRow level="S1" data={pegawai.pegawai_pendidikanS1} />
+                        <PendidikanRow level="S2" data={pegawai.pegawai_pendidikanS2} />
                     </div>
                 </section>
 
                  <section>
                     <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">E. File Pegawai</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-                        <FileRow label="SK Pengangkatan" document={pegawai.skPengangkatan} isMulti={true} />
-                        <FileRow label="SK NIP Baru" document={pegawai.skNipBaru} />
-                        <FileRow label="SK Fungsional" document={pegawai.skFungsional} isMulti={true} />
-                        <FileRow label="Berita Acara Sumpah" document={pegawai.beritaAcaraSumpah} />
-                        <FileRow label="Sertifikat Pendidik" document={pegawai.sertifikatPendidik} />
-                        <FileRow label="Sertifikat Pelatihan" document={pegawai.sertifikatPelatihan} isMulti={true} />
-                        <FileRow label="SKP" document={pegawai.skp} isMulti={true} />
-                        <FileRow label="Karpeg" document={pegawai.karpeg} />
-                        <FileRow label="Karis/Karsu" document={pegawai.karisKarsu} />
-                        <FileRow label="Buku Nikah" document={pegawai.bukuNikah} />
-                        <FileRow label="Kartu Keluarga" document={pegawai.kartuKeluarga} />
-                        <FileRow label="KTP" document={pegawai.ktp} />
-                        <FileRow label="Akte Kelahiran" document={pegawai.akteKelahiran} />
-                        <FileRow label="Kartu Taspen" document={pegawai.kartuTaspen} />
-                        <FileRow label="NPWP" document={pegawai.npwp} />
-                        <FileRow label="Kartu BPJS" document={pegawai.kartuBpjs} />
-                        <FileRow label="Buku Rekening Gaji" document={pegawai.bukuRekening} />
+                        <FileRow label="SK Pengangkatan" document={pegawai.pegawai_skPengangkatan} isMulti={true} />
+                        <FileRow label="SK NIP Baru" document={pegawai.pegawai_skNipBaru} />
+                        <FileRow label="SK Fungsional" document={pegawai.pegawai_skFungsional} isMulti={true} />
+                        <FileRow label="Berita Acara Sumpah" document={pegawai.pegawai_beritaAcaraSumpah} />
+                        <FileRow label="Sertifikat Pendidik" document={pegawai.pegawai_sertifikatPendidik} />
+                        <FileRow label="Sertifikat Pelatihan" document={pegawai.pegawai_sertifikatPelatihan} isMulti={true} />
+                        <FileRow label="SKP" document={pegawai.pegawai_skp} isMulti={true} />
+                        <FileRow label="Karpeg" document={pegawai.pegawai_karpeg} />
+                        <FileRow label="Karis/Karsu" document={pegawai.pegawai_karisKarsu} />
+                        <FileRow label="Buku Nikah" document={pegawai.pegawai_bukuNikah} />
+                        <FileRow label="Kartu Keluarga" document={pegawai.pegawai_kartuKeluarga} />
+                        <FileRow label="KTP" document={pegawai.pegawai_ktp} />
+                        <FileRow label="Akte Kelahiran" document={pegawai.pegawai_akteKelahiran} />
+                        <FileRow label="Kartu Taspen" document={pegawai.pegawai_kartuTaspen} />
+                        <FileRow label="NPWP" document={pegawai.pegawai_npwp} />
+                        <FileRow label="Kartu BPJS" document={pegawai.pegawai_kartuBpjs} />
+                        <FileRow label="Buku Rekening Gaji" document={pegawai.pegawai_bukuRekening} />
                     </div>
                 </section>
             </div>

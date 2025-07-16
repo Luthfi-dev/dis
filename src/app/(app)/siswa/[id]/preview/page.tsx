@@ -1,6 +1,7 @@
 
 'use client';
-import { Siswa, mockSiswaData } from '@/lib/data';
+import { getSiswaById } from '@/lib/actions';
+import { Siswa } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -25,25 +26,21 @@ function InfoRow({ label, value, icon, className }: { label: string, value?: Rea
     )
 }
 
-export default function PreviewSiswaPage({ params: { id } }: { params: { id: string } }) {
+export default function PreviewSiswaPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const [student, setStudent] = useState<Siswa | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const storedData = localStorage.getItem('siswaData');
-      const allStudents: Siswa[] = storedData ? JSON.parse(storedData) : mockSiswaData;
-      const foundStudent = allStudents.find(s => s.id === id);
-      
-      if (foundStudent) {
-        setStudent(foundStudent);
-      }
-    } catch (error) {
-      console.error("Failed to parse student data from localStorage", error);
-    } finally {
+    const fetchStudent = async () => {
+        const result = await getSiswaById(id);
+        if (result) {
+            setStudent(result);
+        }
         setLoading(false);
-    }
-}, [id]);
+    };
+    fetchStudent();
+  }, [id]);
 
 
   if (loading) {
@@ -91,16 +88,16 @@ export default function PreviewSiswaPage({ params: { id } }: { params: { id: str
         <main className="p-6 sm:p-10">
             {/* Header */}
             <header className="flex flex-col sm:flex-row items-center gap-6 mb-8 text-center sm:text-left">
-                {student.fotoProfil?.fileURL ? (
-                    <Image src={student.fotoProfil.fileURL} alt="Foto Siswa" width={128} height={128} className="rounded-full border-4 border-primary/20 shadow-lg object-cover w-32 h-32" />
+                {student.siswa_fotoProfil?.fileURL ? (
+                    <Image src={student.siswa_fotoProfil.fileURL} alt="Foto Siswa" width={128} height={128} className="rounded-full border-4 border-primary/20 shadow-lg object-cover w-32 h-32" />
                 ) : (
                     <div className="w-32 h-32 rounded-full bg-muted flex items-center justify-center border-4 border-primary/20 shadow-lg">
                         <User className="w-20 h-20 text-muted-foreground" />
                     </div>
                 )}
                 <div>
-                    <h1 className="text-3xl font-bold text-card-foreground">{student.namaLengkap}</h1>
-                    <p className="text-lg text-muted-foreground">NISN: {student.nisn}</p>
+                    <h1 className="text-3xl font-bold text-card-foreground">{student.siswa_namaLengkap}</h1>
+                    <p className="text-lg text-muted-foreground">NISN: {student.siswa_nisn}</p>
                      <Badge variant={studentStatus ? 'default' : 'destructive'} className="mt-2">
                         {studentStatus ? <CheckCircle2 className="mr-2 h-4 w-4" /> : <XCircle className="mr-2 h-4 w-4" />}
                         Status: {student.status}
@@ -115,17 +112,17 @@ export default function PreviewSiswaPage({ params: { id } }: { params: { id: str
                 <section>
                     <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">A. Keterangan Pribadi Siswa</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-                        <InfoRow label="Nama Lengkap" value={student.namaLengkap} icon={User} />
-                        <InfoRow label="NIS" value={student.nis} icon={User} />
-                        <InfoRow label="NISN" value={student.nisn} icon={User} />
-                        <InfoRow label="Jenis Kelamin" value={student.jenisKelamin} icon={Users} />
-                        <InfoRow label="Tempat, Tgl Lahir" value={`${student.tempatLahir}, ${formatDate(student.tanggalLahir)}`} icon={Calendar} />
-                        <InfoRow label="Agama" value={student.agama} icon={BookOpen} />
-                        <InfoRow label="Kewarganegaraan" value={student.kewarganegaraan} icon={Map} />
-                        <InfoRow label="Jumlah Saudara" value={student.jumlahSaudara} icon={Users}/>
-                        <InfoRow label="Bahasa Sehari-hari" value={student.bahasa} icon={Languages}/>
-                        <InfoRow label="Golongan Darah" value={student.golonganDarah} icon={Droplet} />
-                        <InfoRow label="Nomor HP/WA" value={student.telepon} icon={Phone} />
+                        <InfoRow label="Nama Lengkap" value={student.siswa_namaLengkap} icon={User} />
+                        <InfoRow label="NIS" value={student.siswa_nis} icon={User} />
+                        <InfoRow label="NISN" value={student.siswa_nisn} icon={User} />
+                        <InfoRow label="Jenis Kelamin" value={student.siswa_jenisKelamin} icon={Users} />
+                        <InfoRow label="Tempat, Tgl Lahir" value={`${student.siswa_tempatLahir}, ${formatDate(student.siswa_tanggalLahir)}`} icon={Calendar} />
+                        <InfoRow label="Agama" value={student.siswa_agama} icon={BookOpen} />
+                        <InfoRow label="Kewarganegaraan" value={student.siswa_kewarganegaraan} icon={Map} />
+                        <InfoRow label="Jumlah Saudara" value={student.siswa_jumlahSaudara} icon={Users}/>
+                        <InfoRow label="Bahasa Sehari-hari" value={student.siswa_bahasa} icon={Languages}/>
+                        <InfoRow label="Golongan Darah" value={student.siswa_golonganDarah} icon={Droplet} />
+                        <InfoRow label="Nomor HP/WA" value={student.siswa_telepon} icon={Phone} />
                     </div>
                 </section>
                 
@@ -135,17 +132,17 @@ export default function PreviewSiswaPage({ params: { id } }: { params: { id: str
                     <div className="space-y-4">
                         <div className="p-4 bg-muted/50 rounded-lg space-y-3">
                             <h4 className='font-semibold text-md'>Alamat Sesuai KK</h4>
-                            <InfoRow label="Desa" value={getDesaName(student.alamatKkDesa)} icon={Home} />
-                            <InfoRow label="Kecamatan" value={getKecamatanName(student.alamatKkKecamatan)} icon={Home} />
-                            <InfoRow label="Kabupaten" value={getKabupatenName(student.alamatKkKabupaten)} icon={Home} />
-                            <InfoRow label="Provinsi" value={getProvinceName(student.alamatKkProvinsi)} icon={Home} />
+                            <InfoRow label="Desa" value={getDesaName(student.siswa_alamatKkDesa)} icon={Home} />
+                            <InfoRow label="Kecamatan" value={getKecamatanName(student.siswa_alamatKkKecamatan)} icon={Home} />
+                            <InfoRow label="Kabupaten" value={getKabupatenName(student.siswa_alamatKkKabupaten)} icon={Home} />
+                            <InfoRow label="Provinsi" value={getProvinceName(student.siswa_alamatKkProvinsi)} icon={Home} />
                         </div>
                         <div className="p-4 bg-muted/50 rounded-lg space-y-3">
                             <h4 className='font-semibold text-md'>Domisili</h4>
-                            <InfoRow label="Desa" value={getDesaName(student.domisiliDesa)} icon={MapPin} />
-                            <InfoRow label="Kecamatan" value={getKecamatanName(student.domisiliKecamatan)} icon={MapPin} />
-                            <InfoRow label="Kabupaten" value={getKabupatenName(student.domisiliKabupaten)} icon={MapPin} />
-                            <InfoRow label="Provinsi" value={getProvinceName(student.domisiliProvinsi)} icon={MapPin} />
+                            <InfoRow label="Desa" value={getDesaName(student.siswa_domisiliDesa)} icon={MapPin} />
+                            <InfoRow label="Kecamatan" value={getKecamatanName(student.siswa_domisiliKecamatan)} icon={MapPin} />
+                            <InfoRow label="Kabupaten" value={getKabupatenName(student.siswa_domisiliKabupaten)} icon={MapPin} />
+                            <InfoRow label="Provinsi" value={getProvinceName(student.siswa_domisiliProvinsi)} icon={MapPin} />
                         </div>
                     </div>
                 </section>
@@ -154,9 +151,9 @@ export default function PreviewSiswaPage({ params: { id } }: { params: { id: str
                 <section>
                     <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">C. Keterangan Kesehatan</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-                         <InfoRow label="Riwayat Penyakit" value={student.penyakit} icon={Stethoscope} />
-                         <InfoRow label="Kelainan Jasmani" value={student.kelainanJasmani} />
-                         <InfoRow label="Tinggi & Berat Badan" value={`${student.tinggiBadan || '-'} cm / ${student.beratBadan || '-'} kg`} />
+                         <InfoRow label="Riwayat Penyakit" value={student.siswa_penyakit} icon={Stethoscope} />
+                         <InfoRow label="Kelainan Jasmani" value={student.siswa_kelainanJasmani} />
+                         <InfoRow label="Tinggi & Berat Badan" value={`${student.siswa_tinggiBadan || '-'} cm / ${student.siswa_beratBadan || '-'} kg`} />
                     </div>
                 </section>
 
@@ -165,17 +162,17 @@ export default function PreviewSiswaPage({ params: { id } }: { params: { id: str
                     <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">D. Keterangan Orang Tua</h3>
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 p-4 bg-muted/50 rounded-lg">
-                           <InfoRow label="Nama Ayah" value={student.namaAyah} icon={User} />
-                           <InfoRow label="Pendidikan Ayah" value={student.pendidikanAyah} icon={GraduationCap} />
-                           <InfoRow label="Pekerjaan Ayah" value={student.pekerjaanAyah} icon={Briefcase} />
+                           <InfoRow label="Nama Ayah" value={student.siswa_namaAyah} icon={User} />
+                           <InfoRow label="Pendidikan Ayah" value={student.siswa_pendidikanAyah} icon={GraduationCap} />
+                           <InfoRow label="Pekerjaan Ayah" value={student.siswa_pekerjaanAyah} icon={Briefcase} />
                         </div>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 p-4 bg-muted/50 rounded-lg">
-                           <InfoRow label="Nama Ibu" value={student.namaIbu} icon={User} />
-                           <InfoRow label="Pendidikan Ibu" value={student.pendidikanIbu} icon={GraduationCap} />
-                           <InfoRow label="Pekerjaan Ibu" value={student.pekerjaanIbu} icon={Briefcase} />
+                           <InfoRow label="Nama Ibu" value={student.siswa_namaIbu} icon={User} />
+                           <InfoRow label="Pendidikan Ibu" value={student.siswa_pendidikanIbu} icon={GraduationCap} />
+                           <InfoRow label="Pekerjaan Ibu" value={student.siswa_pekerjaanIbu} icon={Briefcase} />
                         </div>
-                        <InfoRow label="Alamat Orang Tua" value={student.alamatOrangTua} icon={Home} />
-                        <InfoRow label="Telepon Orang Tua" value={student.teleponOrangTua} icon={Phone} />
+                        <InfoRow label="Alamat Orang Tua" value={student.siswa_alamatOrangTua} icon={Home} />
+                        <InfoRow label="Telepon Orang Tua" value={student.siswa_teleponOrangTua} icon={Phone} />
                     </div>
                 </section>
 
@@ -183,10 +180,10 @@ export default function PreviewSiswaPage({ params: { id } }: { params: { id: str
                  <section>
                     <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">E. Keterangan Wali</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-                       <InfoRow label="Nama Wali" value={student.namaWali} icon={HeartHandshake} />
-                       <InfoRow label="Hubungan Keluarga" value={student.hubunganWali} icon={Users} />
-                       <InfoRow label="Pendidikan Wali" value={student.pendidikanWali} icon={GraduationCap} />
-                       <InfoRow label="Pekerjaan Wali" value={student.pekerjaanWali} icon={Briefcase} />
+                       <InfoRow label="Nama Wali" value={student.siswa_namaWali} icon={HeartHandshake} />
+                       <InfoRow label="Hubungan Keluarga" value={student.siswa_hubunganWali} icon={Users} />
+                       <InfoRow label="Pendidikan Wali" value={student.siswa_pendidikanWali} icon={GraduationCap} />
+                       <InfoRow label="Pekerjaan Wali" value={student.siswa_pekerjaanWali} icon={Briefcase} />
                     </div>
                 </section>
 
@@ -196,15 +193,15 @@ export default function PreviewSiswaPage({ params: { id } }: { params: { id: str
                      <div className="space-y-4">
                         <div className="p-4 bg-muted/50 rounded-lg space-y-3">
                             <h4 className='font-semibold text-md'>Pendidikan Sebelumnya (Siswa Baru)</h4>
-                            <InfoRow label="Asal Sekolah" value={student.asalSekolah} icon={School}/>
-                            <InfoRow label="Nomor STTB" value={student.nomorSttb} icon={FileText}/>
-                            <InfoRow label="Tanggal STTB" value={formatDate(student.tanggalSttb)} icon={Calendar}/>
+                            <InfoRow label="Asal Sekolah" value={student.siswa_asalSekolah} icon={School}/>
+                            <InfoRow label="Nomor STTB" value={student.siswa_nomorSttb} icon={FileText}/>
+                            <InfoRow label="Tanggal STTB" value={formatDate(student.siswa_tanggalSttb)} icon={Calendar}/>
                         </div>
                         <div className="p-4 bg-muted/50 rounded-lg space-y-3">
                              <h4 className='font-semibold text-md'>Pendidikan Sebelumnya (Pindahan)</h4>
-                            <InfoRow label="Asal Sekolah" value={student.pindahanAsalSekolah} icon={School}/>
-                            <InfoRow label="Dari Tingkat" value={student.pindahanDariTingkat} icon={GraduationCap}/>
-                            <InfoRow label="Diterima Tanggal" value={formatDate(student.pindahanDiterimaTanggal)} icon={Calendar}/>
+                            <InfoRow label="Asal Sekolah" value={student.siswa_pindahanAsalSekolah} icon={School}/>
+                            <InfoRow label="Dari Tingkat" value={student.siswa_pindahanDariTingkat} icon={GraduationCap}/>
+                            <InfoRow label="Diterima Tanggal" value={formatDate(student.siswa_pindahanDiterimaTanggal)} icon={Calendar}/>
                         </div>
                     </div>
                 </section>
@@ -215,20 +212,20 @@ export default function PreviewSiswaPage({ params: { id } }: { params: { id: str
                      <div className="space-y-4">
                         <div className="p-4 bg-muted/50 rounded-lg space-y-3">
                             <h4 className='font-semibold text-md'>Tamat Belajar / Lulus</h4>
-                            <InfoRow label="Tahun" value={student.lulusTahun} icon={Calendar}/>
-                            <InfoRow label="Nomor Ijazah" value={student.lulusNomorIjazah} icon={FileText}/>
-                            <InfoRow label="Melanjutkan Ke" value={student.lulusMelanjutkanKe} icon={Building}/>
+                            <InfoRow label="Tahun" value={student.siswa_lulusTahun} icon={Calendar}/>
+                            <InfoRow label="Nomor Ijazah" value={student.siswa_lulusNomorIjazah} icon={FileText}/>
+                            <InfoRow label="Melanjutkan Ke" value={student.siswa_lulusMelanjutkanKe} icon={Building}/>
                         </div>
                         <div className="p-4 bg-muted/50 rounded-lg space-y-3">
                              <h4 className='font-semibold text-md'>Pindah Sekolah</h4>
-                            <InfoRow label="Tingkat Kelas Ditinggalkan" value={student.pindahTingkatKelas} icon={GraduationCap}/>
-                            <InfoRow label="Ke Sekolah" value={student.pindahKeSekolah} icon={Building}/>
-                            <InfoRow label="Ke Tingkat" value={student.pindahKeTingkat} icon={GraduationCap}/>
+                            <InfoRow label="Tingkat Kelas Ditinggalkan" value={student.siswa_pindahTingkatKelas} icon={GraduationCap}/>
+                            <InfoRow label="Ke Sekolah" value={student.siswa_pindahKeSekolah} icon={Building}/>
+                            <InfoRow label="Ke Tingkat" value={student.siswa_pindahKeTingkat} icon={GraduationCap}/>
                         </div>
                         <div className="p-4 bg-muted/50 rounded-lg space-y-3">
                              <h4 className='font-semibold text-md'>Keluar Sekolah</h4>
-                            <InfoRow label="Alasan Keluar" value={student.keluarAlasan} icon={FileText}/>
-                            <InfoRow label="Tanggal Keluar" value={formatDate(student.keluarTanggal)} icon={Calendar}/>
+                            <InfoRow label="Alasan Keluar" value={student.siswa_keluarAlasan} icon={FileText}/>
+                            <InfoRow label="Tanggal Keluar" value={formatDate(student.siswa_keluarTanggal)} icon={Calendar}/>
                         </div>
                     </div>
                 </section>

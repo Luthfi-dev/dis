@@ -1,6 +1,7 @@
 
 'use client';
-import { Pegawai, mockPegawaiData } from '@/lib/pegawai-data';
+import { getPegawaiById } from '@/lib/actions';
+import { Pegawai } from '@/lib/pegawai-data';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -75,24 +76,20 @@ function MultiDocumentItem({ label, documents }: { label: string; documents?: { 
 }
 
 
-export default function LihatPegawaiPage({ params: { id } }: { params: { id: string } }) {
+export default function LihatPegawaiPage({ params }: { params: { id: string } }) {
+    const { id } = params;
     const [pegawai, setPegawai] = useState<Pegawai | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        try {
-          const storedData = localStorage.getItem('pegawaiData');
-          const allPegawai: Pegawai[] = storedData ? JSON.parse(storedData) : mockPegawaiData;
-          const foundPegawai = allPegawai.find(s => s.id === id);
-          
-          if (foundPegawai) {
-            setPegawai(foundPegawai);
-          }
-        } catch (error) {
-          console.error("Failed to parse pegawai data from localStorage", error);
-        } finally {
+        const fetchPegawai = async () => {
+            const result = await getPegawaiById(id);
+            if(result) {
+                setPegawai(result);
+            }
             setLoading(false);
-        }
+        };
+        fetchPegawai();
     }, [id]);
 
     const formatDate = (dateString?: string | Date) => {
@@ -138,18 +135,18 @@ export default function LihatPegawaiPage({ params: { id } }: { params: { id: str
       <div className="space-y-6">
         <Card className="shadow-lg">
           <CardHeader className="flex flex-col sm:flex-row items-start gap-4">
-             {pegawai.phaspoto?.fileURL ? (
-                <Image src={pegawai.phaspoto.fileURL} alt="Foto Pegawai" width={100} height={133} className="border object-cover" />
+             {pegawai.pegawai_phaspoto?.fileURL ? (
+                <Image src={pegawai.pegawai_phaspoto.fileURL} alt="Foto Pegawai" width={100} height={133} className="border object-cover" />
              ) : (
                 <div className="w-24 h-32 bg-muted flex items-center justify-center border">
                     <User className="w-12 h-12 text-muted-foreground" />
                 </div>
              )}
             <div className="flex-1">
-                <CardTitle className="text-2xl">{pegawai.nama}</CardTitle>
+                <CardTitle className="text-2xl">{pegawai.pegawai_nama}</CardTitle>
                  <div className="text-muted-foreground mt-2 space-y-2">
-                    <div className="flex items-center gap-2"><Briefcase className='w-4 h-4' /> {pegawai.jabatan}</div>
-                    <div className="flex items-center gap-2"><BookOpen className='w-4 h-4' /> {pegawai.bidangStudi}</div>
+                    <div className="flex items-center gap-2"><Briefcase className='w-4 h-4' /> {pegawai.pegawai_jabatan}</div>
+                    <div className="flex items-center gap-2"><BookOpen className='w-4 h-4' /> {pegawai.pegawai_bidangStudi}</div>
                 </div>
                 <Badge variant={pegawaiStatus === 'Lengkap' ? 'default' : 'outline'} className={`mt-4 ${pegawaiStatus === 'Lengkap' ? 'bg-green-100 text-green-800' : 'text-amber-600 border-amber-500/50'}`}>
                     Status: {pegawaiStatus}
@@ -160,27 +157,27 @@ export default function LihatPegawaiPage({ params: { id } }: { params: { id: str
              <div>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">Identitas Pegawai</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                    <DetailItem label="NIP" value={pegawai.nip} icon={User} />
-                    <DetailItem label="NUPTK" value={pegawai.nuptk} icon={User} />
-                    <DetailItem label="NRG" value={pegawai.nrg} icon={User} />
-                    <DetailItem label="Jenis Kelamin" value={pegawai.jenisKelamin} icon={Users} />
-                    <DetailItem label="Tempat Lahir" value={pegawai.tempatLahir} icon={MapPin} />
-                    <DetailItem label="Tanggal Lahir" value={formatDate(pegawai.tanggalLahir)} icon={Calendar}/>
-                    <DetailItem label="Status Perkawinan" value={pegawai.statusPerkawinan} icon={HeartHandshake} />
-                    <DetailItem label="Tanggal Perkawinan" value={formatDate(pegawai.tanggalPerkawinan)} icon={Calendar} />
-                    <DetailItem label="Nama Pasangan" value={pegawai.namaPasangan} icon={User} />
-                    <DetailItem label="Jumlah Anak" value={pegawai.jumlahAnak} icon={Users} />
-                    <DetailItem label="Tugas Tambahan" value={pegawai.tugasTambahan} icon={Briefcase} />
-                    <DetailItem label="TMT" value={formatDate(pegawai.terhitungMulaiTanggal)} icon={Calendar} />
+                    <DetailItem label="NIP" value={pegawai.pegawai_nip} icon={User} />
+                    <DetailItem label="NUPTK" value={pegawai.pegawai_nuptk} icon={User} />
+                    <DetailItem label="NRG" value={pegawai.pegawai_nrg} icon={User} />
+                    <DetailItem label="Jenis Kelamin" value={pegawai.pegawai_jenisKelamin} icon={Users} />
+                    <DetailItem label="Tempat Lahir" value={pegawai.pegawai_tempatLahir} icon={MapPin} />
+                    <DetailItem label="Tanggal Lahir" value={formatDate(pegawai.pegawai_tanggalLahir)} icon={Calendar}/>
+                    <DetailItem label="Status Perkawinan" value={pegawai.pegawai_statusPerkawinan} icon={HeartHandshake} />
+                    <DetailItem label="Tanggal Perkawinan" value={formatDate(pegawai.pegawai_tanggalPerkawinan)} icon={Calendar} />
+                    <DetailItem label="Nama Pasangan" value={pegawai.pegawai_namaPasangan} icon={User} />
+                    <DetailItem label="Jumlah Anak" value={pegawai.pegawai_jumlahAnak} icon={Users} />
+                    <DetailItem label="Tugas Tambahan" value={pegawai.pegawai_tugasTambahan} icon={Briefcase} />
+                    <DetailItem label="TMT" value={formatDate(pegawai.pegawai_terhitungMulaiTanggal)} icon={Calendar} />
                 </div>
              </div>
              <div>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">Alamat Rumah</h3>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                    <DetailItem label="Kabupaten" value={getKabupatenName(pegawai.alamatKabupaten)} icon={Home}/>
-                    <DetailItem label="Kecamatan" value={getKecamatanName(pegawai.alamatKecamatan)} icon={Home}/>
-                    <DetailItem label="Desa" value={getDesaName(pegawai.alamatDesa)} icon={Home}/>
-                    <DetailItem label="Dusun" value={pegawai.alamatDusun} icon={Home}/>
+                    <DetailItem label="Kabupaten" value={getKabupatenName(pegawai.pegawai_alamatKabupaten)} icon={Home}/>
+                    <DetailItem label="Kecamatan" value={getKecamatanName(pegawai.pegawai_alamatKecamatan)} icon={Home}/>
+                    <DetailItem label="Desa" value={getDesaName(pegawai.pegawai_alamatDesa)} icon={Home}/>
+                    <DetailItem label="Dusun" value={pegawai.pegawai_alamatDusun} icon={Home}/>
                 </div>
              </div>
           </CardContent>
@@ -191,38 +188,38 @@ export default function LihatPegawaiPage({ params: { id } }: { params: { id: str
             <CardContent className="space-y-4">
                  <h4 className="font-semibold text-md">SD/MI</h4>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                    <DetailItem label="Tamat Tahun" value={pegawai.pendidikanSD?.tamatTahun} icon={Calendar} />
-                    <DocumentItem label="Ijazah" document={pegawai.pendidikanSD?.ijazah} />
+                    <DetailItem label="Tamat Tahun" value={pegawai.pegawai_pendidikanSD?.tamatTahun} icon={Calendar} />
+                    <DocumentItem label="Ijazah" document={pegawai.pegawai_pendidikanSD?.ijazah} />
                  </div>
                  <Separator/>
                  <h4 className="font-semibold text-md">SMP/MTs</h4>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                    <DetailItem label="Tamat Tahun" value={pegawai.pendidikanSMP?.tamatTahun} icon={Calendar} />
-                    <DocumentItem label="Ijazah" document={pegawai.pendidikanSMP?.ijazah} />
+                    <DetailItem label="Tamat Tahun" value={pegawai.pegawai_pendidikanSMP?.tamatTahun} icon={Calendar} />
+                    <DocumentItem label="Ijazah" document={pegawai.pegawai_pendidikanSMP?.ijazah} />
                  </div>
                  <Separator/>
                  <h4 className="font-semibold text-md">SMA/MA</h4>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                    <DetailItem label="Tamat Tahun" value={pegawai.pendidikanSMA?.tamatTahun} icon={Calendar} />
-                    <DocumentItem label="Ijazah" document={pegawai.pendidikanSMA?.ijazah} />
+                    <DetailItem label="Tamat Tahun" value={pegawai.pegawai_pendidikanSMA?.tamatTahun} icon={Calendar} />
+                    <DocumentItem label="Ijazah" document={pegawai.pegawai_pendidikanSMA?.ijazah} />
                  </div>
                  <Separator/>
                  <h4 className="font-semibold text-md">Diploma</h4>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                    <DetailItem label="Tamat Tahun" value={pegawai.pendidikanDiploma?.tamatTahun} icon={Calendar} />
-                    <DocumentItem label="Ijazah" document={pegawai.pendidikanDiploma?.ijazah} />
+                    <DetailItem label="Tamat Tahun" value={pegawai.pegawai_pendidikanDiploma?.tamatTahun} icon={Calendar} />
+                    <DocumentItem label="Ijazah" document={pegawai.pegawai_pendidikanDiploma?.ijazah} />
                  </div>
                  <Separator/>
                  <h4 className="font-semibold text-md">S1</h4>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                    <DetailItem label="Tamat Tahun" value={pegawai.pendidikanS1?.tamatTahun} icon={Calendar} />
-                    <DocumentItem label="Ijazah" document={pegawai.pendidikanS1?.ijazah} />
+                    <DetailItem label="Tamat Tahun" value={pegawai.pegawai_pendidikanS1?.tamatTahun} icon={Calendar} />
+                    <DocumentItem label="Ijazah" document={pegawai.pegawai_pendidikanS1?.ijazah} />
                  </div>
                   <Separator/>
                  <h4 className="font-semibold text-md">S2</h4>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                    <DetailItem label="Tamat Tahun" value={pegawai.pendidikanS2?.tamatTahun} icon={Calendar} />
-                    <DocumentItem label="Ijazah" document={pegawai.pendidikanS2?.ijazah} />
+                    <DetailItem label="Tamat Tahun" value={pegawai.pegawai_pendidikanS2?.tamatTahun} icon={Calendar} />
+                    <DocumentItem label="Ijazah" document={pegawai.pegawai_pendidikanS2?.ijazah} />
                  </div>
             </CardContent>
         </Card>
@@ -230,23 +227,23 @@ export default function LihatPegawaiPage({ params: { id } }: { params: { id: str
         <Card className="shadow-lg">
           <CardHeader><CardTitle>File Pegawai</CardTitle></CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-              <MultiDocumentItem label="SK Pengangkatan Pegawai" documents={pegawai.skPengangkatan} />
-              <DocumentItem label="SK NIP Baru" document={pegawai.skNipBaru} />
-              <MultiDocumentItem label="SK Fungsional" documents={pegawai.skFungsional} />
-              <DocumentItem label="Berita Acara Sumpah PNS" document={pegawai.beritaAcaraSumpah} />
-              <DocumentItem label="Sertifikat Pendidik" document={pegawai.sertifikatPendidik} />
-              <MultiDocumentItem label="Sertifikat Pelatihan" documents={pegawai.sertifikatPelatihan} />
-              <MultiDocumentItem label="SKP" documents={pegawai.skp} />
-              <DocumentItem label="Karpeg" document={pegawai.karpeg} />
-              <DocumentItem label="Karis/Karsu" document={pegawai.karisKarsu} />
-              <DocumentItem label="Buku Nikah" document={pegawai.bukuNikah} />
-              <DocumentItem label="Kartu Keluarga" document={pegawai.kartuKeluarga} />
-              <DocumentItem label="KTP" document={pegawai.ktp} />
-              <DocumentItem label="Akte Kelahiran" document={pegawai.akteKelahiran} />
-              <DocumentItem label="Kartu Peserta Taspen" document={pegawai.kartuTaspen} />
-              <DocumentItem label="NPWP" document={pegawai.npwp} />
-              <DocumentItem label="Kartu BPJS / ASKES" document={pegawai.kartuBpjs} />
-              <DocumentItem label="Buku Rekening Gaji" document={pegawai.bukuRekening} />
+              <MultiDocumentItem label="SK Pengangkatan Pegawai" documents={pegawai.pegawai_skPengangkatan} />
+              <DocumentItem label="SK NIP Baru" document={pegawai.pegawai_skNipBaru} />
+              <MultiDocumentItem label="SK Fungsional" documents={pegawai.pegawai_skFungsional} />
+              <DocumentItem label="Berita Acara Sumpah PNS" document={pegawai.pegawai_beritaAcaraSumpah} />
+              <DocumentItem label="Sertifikat Pendidik" document={pegawai.pegawai_sertifikatPendidik} />
+              <MultiDocumentItem label="Sertifikat Pelatihan" documents={pegawai.pegawai_sertifikatPelatihan} />
+              <MultiDocumentItem label="SKP" documents={pegawai.pegawai_skp} />
+              <DocumentItem label="Karpeg" document={pegawai.pegawai_karpeg} />
+              <DocumentItem label="Karis/Karsu" document={pegawai.pegawai_karisKarsu} />
+              <DocumentItem label="Buku Nikah" document={pegawai.pegawai_bukuNikah} />
+              <DocumentItem label="Kartu Keluarga" document={pegawai.pegawai_kartuKeluarga} />
+              <DocumentItem label="KTP" document={pegawai.pegawai_ktp} />
+              <DocumentItem label="Akte Kelahiran" document={pegawai.pegawai_akteKelahiran} />
+              <DocumentItem label="Kartu Peserta Taspen" document={pegawai.pegawai_kartuTaspen} />
+              <DocumentItem label="NPWP" document={pegawai.pegawai_npwp} />
+              <DocumentItem label="Kartu BPJS / ASKES" document={pegawai.pegawai_kartuBpjs} />
+              <DocumentItem label="Buku Rekening Gaji" document={pegawai.pegawai_bukuRekening} />
           </CardContent>
         </Card>
       </div>

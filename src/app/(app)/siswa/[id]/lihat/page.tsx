@@ -1,6 +1,7 @@
 
 'use client';
-import { Siswa, mockSiswaData } from '@/lib/data';
+import { getSiswaById } from '@/lib/actions';
+import { Siswa } from '@/lib/data';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -47,24 +48,20 @@ function DocumentItem({ label, document }: { label: string; document?: { fileNam
     );
 }
 
-export default function LihatSiswaPage({ params: { id } }: { params: { id: string } }) {
+export default function LihatSiswaPage({ params }: { params: { id: string } }) {
+    const { id } = params;
     const [student, setStudent] = useState<Siswa | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        try {
-          const storedData = localStorage.getItem('siswaData');
-          const allStudents: Siswa[] = storedData ? JSON.parse(storedData) : mockSiswaData;
-          const foundStudent = allStudents.find(s => s.id === id);
-          
-          if (foundStudent) {
-            setStudent(foundStudent);
-          }
-        } catch (error) {
-          console.error("Failed to parse student data from localStorage", error);
-        } finally {
+        const fetchStudent = async () => {
+            const result = await getSiswaById(id);
+            if (result) {
+                setStudent(result);
+            }
             setLoading(false);
-        }
+        };
+        fetchStudent();
     }, [id]);
 
     const formatDate = (dateString?: string | Date) => {
@@ -110,15 +107,15 @@ export default function LihatSiswaPage({ params: { id } }: { params: { id: strin
       <div className="space-y-6">
         <Card className="shadow-lg">
           <CardHeader className="flex flex-col sm:flex-row items-start gap-4">
-             {student.fotoProfil?.fileURL ? (
-                <Image src={student.fotoProfil.fileURL} alt="Foto Profil" width={100} height={100} className="rounded-full border object-cover" />
+             {student.siswa_fotoProfil?.fileURL ? (
+                <Image src={student.siswa_fotoProfil.fileURL} alt="Foto Profil" width={100} height={100} className="rounded-full border object-cover" />
              ) : (
                 <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center border">
                     <User className="w-12 h-12 text-muted-foreground" />
                 </div>
              )}
             <div className="flex-1">
-                <CardTitle className="text-2xl">{student.namaLengkap}</CardTitle>
+                <CardTitle className="text-2xl">{student.siswa_namaLengkap}</CardTitle>
                 <CardDescription className='mt-2'>
                     <Badge variant={studentStatus === 'Lengkap' ? 'default' : 'outline'} className={studentStatus === 'Lengkap' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 'text-amber-600 border-amber-500/50'}>
                         Status: {studentStatus}
@@ -130,38 +127,38 @@ export default function LihatSiswaPage({ params: { id } }: { params: { id: strin
              <div>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">Data Pribadi</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                    <DetailItem label="NIS" value={student.nis} icon={User} />
-                    <DetailItem label="NISN" value={student.nisn} icon={User} />
+                    <DetailItem label="NIS" value={student.siswa_nis} icon={User} />
+                    <DetailItem label="NISN" value={student.siswa_nisn} icon={User} />
                     <DetailItem label="Jenis Kelamin" value={
-                        <Badge variant={student.jenisKelamin === 'Laki-laki' ? 'default' : 'secondary'} className={student.jenisKelamin === 'Perempuan' ? 'bg-pink-100 text-pink-800' : ''}>
-                            {student.jenisKelamin}
+                        <Badge variant={student.siswa_jenisKelamin === 'Laki-laki' ? 'default' : 'secondary'} className={student.siswa_jenisKelamin === 'Perempuan' ? 'bg-pink-100 text-pink-800' : ''}>
+                            {student.siswa_jenisKelamin}
                         </Badge>
                     } icon={Users} />
-                    <DetailItem label="Tempat Lahir" value={student.tempatLahir} icon={MapPin} />
-                    <DetailItem label="Tanggal Lahir" value={formatDate(student.tanggalLahir)} icon={Calendar}/>
-                    <DetailItem label="Agama" value={student.agama} icon={BookOpen} />
-                    <DetailItem label="Kewarganegaraan" value={student.kewarganegaraan} icon={MapPin}/>
-                    <DetailItem label="Jumlah Saudara" value={student.jumlahSaudara} icon={Users} />
-                    <DetailItem label="Bahasa Sehari-hari" value={student.bahasa} icon={Languages}/>
-                    <DetailItem label="Nomor HP/WA" value={student.telepon} icon={Phone}/>
+                    <DetailItem label="Tempat Lahir" value={student.siswa_tempatLahir} icon={MapPin} />
+                    <DetailItem label="Tanggal Lahir" value={formatDate(student.siswa_tanggalLahir)} icon={Calendar}/>
+                    <DetailItem label="Agama" value={student.siswa_agama} icon={BookOpen} />
+                    <DetailItem label="Kewarganegaraan" value={student.siswa_kewarganegaraan} icon={MapPin}/>
+                    <DetailItem label="Jumlah Saudara" value={student.siswa_jumlahSaudara} icon={Users} />
+                    <DetailItem label="Bahasa Sehari-hari" value={student.siswa_bahasa} icon={Languages}/>
+                    <DetailItem label="Nomor HP/WA" value={student.siswa_telepon} icon={Phone}/>
                 </div>
              </div>
              <div>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">Alamat Sesuai KK</h3>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                    <DetailItem label="Kabupaten" value={getKabupatenName(student.alamatKkKabupaten)} icon={Home}/>
-                    <DetailItem label="Kecamatan" value={getKecamatanName(student.alamatKkKecamatan)} icon={Home}/>
-                    <DetailItem label="Desa" value={getDesaName(student.alamatKkDesa)} icon={Home}/>
-                    <DetailItem label="Provinsi" value={getProvinceName(student.alamatKkProvinsi)} icon={Home}/>
+                    <DetailItem label="Kabupaten" value={getKabupatenName(student.siswa_alamatKkKabupaten)} icon={Home}/>
+                    <DetailItem label="Kecamatan" value={getKecamatanName(student.siswa_alamatKkKecamatan)} icon={Home}/>
+                    <DetailItem label="Desa" value={getDesaName(student.siswa_alamatKkDesa)} icon={Home}/>
+                    <DetailItem label="Provinsi" value={getProvinceName(student.siswa_alamatKkProvinsi)} icon={Home}/>
                 </div>
              </div>
              <div>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">Alamat Domisili</h3>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                    <DetailItem label="Provinsi" value={getProvinceName(student.domisiliProvinsi)} icon={MapPin}/>
-                    <DetailItem label="Kabupaten" value={getKabupatenName(student.domisiliKabupaten)} icon={MapPin}/>
-                    <DetailItem label="Kecamatan" value={getKecamatanName(student.domisiliKecamatan)} icon={MapPin}/>
-                    <DetailItem label="Desa" value={getDesaName(student.domisiliDesa)} icon={MapPin}/>
+                    <DetailItem label="Provinsi" value={getProvinceName(student.siswa_domisiliProvinsi)} icon={MapPin}/>
+                    <DetailItem label="Kabupaten" value={getKabupatenName(student.siswa_domisiliKabupaten)} icon={MapPin}/>
+                    <DetailItem label="Kecamatan" value={getKecamatanName(student.siswa_domisiliKecamatan)} icon={MapPin}/>
+                    <DetailItem label="Desa" value={getDesaName(student.siswa_domisiliDesa)} icon={MapPin}/>
                 </div>
              </div>
           </CardContent>
@@ -191,36 +188,36 @@ export default function LihatSiswaPage({ params: { id } }: { params: { id: strin
                 <div>
                     <h4 className="font-semibold text-md mb-2">a. Nama Orang Tua Kandung</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                        <DetailItem label="Nama Ayah" value={student.namaAyah} icon={User}/>
-                        <DetailItem label="Nama Ibu" value={student.namaIbu} icon={User}/>
+                        <DetailItem label="Nama Ayah" value={student.siswa_namaAyah} icon={User}/>
+                        <DetailItem label="Nama Ibu" value={student.siswa_namaIbu} icon={User}/>
                     </div>
                 </div>
                 <Separator/>
                 <div>
                     <h4 className="font-semibold text-md mb-2">b. Pendidikan & Pekerjaan</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                        <DetailItem label="Pendidikan Tertinggi Ayah" value={student.pendidikanAyah} icon={GraduationCap}/>
-                        <DetailItem label="Pekerjaan Ayah" value={student.pekerjaanAyah} icon={Briefcase}/>
-                        <DetailItem label="Pendidikan Tertinggi Ibu" value={student.pendidikanIbu} icon={GraduationCap}/>
-                        <DetailItem label="Pekerjaan Ibu" value={student.pekerjaanIbu} icon={Briefcase}/>
+                        <DetailItem label="Pendidikan Tertinggi Ayah" value={student.siswa_pendidikanAyah} icon={GraduationCap}/>
+                        <DetailItem label="Pekerjaan Ayah" value={student.siswa_pekerjaanAyah} icon={Briefcase}/>
+                        <DetailItem label="Pendidikan Tertinggi Ibu" value={student.siswa_pendidikanIbu} icon={GraduationCap}/>
+                        <DetailItem label="Pekerjaan Ibu" value={student.siswa_pekerjaanIbu} icon={Briefcase}/>
                     </div>
                 </div>
                 <Separator/>
                 <div>
                     <h4 className="font-semibold text-md mb-2">c. Wali Murid</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                        <DetailItem label="Nama Wali" value={student.namaWali} icon={HeartHandshake}/>
-                        <DetailItem label="Hubungan Keluarga" value={student.hubunganWali} icon={Users}/>
-                        <DetailItem label="Pendidikan Terakhir" value={student.pendidikanWali} icon={GraduationCap}/>
-                        <DetailItem label="Pekerjaan" value={student.pekerjaanWali} icon={Briefcase}/>
+                        <DetailItem label="Nama Wali" value={student.siswa_namaWali} icon={HeartHandshake}/>
+                        <DetailItem label="Hubungan Keluarga" value={student.siswa_hubunganWali} icon={Users}/>
+                        <DetailItem label="Pendidikan Terakhir" value={student.siswa_pendidikanWali} icon={GraduationCap}/>
+                        <DetailItem label="Pekerjaan" value={student.siswa_pekerjaanWali} icon={Briefcase}/>
                     </div>
                 </div>
                 <Separator/>
                 <div>
                     <h4 className="font-semibold text-md mb-2">d. Kontak & Alamat Orang Tua / Wali</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                        <DetailItem label="Alamat" value={student.alamatOrangTua} icon={Home}/>
-                        <DetailItem label="Telepon" value={student.teleponOrangTua} icon={Phone}/>
+                        <DetailItem label="Alamat" value={student.siswa_alamatOrangTua} icon={Home}/>
+                        <DetailItem label="Telepon" value={student.siswa_teleponOrangTua} icon={Phone}/>
                     </div>
                 </div>
             </CardContent>
@@ -230,11 +227,11 @@ export default function LihatSiswaPage({ params: { id } }: { params: { id: strin
             <CardHeader><CardTitle>Rincian Kesehatan</CardTitle></CardHeader>
             <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                    <DetailItem label="Golongan Darah" value={student.golonganDarah} icon={Droplet} />
-                    <DetailItem label="Tinggi Badan (cm)" value={student.tinggiBadan} icon={Stethoscope} />
-                    <DetailItem label="Berat Badan (kg)" value={student.beratBadan} icon={Stethoscope} />
-                    <DetailItem label="Riwayat Penyakit" value={student.penyakit} icon={Stethoscope} />
-                    <DetailItem label="Kelainan Jasmani" value={student.kelainanJasmani} icon={Stethoscope} />
+                    <DetailItem label="Golongan Darah" value={student.siswa_golonganDarah} icon={Droplet} />
+                    <DetailItem label="Tinggi Badan (cm)" value={student.siswa_tinggiBadan} icon={Stethoscope} />
+                    <DetailItem label="Berat Badan (kg)" value={student.siswa_beratBadan} icon={Stethoscope} />
+                    <DetailItem label="Riwayat Penyakit" value={student.siswa_penyakit} icon={Stethoscope} />
+                    <DetailItem label="Kelainan Jasmani" value={student.siswa_kelainanJasmani} icon={Stethoscope} />
                 </div>
             </CardContent>
         </Card>
@@ -247,18 +244,18 @@ export default function LihatSiswaPage({ params: { id } }: { params: { id: strin
                 <div>
                     <h4 className="font-semibold text-md mb-2">Pendidikan Sebelumnya (Siswa Baru)</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                        <DetailItem label="Asal Sekolah" value={student.asalSekolah} icon={School}/>
-                        <DetailItem label="Nomor STTB" value={student.nomorSttb} icon={FileText}/>
-                        <DetailItem label="Tanggal STTB" value={formatDate(student.tanggalSttb)} icon={Calendar}/>
+                        <DetailItem label="Asal Sekolah" value={student.siswa_asalSekolah} icon={School}/>
+                        <DetailItem label="Nomor STTB" value={student.siswa_nomorSttb} icon={FileText}/>
+                        <DetailItem label="Tanggal STTB" value={formatDate(student.siswa_tanggalSttb)} icon={Calendar}/>
                     </div>
                 </div>
                 <Separator/>
                 <div>
                     <h4 className="font-semibold text-md mb-2">Pendidikan Sebelumnya (Pindahan)</h4>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                        <DetailItem label="Asal Sekolah" value={student.pindahanAsalSekolah} icon={School}/>
-                        <DetailItem label="Dari Tingkat" value={student.pindahanDariTingkat} icon={GraduationCap}/>
-                        <DetailItem label="Diterima Tanggal" value={formatDate(student.pindahanDiterimaTanggal)} icon={Calendar}/>
+                        <DetailItem label="Asal Sekolah" value={student.siswa_pindahanAsalSekolah} icon={School}/>
+                        <DetailItem label="Dari Tingkat" value={student.siswa_pindahanDariTingkat} icon={GraduationCap}/>
+                        <DetailItem label="Diterima Tanggal" value={formatDate(student.siswa_pindahanDiterimaTanggal)} icon={Calendar}/>
                     </div>
                 </div>
             </CardContent>
@@ -272,26 +269,26 @@ export default function LihatSiswaPage({ params: { id } }: { params: { id: strin
                  <div>
                     <h4 className="font-semibold text-md mb-2">Tamat Belajar / Lulus</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                        <DetailItem label="Tahun" value={student.lulusTahun} icon={Calendar}/>
-                        <DetailItem label="Nomor Ijazah" value={student.lulusNomorIjazah} icon={FileText}/>
-                        <DetailItem label="Melanjutkan Ke" value={student.lulusMelanjutkanKe} icon={Building}/>
+                        <DetailItem label="Tahun" value={student.siswa_lulusTahun} icon={Calendar}/>
+                        <DetailItem label="Nomor Ijazah" value={student.siswa_lulusNomorIjazah} icon={FileText}/>
+                        <DetailItem label="Melanjutkan Ke" value={student.siswa_lulusMelanjutkanKe} icon={Building}/>
                     </div>
                 </div>
                 <Separator/>
                 <div>
                     <h4 className="font-semibold text-md mb-2">Pindah Sekolah</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                        <DetailItem label="Tingkat Kelas Ditinggalkan" value={student.pindahTingkatKelas} icon={GraduationCap}/>
-                        <DetailItem label="Ke Sekolah" value={student.pindahKeSekolah} icon={Building}/>
-                        <DetailItem label="Ke Tingkat" value={student.pindahKeTingkat} icon={GraduationCap}/>
+                        <DetailItem label="Tingkat Kelas Ditinggalkan" value={student.siswa_pindahTingkatKelas} icon={GraduationCap}/>
+                        <DetailItem label="Ke Sekolah" value={student.siswa_pindahKeSekolah} icon={Building}/>
+                        <DetailItem label="Ke Tingkat" value={student.siswa_pindahKeTingkat} icon={GraduationCap}/>
                     </div>
                 </div>
                 <Separator/>
                 <div>
                     <h4 className="font-semibold text-md mb-2">Keluar Sekolah</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                        <DetailItem label="Alasan Keluar" value={student.keluarAlasan} icon={FileText}/>
-                        <DetailItem label="Tanggal Keluar" value={formatDate(student.keluarTanggal)} icon={Calendar}/>
+                        <DetailItem label="Alasan Keluar" value={student.siswa_keluarAlasan} icon={FileText}/>
+                        <DetailItem label="Tanggal Keluar" value={formatDate(student.siswa_keluarTanggal)} icon={Calendar}/>
                     </div>
                 </div>
             </CardContent>

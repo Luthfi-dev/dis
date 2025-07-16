@@ -1,29 +1,26 @@
 
 'use client';
 import { StudentForm } from '@/components/student-form';
-import { Siswa, mockSiswaData } from '@/lib/data';
+import { getSiswaById } from '@/lib/actions';
 import { notFound } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { Siswa } from '@/lib/data';
 
 export function EditStudentForm({ studentId }: { studentId: string }) {
   const [student, setStudent] = useState<Siswa | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const storedData = localStorage.getItem('siswaData');
-      const allStudents = storedData ? JSON.parse(storedData) : mockSiswaData;
-      const foundStudent = allStudents.find((s: Siswa) => s.id === studentId);
-      
-      if (foundStudent) {
-        setStudent(foundStudent);
+    const fetchStudent = async () => {
+      const result = await getSiswaById(studentId);
+      if (result) {
+        setStudent(result);
       }
-    } catch (error) {
-      console.error("Failed to parse student data from localStorage", error);
-    } finally {
       setLoading(false);
-    }
+    };
+
+    fetchStudent();
   }, [studentId]);
 
   if (loading) {
@@ -46,7 +43,7 @@ export function EditStudentForm({ studentId }: { studentId: string }) {
     <div className="mx-auto max-w-5xl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Edit Data Siswa</h1>
-        <p className="text-muted-foreground">Perbarui data untuk {student.namaLengkap}.</p>
+        <p className="text-muted-foreground">Perbarui data untuk {student.siswa_namaLengkap}.</p>
       </div>
       <StudentForm studentData={student} />
     </div>
