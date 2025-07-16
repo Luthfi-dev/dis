@@ -47,7 +47,7 @@ const initialFormValues: PegawaiFormData = {
     pegawai_statusPerkawinan: undefined,
     pegawai_tanggalPerkawinan: undefined,
     pegawai_namaPasangan: '',
-    pegawai_jumlahAnak: undefined,
+    pegawai_jumlahAnak: 0,
     pegawai_jabatan: '',
     pegawai_bidangStudi: '',
     pegawai_tugasTambahan: undefined,
@@ -101,6 +101,7 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
   const [isSubmitting, startTransition] = useTransition();
   const { toast } = useToast();
   const router = useRouter();
+  const [pegawaiId, setPegawaiId] = useState<string | undefined>(pegawaiData?.id);
 
   const methods = useForm<PegawaiFormData>({
     resolver: zodResolver(pegawaiFormSchema),
@@ -116,15 +117,51 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
       : initialFormValues,
   });
 
-  const { handleSubmit, trigger, formState: { errors } } = methods;
+  const { handleSubmit, trigger, getValues, formState: { errors } } = methods;
+  
+  const processDraftSave = async (isFinalSubmit: boolean = false) => {
+    const data = getValues();
+    const result = await submitPegawaiData(data, pegawaiId, !isFinalSubmit);
+    
+    if (result.success) {
+      toast({
+          title: 'Sukses!',
+          description: result.message,
+      });
+      if (result.pegawai && !pegawaiId) {
+          setPegawaiId(result.pegawai.id);
+          router.replace(`/pegawai/${result.pegawai.id}/edit?step=${currentStep + 1}`, { scroll: false });
+      }
+      return true;
+    } else {
+      toast({
+          title: 'Gagal Menyimpan Draf',
+          description: result.message || 'Terjadi kesalahan.',
+          variant: 'destructive',
+      });
+      return false;
+    }
+  };
 
   const handleNext = async () => {
-    const fieldsToValidate = steps.slice(0, currentStep).flatMap(s => s.fields) as FieldPath<PegawaiFormData>[];
+    const fieldsToValidate = steps.find(s => s.id === currentStep)?.fields as FieldPath<PegawaiFormData>[] | undefined;
     const isValid = await trigger(fieldsToValidate, { shouldFocus: true });
     
-    if (isValid && currentStep < steps.length) {
-      setCurrentStep((prev) => prev + 1);
+    if (!isValid) {
+        toast({
+            title: 'Data Belum Lengkap',
+            description: 'Silakan isi semua kolom yang wajib diisi pada langkah ini.',
+            variant: 'destructive'
+        });
+        return;
     }
+
+    startTransition(async () => {
+      const success = await processDraftSave(false);
+      if (success && currentStep < steps.length) {
+          setCurrentStep((prev) => prev + 1);
+      }
+    });
   };
 
   const handlePrev = () => {
@@ -133,16 +170,9 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
     }
   };
 
-  const processForm = (data: PegawaiFormData) => {
+  const processFinalSubmit = (data: PegawaiFormData) => {
     startTransition(async () => {
-        const dataForServer = {
-            ...data,
-            pegawai_tanggalLahir: data.pegawai_tanggalLahir ? data.pegawai_tanggalLahir.toISOString() : undefined,
-            pegawai_tanggalPerkawinan: data.pegawai_tanggalPerkawinan ? data.pegawai_tanggalPerkawinan.toISOString() : undefined,
-            pegawai_terhitungMulaiTanggal: data.pegawai_terhitungMulaiTanggal ? data.pegawai_terhitungMulaiTanggal.toISOString() : undefined,
-        }
-
-        const result = await submitPegawaiData(dataForServer, pegawaiData?.id);
+        const result = await submitPegawaiData(data, pegawaiId, false);
 
         if (result.success) {
             toast({
@@ -158,7 +188,6 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
                 variant: 'destructive',
             });
              if (result.errors) {
-                // Find the first step with an error and go to it
                 const errorFields = Object.keys(result.errors);
                 const firstErrorField = errorFields[0];
                 const stepWithError = steps.find(step => step.fields.includes(firstErrorField));
@@ -196,7 +225,6 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
 
     if (stepWithError) {
       setCurrentStep(stepWithError.id);
-      // Trigger validation again to show field-specific messages
       trigger(errorKeys as FieldPath<PegawaiFormData>[], { shouldFocus: true });
     }
   };
@@ -206,7 +234,7 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
       <div className="mt-12">
         <FormStepper steps={steps} currentStep={currentStep} />
       </div>
-      <form onSubmit={handleSubmit(processForm, onInvalid)}>
+      <form onSubmit={handleSubmit(processFinalSubmit, onInvalid)}>
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>{steps[currentStep - 1].title}</CardTitle>
@@ -225,7 +253,8 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
             Kembali
           </Button>
           {currentStep < steps.length ? (
-            <Button type="button" onClick={handleNext}>
+            <Button type="button" onClick={handleNext} disabled={isSubmitting}>
+               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Lanjut
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>

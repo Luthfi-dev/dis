@@ -20,7 +20,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { submitStudentData } from '@/lib/actions';
 import { Textarea } from './ui/textarea';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { Siswa } from '@/lib/data';
 import Image from 'next/image';
 import { getProvinces, getKabupatens, getKecamatans, getDesas, Wilayah } from '@/lib/wilayah';
@@ -52,7 +52,7 @@ const initialFormValues: StudentFormData = {
   siswa_tanggalLahir: undefined,
   siswa_agama: undefined,
   siswa_kewarganegaraan: undefined,
-  siswa_jumlahSaudara: undefined,
+  siswa_jumlahSaudara: 0,
   siswa_bahasa: '',
   siswa_golonganDarah: undefined,
   siswa_telepon: '',
@@ -76,8 +76,8 @@ const initialFormValues: StudentFormData = {
   siswa_pekerjaanWali: '',
   siswa_alamatOrangTua: '',
   siswa_teleponOrangTua: '',
-  siswa_tinggiBadan: undefined,
-  siswa_beratBadan: undefined,
+  siswa_tinggiBadan: 0,
+  siswa_beratBadan: 0,
   siswa_penyakit: '',
   siswa_kelainanJasmani: '',
   siswa_asalSekolah: '',
@@ -130,10 +130,15 @@ async function uploadFile(file: File) {
 
 
 export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { id: string } }) {
-  const [currentStep, setCurrentStep] = useState(1);
+  const searchParams = useSearchParams();
+  const stepParam = searchParams.get('step');
+
+  const [currentStep, setCurrentStep] = useState(stepParam ? parseInt(stepParam, 10) : 1);
   const [isSubmitting, startTransition] = useTransition();
   const { toast } = useToast();
   const router = useRouter();
+  const [studentId, setStudentId] = useState<string | undefined>(studentData?.id);
+
 
   const methods = useForm<StudentFormData>({
     resolver: zodResolver(studentFormSchema),
@@ -150,15 +155,60 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
       : initialFormValues,
   });
 
-  const { handleSubmit, trigger, formState: { errors } } = methods;
+  const { handleSubmit, trigger, getValues, formState: { errors } } = methods;
+  
+  const processDraftSave = async (isFinalSubmit: boolean = false) => {
+    // Convert Date objects to ISO strings before submission
+    const data = getValues();
+    const dataToSend = { ...data };
+    Object.keys(dataToSend).forEach(key => {
+        const value = (dataToSend as any)[key];
+        if (value instanceof Date) {
+            (dataToSend as any)[key] = value.toISOString();
+        }
+    });
 
+    const result = await submitStudentData(dataToSend, studentId, !isFinalSubmit);
+    
+    if (result.success) {
+      toast({
+          title: 'Sukses!',
+          description: result.message,
+      });
+      if (result.student && !studentId) {
+          setStudentId(result.student.id);
+          router.replace(`/siswa/${result.student.id}/edit?step=${currentStep}`, { scroll: false });
+      }
+      return true;
+    } else {
+      toast({
+          title: 'Gagal Menyimpan Draf',
+          description: result.message || 'Terjadi kesalahan.',
+          variant: 'destructive',
+      });
+      return false;
+    }
+  };
+  
   const handleNext = async () => {
-    const fieldsToValidate = steps.slice(0, currentStep).flatMap(s => s.fields) as FieldPath<StudentFormData>[];
+    const fieldsToValidate = steps.find(s => s.id === currentStep)?.fields as FieldPath<StudentFormData>[] | undefined;
     const isValid = await trigger(fieldsToValidate, { shouldFocus: true });
     
-    if (isValid && currentStep < steps.length) {
-      setCurrentStep(prev => prev + 1);
+    if (!isValid) {
+        toast({
+            title: 'Data Belum Lengkap',
+            description: 'Silakan isi semua kolom yang wajib diisi pada langkah ini.',
+            variant: 'destructive'
+        });
+        return;
     }
+
+    startTransition(async () => {
+        const success = await processDraftSave(false);
+        if (success && currentStep < steps.length) {
+            setCurrentStep((prev) => prev + 1);
+        }
+    });
   };
 
   const handlePrev = () => {
@@ -167,17 +217,19 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
     }
   };
 
-  const processForm = (data: StudentFormData) => {
+  const processFinalSubmit = (data: StudentFormData) => {
     startTransition(async () => {
-        const dataForServer = {
-          ...data,
-          siswa_tanggalLahir: data.siswa_tanggalLahir ? data.siswa_tanggalLahir.toISOString() : undefined,
-          siswa_tanggalSttb: data.siswa_tanggalSttb ? data.siswa_tanggalSttb.toISOString() : undefined,
-          siswa_pindahanDiterimaTanggal: data.siswa_pindahanDiterimaTanggal ? data.siswa_pindahanDiterimaTanggal.toISOString() : undefined,
-          siswa_keluarTanggal: data.siswa_keluarTanggal ? data.siswa_keluarTanggal.toISOString() : undefined,
-        }
+        // Convert Date objects to ISO strings before submission
+        const dataToSend = { ...data };
+        Object.keys(dataToSend).forEach(key => {
+            const value = (dataToSend as any)[key];
+            if (value instanceof Date) {
+                (dataToSend as any)[key] = value.toISOString();
+            }
+        });
 
-        const result = await submitStudentData(dataForServer, studentData?.id);
+        const result = await submitStudentData(dataToSend, studentId, false);
+
         if (result.success) {
             toast({
                 title: 'Sukses!',
@@ -186,19 +238,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
             router.push('/siswa');
             router.refresh();
         } else {
-            toast({
-                title: 'Gagal Menyimpan',
-                description: result.message || 'Terjadi kesalahan. Periksa kembali isian formulir Anda.',
-                variant: 'destructive',
-            });
-            if (result.errors) {
-              const errorFields = Object.keys(result.errors);
-              const firstErrorField = errorFields[0];
-              const stepWithError = steps.find(step => step.fields.includes(firstErrorField));
-              if (stepWithError) {
-                  setCurrentStep(stepWithError.id);
-              }
-          }
+            onInvalid(result.errors || {});
         }
     });
   };
@@ -217,7 +257,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
     };
 
     const errorMessages = errorKeys.map(key => fieldLabels[key] || key).join(', ');
-
+    
     toast({
         title: 'Gagal Menyimpan: Data Tidak Valid',
         description: `Silakan periksa kolom berikut: ${errorMessages}`,
@@ -230,30 +270,17 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
 
     if (stepWithError) {
       setCurrentStep(stepWithError.id);
+      // Let's trigger validation again to show field-specific errors
       trigger(errorKeys as FieldPath<StudentFormData>[], { shouldFocus: true });
     }
   };
-
-
-  useEffect(() => {
-    if (studentData) {
-        const studentDataWithDates = {
-            ...studentData,
-            siswa_tanggalLahir: studentData.siswa_tanggalLahir ? new Date(studentData.siswa_tanggalLahir) : undefined,
-            siswa_tanggalSttb: studentData.siswa_tanggalSttb ? new Date(studentData.siswa_tanggalSttb) : undefined,
-            siswa_pindahanDiterimaTanggal: studentData.siswa_pindahanDiterimaTanggal ? new Date(studentData.siswa_pindahanDiterimaTanggal) : undefined,
-            siswa_keluarTanggal: studentData.siswa_keluarTanggal ? new Date(studentData.siswa_keluarTanggal) : undefined,
-        };
-        methods.reset({...initialFormValues, ...studentDataWithDates});
-    }
-  }, [studentData, methods]);
 
   return (
     <FormProvider {...methods}>
       <div className="mt-12">
         <FormStepper steps={steps} currentStep={currentStep} />
       </div>
-      <form onSubmit={handleSubmit(processForm, onInvalid)}>
+      <form onSubmit={handleSubmit(processFinalSubmit, onInvalid)}>
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>{steps[currentStep - 1].title}</CardTitle>
@@ -277,7 +304,8 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
             Kembali
           </Button>
           {currentStep < steps.length ? (
-            <Button type="button" onClick={handleNext}>
+            <Button type="button" onClick={handleNext} disabled={isSubmitting}>
+               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Lanjut
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
@@ -662,7 +690,7 @@ function DataOrangTuaForm() {
                     <FormItem><FormLabel>Alamat Orang Tua/Wali</FormLabel><FormControl><Textarea placeholder="Alamat lengkap orang tua/wali" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={control} name="siswa_teleponOrangTua" render={({ field }) => (
-                    <FormItem><FormLabel>Telepon Orang Tua/Wali</FormLabel><FormControl><Input placeholder="Nomor telepon" {...field} /></FormControl><FormMessage /></FormMessage>
+                    <FormItem><FormLabel>Telepon Orang Tua/Wali</FormLabel><FormControl><Input placeholder="Nomor telepon" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
              </Grid>
         </div>
@@ -986,3 +1014,5 @@ function DataValidasiForm() {
     </div>
   )
 }
+
+    

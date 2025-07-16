@@ -57,45 +57,47 @@ export async function getCategorySuggestion(description: string) {
   }
 }
 
-export async function submitStudentData(data: Omit<StudentFormData, 'id'>, studentId?: string) {
+export async function submitStudentData(data: Partial<StudentFormData>, studentId?: string, isDraft: boolean = false) {
   try {
-    const parsedData = studentFormSchema.parse(data);
-    
+    const schemaToUse = isDraft ? studentFormSchema.partial() : studentFormSchema;
+    const parsedData = schemaToUse.parse(data);
+
     // Check for NISN duplicates
     if (parsedData.siswa_nisn) {
-        if (studentId) { // Editing
-            if (allStudents.some(s => s.siswa_nisn === parsedData.siswa_nisn && s.id !== studentId)) {
-                return { success: false, message: 'NISN sudah digunakan oleh siswa lain.' };
-            }
-        } else { // Adding
-             if (allStudents.some(s => s.siswa_nisn === parsedData.siswa_nisn)) {
-                return { success: false, message: 'NISN sudah terdaftar.' };
-            }
-        }
+      const existingStudent = allStudents.find(s => s.siswa_nisn === parsedData.siswa_nisn);
+      if (existingStudent && existingStudent.id !== studentId) {
+        return { success: false, message: 'NISN sudah digunakan oleh siswa lain.' };
+      }
     }
 
-    const completionResult = completeStudentFormSchema.safeParse(parsedData);
-    const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
-    
-    const finalData: Siswa = { 
-        ...parsedData, 
-        id: studentId || crypto.randomUUID(), 
-        status 
-    };
-    
-    if (studentId) {
-        const index = allStudents.findIndex(s => s.id === studentId);
-        if (index !== -1) {
-            allStudents[index] = finalData;
-        } else {
-             allStudents.push(finalData); // If somehow editing a non-existent user, add them
-        }
+    const id = studentId || crypto.randomUUID();
+    const existingStudentIndex = allStudents.findIndex(s => s.id === id);
+
+    let finalData: Siswa;
+
+    if (existingStudentIndex !== -1) {
+      // Update existing student
+      const updatedData = { ...allStudents[existingStudentIndex], ...parsedData };
+      const completionResult = completeStudentFormSchema.safeParse(updatedData);
+      const status = isDraft ? 'Belum Lengkap' : (completionResult.success ? 'Lengkap' : 'Belum Lengkap');
+      finalData = { ...updatedData, id, status };
+      allStudents[existingStudentIndex] = finalData;
     } else {
-        allStudents.push(finalData);
+      // Create new student
+      const newStudentData = { ...(data as StudentFormData), ...parsedData };
+      const completionResult = completeStudentFormSchema.safeParse(newStudentData);
+      const status = isDraft ? 'Belum Lengkap' : (completionResult.success ? 'Lengkap' : 'Belum Lengkap');
+      finalData = { ...newStudentData, id, status };
+      allStudents.push(finalData);
     }
-
-    const message = studentId ? `Data siswa ${finalData.siswa_namaLengkap} berhasil diperbarui!` : `Data siswa ${finalData.siswa_namaLengkap} berhasil disimpan!`;
-    logActivity(message);
+    
+    let message: string;
+    if (isDraft) {
+        message = `Draf untuk ${finalData.siswa_namaLengkap} berhasil disimpan.`;
+    } else {
+        message = studentId ? `Data siswa ${finalData.siswa_namaLengkap} berhasil diperbarui!` : `Data siswa ${finalData.siswa_namaLengkap} berhasil disimpan!`;
+        logActivity(message);
+    }
 
     return { success: true, message, student: finalData };
 
@@ -131,62 +133,58 @@ export async function deletePegawai(id: string): Promise<{ success: boolean; mes
 }
 
 
-export async function submitPegawaiData(data: Omit<PegawaiFormData, 'id'>, pegawaiId?: string) {
+export async function submitPegawaiData(data: Partial<PegawaiFormData>, pegawaiId?: string, isDraft: boolean = false) {
     try {
-        const parsedData = pegawaiFormSchema.parse(data);
+        const schemaToUse = isDraft ? pegawaiFormSchema.partial() : pegawaiFormSchema;
+        const parsedData = schemaToUse.parse(data);
 
         // Check for duplicates
         if (parsedData.pegawai_nip) {
-            if (pegawaiId) { // Editing
-                 if (allPegawai.some(p => p.pegawai_nip === parsedData.pegawai_nip && p.id !== pegawaiId)) {
-                    return { success: false, message: "NIP sudah digunakan oleh pegawai lain." };
-                }
-            } else { // Adding
-                if (allPegawai.some(p => p.pegawai_nip === parsedData.pegawai_nip)) {
-                    return { success: false, message: "NIP sudah terdaftar." };
-                }
+            const existingPegawai = allPegawai.find(p => p.pegawai_nip === parsedData.pegawai_nip);
+            if (existingPegawai && existingPegawai.id !== pegawaiId) {
+                return { success: false, message: "NIP sudah digunakan oleh pegawai lain." };
             }
         }
         if (parsedData.pegawai_nuptk) {
-             if (pegawaiId) { // Editing
-                if (allPegawai.some(p => p.pegawai_nuptk === parsedData.pegawai_nuptk && p.id !== pegawaiId)) {
-                    return { success: false, message: "NUPTK sudah digunakan oleh pegawai lain." };
-                }
-            } else { // Adding
-                if (allPegawai.some(p => p.pegawai_nuptk === parsedData.pegawai_nuptk)) {
-                    return { success: false, message: "NUPTK sudah terdaftar." };
-                }
+            const existingPegawai = allPegawai.find(p => p.pegawai_nuptk === parsedData.pegawai_nuptk);
+             if (existingPegawai && existingPegawai.id !== pegawaiId) {
+                return { success: false, message: "NUPTK sudah digunakan oleh pegawai lain." };
             }
         }
 
-        const completionResult = completePegawaiFormSchema.safeParse(parsedData);
-        const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
+        const id = pegawaiId || crypto.randomUUID();
+        const existingPegawaiIndex = allPegawai.findIndex(p => p.id === id);
+        
+        let finalData: Pegawai;
 
-        const finalData: Pegawai = {
-            ...parsedData,
-            id: pegawaiId || crypto.randomUUID(),
-            status,
-        };
-
-        if (pegawaiId) {
-            const index = allPegawai.findIndex(p => (p.id === pegawaiId));
-            if (index !== -1) {
-                allPegawai[index] = finalData;
-            } else {
-                 allPegawai.push(finalData); // If somehow editing a non-existent user, add them
-            }
+        if (existingPegawaiIndex !== -1) {
+            const updatedData = { ...allPegawai[existingPegawaiIndex], ...parsedData };
+            const completionResult = completePegawaiFormSchema.safeParse(updatedData);
+            const status = isDraft ? 'Belum Lengkap' : (completionResult.success ? 'Lengkap' : 'Belum Lengkap');
+            finalData = { ...updatedData, id, status };
+            allPegawai[existingPegawaiIndex] = finalData;
         } else {
+            const newPegawaiData = { ...(data as PegawaiFormData), ...parsedData };
+            const completionResult = completePegawaiFormSchema.safeParse(newPegawaiData);
+            const status = isDraft ? 'Belum Lengkap' : (completionResult.success ? 'Lengkap' : 'Belum Lengkap');
+            finalData = { ...newPegawaiData, id, status };
             allPegawai.push(finalData);
         }
 
-        const message = pegawaiId ? `Data pegawai ${finalData.pegawai_nama} berhasil diperbarui!` : `Data pegawai ${finalData.pegawai_nama} berhasil disimpan!`;
-        logActivity(message);
+        let message: string;
+        if (isDraft) {
+            message = `Draf untuk ${finalData.pegawai_nama} berhasil disimpan.`;
+        } else {
+            message = pegawaiId ? `Data pegawai ${finalData.pegawai_nama} berhasil diperbarui!` : `Data pegawai ${finalData.pegawai_nama} berhasil disimpan!`;
+            logActivity(message);
+        }
 
         return { success: true, message: message, pegawai: finalData };
 
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return { success: false, message: 'Data tidak valid. Periksa kembali isian Anda.', errors: error.flatten().fieldErrors };
+        const errorMessages = Object.entries(error.flatten().fieldErrors).map(([field, errors]) => `${field}: ${errors.join(', ')}`).join('; ');
+        return { success: false, message: `Data tidak valid. Periksa kembali isian Anda. Kesalahan: ${errorMessages}`, errors: error.flatten().fieldErrors };
       }
       console.error('Pegawai submission error:', error);
       return { success: false, message: 'Gagal menyimpan data pegawai.' };
