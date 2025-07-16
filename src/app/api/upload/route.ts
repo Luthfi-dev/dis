@@ -2,6 +2,7 @@
 import { writeFile, mkdir } from 'fs/promises';
 import { NextRequest, NextResponse } from 'next/server';
 import { join } from 'path';
+import sharp from 'sharp';
 
 export async function POST(request: NextRequest) {
   const data = await request.formData();
@@ -25,8 +26,22 @@ export async function POST(request: NextRequest) {
     // Ensure the uploads directory exists, create it if it doesn't
     await mkdir(uploadsDir, { recursive: true });
 
-    // Write the file to the specified path
-    await writeFile(path, buffer);
+    // Check if the file is an image
+    const isImage = file.type.startsWith('image/');
+    let fileBufferToSave = buffer;
+
+    if (isImage) {
+        // Process image to 3x4 aspect ratio (e.g., 300x400)
+        fileBufferToSave = await sharp(buffer)
+            .resize(300, 400, {
+                fit: 'cover', // Crop to cover both provided dimensions
+                position: 'attention' // Focus on the most interesting part of the image
+            })
+            .toBuffer();
+    }
+    
+    // Write the file (original or processed) to the specified path
+    await writeFile(path, fileBufferToSave);
     console.log(`File uploaded to ${path}`);
     
     // Return the public URL
