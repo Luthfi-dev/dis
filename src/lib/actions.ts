@@ -60,22 +60,28 @@ export async function getCategorySuggestion(description: string) {
 
 export async function submitStudentData(data: StudentFormData, studentId?: string) {
   try {
-    const parsedData = studentFormSchema.parse(data);
+    // This is a partial validation, only checks the basic fields
+    const validationSchema = studentFormSchema.deepPartial();
+    const parsedData = validationSchema.parse(data);
 
-    if (parsedData.siswa_nisn) {
+    const id = studentId || crypto.randomUUID();
+    
+    if (parsedData.siswa_nisn && !studentId) {
       const existingStudent = allStudents.find(s => s.siswa_nisn === parsedData.siswa_nisn);
-      if (existingStudent && existingStudent.id !== studentId) {
+      if (existingStudent) {
         return { success: false, message: 'NISN sudah digunakan oleh siswa lain.' };
       }
     }
-
-    const id = studentId || crypto.randomUUID();
-    const existingStudentIndex = allStudents.findIndex(s => s.id === id);
     
-    const completionResult = completeStudentFormSchema.safeParse(parsedData);
-    const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
+    const existingData = await getSiswaById(id);
 
-    const finalData: Siswa = { ...parsedData, id, status };
+    const completionResult = completeStudentFormSchema.safeParse(data);
+    const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
+    
+    // Merge existing data with new data
+    const finalData: Siswa = mergeDeep(existingData, { ...parsedData, id, status });
+
+    const existingStudentIndex = allStudents.findIndex(s => s.id === id);
 
     if (existingStudentIndex !== -1) {
       allStudents[existingStudentIndex] = finalData;
@@ -89,12 +95,11 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
     return { success: true, message, student: finalData };
 
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      console.error("Zod Validation Error in submitStudentData:", error.flatten().fieldErrors);
-      return { success: false, message: `Data tidak valid.`, errors: error.flatten().fieldErrors };
-    }
-    console.error('Student submission server error:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    console.error("Student submission server error:", {
+        message: errorMessage,
+        error: error,
+    });
     return { success: false, message: `Gagal menyimpan data siswa karena kesalahan server: ${errorMessage}` };
   }
 }
@@ -126,25 +131,24 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
     try {
         const parsedData = pegawaiFormSchema.parse(data);
 
-        if (parsedData.pegawai_nip) {
+        const id = pegawaiId || crypto.randomUUID();
+
+        if (parsedData.pegawai_nip && !pegawaiId) {
             const existingPegawai = allPegawai.find(p => p.pegawai_nip === parsedData.pegawai_nip);
-            if (existingPegawai && existingPegawai.id !== pegawaiId) {
+            if (existingPegawai) {
                 return { success: false, message: "NIP sudah digunakan oleh pegawai lain." };
             }
         }
-        if (parsedData.pegawai_nuptk) {
-            const existingPegawai = allPegawai.find(p => p.pegawai_nuptk === parsedData.pegawai_nuptk);
-             if (existingPegawai && existingPegawai.id !== pegawaiId) {
-                return { success: false, message: "NUPTK sudah digunakan oleh pegawai lain." };
-            }
-        }
-
-        const id = pegawaiId || crypto.randomUUID();
-        const existingPegawaiIndex = allPegawai.findIndex(p => p.id === id);
         
-        const completionResult = completePegawaiFormSchema.safeParse(parsedData);
+        const existingData = await getPegawaiById(id);
+        
+        const completionResult = completePegawaiFormSchema.safeParse(data);
         const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
-        const finalData: Pegawai = { ...parsedData, id, status };
+        
+        // Safely merge data
+        const finalData: Pegawai = mergeDeep(existingData || {}, { ...parsedData, id, status });
+
+        const existingPegawaiIndex = allPegawai.findIndex(p => p.id === id);
 
         if (existingPegawaiIndex !== -1) {
             allPegawai[existingPegawaiIndex] = finalData;
@@ -155,15 +159,23 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
         const message = pegawaiId ? `Data pegawai ${finalData.pegawai_nama} berhasil diperbarui!` : `Data pegawai ${finalData.pegawai_nama} berhasil disimpan!`;
         logActivity(message);
 
-        return { success: true, message: message, pegawai: finalData };
+        return { success: true, message, pegawai: finalData };
 
     } catch (error) {
       if (error instanceof z.ZodError) {
-        console.error("Zod Validation Error in submitPegawaiData:", error.flatten().fieldErrors);
-        return { success: false, message: `Data tidak valid`, errors: error.flatten().fieldErrors };
+        const errorMessage = `Data tidak valid. Periksa kolom: ${Object.keys(error.flatten().fieldErrors).join(', ')}`;
+        console.error("Zod Validation Error in submitPegawaiData:", {
+            message: errorMessage,
+            errors: error.flatten().fieldErrors,
+        });
+        return { success: false, message: errorMessage, errors: error.flatten().fieldErrors };
       }
-      console.error('Pegawai submission server error:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Pegawai submission server error:', {
+        message: errorMessage,
+        error: error
+      });
       return { success: false, message: `Gagal menyimpan data karena kesalahan server: ${errorMessage}` };
     }
   }
+
