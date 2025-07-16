@@ -1,41 +1,38 @@
 
+'use server';
 import { z } from 'zod';
 
 const fileSchema = z.object({
   fileName: z.string(),
-  file: z.any().optional(),
-  fileURL: z.string().optional(),
+  fileURL: z.string().url('URL tidak valid'),
 }).nullable().optional();
 
 const requiredFileSchema = z.object({
   fileName: z.string().min(1, 'File harus diunggah.'),
-  file: z.any().optional(),
-  fileURL: z.string().optional(),
+  fileURL: z.string().url('URL tidak valid'),
 });
-
 
 const multiFileSchema = z.array(z.object({
     fileName: z.string(),
-    file: z.any().optional(),
-    fileURL: z.string().optional(),
+    fileURL: z.string().url('URL tidak valid'),
 })).optional();
 
-export const dataIdentitasPegawaiSchema = z.object({
-  phaspoto: fileSchema,
-  nama: z.string().min(3, "Nama lengkap minimal 3 karakter."),
-  jenisKelamin: z.enum(['Laki-laki', 'Perempuan'], { required_error: "Jenis kelamin wajib dipilih." }),
-  tempatLahir: z.string().min(1, "Tempat lahir wajib diisi."),
-  tanggalLahir: z.date({ required_error: "Tanggal lahir wajib diisi." }),
-  nip: z.string().optional(),
-  nuptk: z.string().optional(),
-  nrg: z.string().optional(),
-  statusPerkawinan: z.enum(['Belum Kawin', 'Kawin', 'Cerai Hidup', 'Cerai Mati'], { required_error: "Status perkawinan wajib dipilih." }),
-  tanggalPerkawinan: z.date().optional().nullable(),
-  namaPasangan: z.string().optional(),
-  jumlahAnak: z.coerce.number().nonnegative("Jumlah anak tidak boleh negatif.").optional(),
-  jabatan: z.string().min(1, "Jabatan wajib dipilih."),
-  bidangStudi: z.string().min(1, "Bidang studi wajib diisi."),
-  tugasTambahan: z.enum([
+export const pegawai_IdentitasSchema = z.object({
+  pegawai_phaspoto: fileSchema,
+  pegawai_nama: z.string().min(3, "Nama lengkap minimal 3 karakter."),
+  pegawai_jenisKelamin: z.enum(['Laki-laki', 'Perempuan'], { required_error: "Jenis kelamin wajib dipilih." }),
+  pegawai_tempatLahir: z.string().min(1, "Tempat lahir wajib diisi."),
+  pegawai_tanggalLahir: z.date({ required_error: "Tanggal lahir wajib diisi." }),
+  pegawai_nip: z.string().optional(),
+  pegawai_nuptk: z.string().optional(),
+  pegawai_nrg: z.string().optional(),
+  pegawai_statusPerkawinan: z.enum(['Belum Kawin', 'Kawin', 'Cerai Hidup', 'Cerai Mati'], { required_error: "Status perkawinan wajib dipilih." }),
+  pegawai_tanggalPerkawinan: z.date().optional().nullable(),
+  pegawai_namaPasangan: z.string().optional(),
+  pegawai_jumlahAnak: z.coerce.number().nonnegative("Jumlah anak tidak boleh negatif.").optional(),
+  pegawai_jabatan: z.string().min(1, "Jabatan wajib dipilih."),
+  pegawai_bidangStudi: z.string().min(1, "Bidang studi wajib diisi."),
+  pegawai_tugasTambahan: z.enum([
     'Kepala Sekolah',
     'Wakasek Bidang Kesiswaan',
     'Wakasek Bidang Kurikulum',
@@ -44,75 +41,75 @@ export const dataIdentitasPegawaiSchema = z.object({
     'Kepala LAB',
     'Kepala Perpustakaan',
   ]).optional().nullable(),
-  terhitungMulaiTanggal: z.date({ required_error: "TMT wajib diisi." }),
-  alamatKabupaten: z.string().min(1, "Kabupaten wajib dipilih."),
-  alamatKecamatan: z.string().min(1, "Kecamatan wajib dipilih."),
-  alamatDesa: z.string().min(1, "Desa wajib dipilih."),
-  alamatDusun: z.string().min(1, "Dusun wajib diisi."),
+  pegawai_terhitungMulaiTanggal: z.date({ required_error: "TMT wajib diisi." }),
+  pegawai_alamatKabupaten: z.string().min(1, "Kabupaten wajib dipilih."),
+  pegawai_alamatKecamatan: z.string().min(1, "Kecamatan wajib dipilih."),
+  pegawai_alamatDesa: z.string().min(1, "Desa wajib dipilih."),
+  pegawai_alamatDusun: z.string().min(1, "Dusun wajib diisi."),
   
-  pendidikanSD: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
-  pendidikanSMP: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
-  pendidikanSMA: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
-  pendidikanDiploma: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
-  pendidikanS1: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
-  pendidikanS2: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
+  pegawai_pendidikanSD: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
+  pegawai_pendidikanSMP: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
+  pegawai_pendidikanSMA: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
+  pegawai_pendidikanDiploma: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
+  pegawai_pendidikanS1: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
+  pegawai_pendidikanS2: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
 });
 
-export const filePegawaiSchema = z.object({
-    skPengangkatan: multiFileSchema,
-    skNipBaru: fileSchema,
-    skFungsional: multiFileSchema,
-    beritaAcaraSumpah: fileSchema,
-    sertifikatPendidik: fileSchema,
-    sertifikatPelatihan: multiFileSchema,
-    skp: multiFileSchema,
-    karpeg: fileSchema,
-    karisKarsu: fileSchema,
-    bukuNikah: fileSchema,
-    kartuKeluarga: fileSchema,
-    ktp: fileSchema,
-    akteKelahiran: fileSchema,
-    kartuTaspen: fileSchema,
-    npwp: fileSchema,
-    kartuBpjs: fileSchema,
-    bukuRekening: fileSchema,
+export const pegawai_FileSchema = z.object({
+    pegawai_skPengangkatan: multiFileSchema,
+    pegawai_skNipBaru: fileSchema,
+    pegawai_skFungsional: multiFileSchema,
+    pegawai_beritaAcaraSumpah: fileSchema,
+    pegawai_sertifikatPendidik: fileSchema,
+    pegawai_sertifikatPelatihan: multiFileSchema,
+    pegawai_skp: multiFileSchema,
+    pegawai_karpeg: fileSchema,
+    pegawai_karisKarsu: fileSchema,
+    pegawai_bukuNikah: fileSchema,
+    pegawai_kartuKeluarga: fileSchema,
+    pegawai_ktp: fileSchema,
+    pegawai_akteKelahiran: fileSchema,
+    pegawai_kartuTaspen: fileSchema,
+    pegawai_npwp: fileSchema,
+    pegawai_kartuBpjs: fileSchema,
+    pegawai_bukuRekening: fileSchema,
 });
 
 
-export const pegawaiFormSchema = dataIdentitasPegawaiSchema.merge(filePegawaiSchema);
+export const pegawaiFormSchema = pegawai_IdentitasSchema.merge(pegawai_FileSchema);
 
 export type PegawaiFormData = z.infer<typeof pegawaiFormSchema>;
 
 
 // Schema for checking completion status
-export const completePegawaiFormSchema = dataIdentitasPegawaiSchema.merge(
+export const completePegawaiFormSchema = pegawai_IdentitasSchema.merge(
   z.object({
-    phaspoto: requiredFileSchema,
-    pendidikanSD: z.object({ tamatTahun: z.string().min(1), ijazah: requiredFileSchema }),
-    pendidikanSMP: z.object({ tamatTahun: z.string().min(1), ijazah: requiredFileSchema }),
-    pendidikanSMA: z.object({ tamatTahun: z.string().min(1), ijazah: requiredFileSchema }),
-    pendidikanDiploma: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema.optional() }),
-    pendidikanS1: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema.optional() }),
-    pendidikanS2: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema.optional() }),
+    pegawai_phaspoto: requiredFileSchema,
+    pegawai_pendidikanSD: z.object({ tamatTahun: z.string().min(1), ijazah: requiredFileSchema }),
+    pegawai_pendidikanSMP: z.object({ tamatTahun: z.string().min(1), ijazah: requiredFileSchema }),
+    pegawai_pendidikanSMA: z.object({ tamatTahun: z.string().min(1), ijazah: requiredFileSchema }),
+    pegawai_pendidikanDiploma: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema.optional() }),
+    pegawai_pendidikanS1: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema.optional() }),
+    pegawai_pendidikanS2: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema.optional() }),
   })
 ).merge(
   z.object({
-    skPengangkatan: z.array(requiredFileSchema).min(1),
-    skNipBaru: requiredFileSchema,
-    skFungsional: z.array(requiredFileSchema).min(1),
-    beritaAcaraSumpah: requiredFileSchema,
-    sertifikatPendidik: requiredFileSchema,
-    sertifikatPelatihan: z.array(requiredFileSchema).min(1),
-    skp: z.array(requiredFileSchema).min(1),
-    karpeg: requiredFileSchema,
-    karisKarsu: requiredFileSchema,
-    bukuNikah: requiredFileSchema,
-    kartuKeluarga: requiredFileSchema,
-    ktp: requiredFileSchema,
-    akteKelahiran: requiredFileSchema,
-    kartuTaspen: requiredFileSchema,
-    npwp: requiredFileSchema,
-    kartuBpjs: requiredFileSchema,
-    bukuRekening: requiredFileSchema,
+    pegawai_skPengangkatan: z.array(requiredFileSchema).min(1),
+    pegawai_skNipBaru: requiredFileSchema,
+    pegawai_skFungsional: z.array(requiredFileSchema).min(1),
+    pegawai_beritaAcaraSumpah: requiredFileSchema,
+    pegawai_sertifikatPendidik: requiredFileSchema,
+    pegawai_sertifikatPelatihan: z.array(requiredFileSchema).min(1),
+    pegawai_skp: z.array(requiredFileSchema).min(1),
+    pegawai_karpeg: requiredFileSchema,
+    pegawai_karisKarsu: requiredFileSchema,
+    pegawai_bukuNikah: requiredFileSchema,
+    pegawai_kartuKeluarga: requiredFileSchema,
+    pegawai_ktp: requiredFileSchema,
+    pegawai_akteKelahiran: requiredFileSchema,
+    pegawai_kartuTaspen: requiredFileSchema,
+    pegawai_npwp: requiredFileSchema,
+    pegawai_kartuBpjs: requiredFileSchema,
+    pegawai_bukuRekening: requiredFileSchema,
   })
 );

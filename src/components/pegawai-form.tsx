@@ -4,7 +4,7 @@
 import { useState, useTransition, useEffect, useMemo } from 'react';
 import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { pegawaiFormSchema, PegawaiFormData, dataIdentitasPegawaiSchema, filePegawaiSchema, completePegawaiFormSchema } from '@/lib/pegawai-schema';
+import { pegawaiFormSchema, PegawaiFormData, pegawai_IdentitasSchema, pegawai_FileSchema, completePegawaiFormSchema } from '@/lib/pegawai-schema';
 import { FormStepper } from './form-stepper';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -28,59 +28,73 @@ import { Combobox } from './ui/combobox';
 import { logActivity } from '@/lib/activity-log';
 
 const steps = [
-  { id: 1, title: 'Identitas Pegawai', schema: dataIdentitasPegawaiSchema },
-  { id: 2, title: 'File Pegawai', schema: filePegawaiSchema },
+  { id: 1, title: 'Identitas Pegawai', schema: pegawai_IdentitasSchema },
+  { id: 2, title: 'File Pegawai', schema: pegawai_FileSchema },
   { id: 3, title: 'Validasi' },
 ];
 
 const initialFormValues: PegawaiFormData = {
-    phaspoto: undefined,
-    nama: '',
-    jenisKelamin: undefined,
-    tempatLahir: '',
-    tanggalLahir: undefined,
-    nip: '',
-    nuptk: '',
-    nrg: '',
-    statusPerkawinan: undefined,
-    tanggalPerkawinan: undefined,
-    namaPasangan: '',
-    jumlahAnak: 0,
-    jabatan: '',
-    bidangStudi: '',
-    tugasTambahan: undefined,
-    terhitungMulaiTanggal: undefined,
-    alamatDusun: '',
-    alamatDesa: '',
-    alamatKecamatan: '',
-    alamatKabupaten: '',
-    pendidikanSD: { tamatTahun: '', ijazah: undefined },
-    pendidikanSMP: { tamatTahun: '', ijazah: undefined },
-    pendidikanSMA: { tamatTahun: '', ijazah: undefined },
-    pendidikanDiploma: { tamatTahun: '', ijazah: undefined },
-    pendidikanS1: { tamatTahun: '', ijazah: undefined },
-    pendidikanS2: { tamatTahun: '', ijazah: undefined },
-    skPengangkatan: [],
-    skNipBaru: undefined,
-    skFungsional: [],
-    beritaAcaraSumpah: undefined,
-    sertifikatPendidik: undefined,
-    sertifikatPelatihan: [],
-    skp: [],
-    karpeg: undefined,
-    karisKarsu: undefined,
-    bukuNikah: undefined,
-    kartuKeluarga: undefined,
-    ktp: undefined,
-    akteKelahiran: undefined,
-    kartuTaspen: undefined,
-    npwp: undefined,
-    kartuBpjs: undefined,
-    bukuRekening: undefined,
+    pegawai_phaspoto: undefined,
+    pegawai_nama: '',
+    pegawai_jenisKelamin: undefined,
+    pegawai_tempatLahir: '',
+    pegawai_tanggalLahir: undefined,
+    pegawai_nip: '',
+    pegawai_nuptk: '',
+    pegawai_nrg: '',
+    pegawai_statusPerkawinan: undefined,
+    pegawai_tanggalPerkawinan: undefined,
+    pegawai_namaPasangan: '',
+    pegawai_jumlahAnak: 0,
+    pegawai_jabatan: '',
+    pegawai_bidangStudi: '',
+    pegawai_tugasTambahan: undefined,
+    pegawai_terhitungMulaiTanggal: undefined,
+    pegawai_alamatDusun: '',
+    pegawai_alamatDesa: '',
+    pegawai_alamatKecamatan: '',
+    pegawai_alamatKabupaten: '',
+    pegawai_pendidikanSD: { tamatTahun: '', ijazah: undefined },
+    pegawai_pendidikanSMP: { tamatTahun: '', ijazah: undefined },
+    pegawai_pendidikanSMA: { tamatTahun: '', ijazah: undefined },
+    pegawai_pendidikanDiploma: { tamatTahun: '', ijazah: undefined },
+    pegawai_pendidikanS1: { tamatTahun: '', ijazah: undefined },
+    pegawai_pendidikanS2: { tamatTahun: '', ijazah: undefined },
+    pegawai_skPengangkatan: [],
+    pegawai_skNipBaru: undefined,
+    pegawai_skFungsional: [],
+    pegawai_beritaAcaraSumpah: undefined,
+    pegawai_sertifikatPendidik: undefined,
+    pegawai_sertifikatPelatihan: [],
+    pegawai_skp: [],
+    pegawai_karpeg: undefined,
+    pegawai_karisKarsu: undefined,
+    pegawai_bukuNikah: undefined,
+    pegawai_kartuKeluarga: undefined,
+    pegawai_ktp: undefined,
+    pegawai_akteKelahiran: undefined,
+    pegawai_kartuTaspen: undefined,
+    pegawai_npwp: undefined,
+    pegawai_kartuBpjs: undefined,
+    pegawai_bukuRekening: undefined,
 };
 
+async function uploadFile(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+    });
+    if (!response.ok) {
+        throw new Error('Upload failed');
+    }
+    const { url } = await response.json();
+    return url;
+}
 
-export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & { id: string, tanggalLahir?: string | Date, tanggalPerkawinan?: string | Date, terhitungMulaiTanggal?: string | Date } }) {
+
+export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & { id: string, pegawai_tanggalLahir?: string | Date, pegawai_tanggalPerkawinan?: string | Date, pegawai_terhitungMulaiTanggal?: string | Date } }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, startTransition] = useTransition();
   const { toast } = useToast();
@@ -93,9 +107,9 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
       ? {
         ...initialFormValues,
         ...pegawaiData,
-        tanggalLahir: pegawaiData.tanggalLahir ? new Date(pegawaiData.tanggalLahir) : undefined,
-        tanggalPerkawinan: pegawaiData.tanggalPerkawinan ? new Date(pegawaiData.tanggalPerkawinan) : undefined,
-        terhitungMulaiTanggal: pegawaiData.terhitungMulaiTanggal ? new Date(pegawaiData.terhitungMulaiTanggal) : undefined,
+        pegawai_tanggalLahir: pegawaiData.pegawai_tanggalLahir ? new Date(pegawaiData.pegawai_tanggalLahir) : undefined,
+        pegawai_tanggalPerkawinan: pegawaiData.pegawai_tanggalPerkawinan ? new Date(pegawaiData.pegawai_tanggalPerkawinan) : undefined,
+        pegawai_terhitungMulaiTanggal: pegawaiData.pegawai_terhitungMulaiTanggal ? new Date(pegawaiData.pegawai_terhitungMulaiTanggal) : undefined,
       }
       : initialFormValues,
   });
@@ -122,92 +136,29 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
 
   const processForm = (data: PegawaiFormData) => {
     startTransition(async () => {
-      // 1. Client-side validation for unique fields before submitting
-      const isUpdate = !!pegawaiData?.id;
-      if (!isUpdate) {
-        const existingPegawai: Pegawai[] = JSON.parse(localStorage.getItem('pegawaiData') || '[]');
-        if (data.nip && existingPegawai.some(p => p.nip === data.nip)) {
-            toast({ title: "Error", description: "NIP sudah terdaftar.", variant: "destructive" });
-            return;
+        try {
+            const submissionResult = await submitPegawaiData(data, pegawaiData?.id);
+            if (submissionResult.success) {
+                toast({
+                    title: 'Sukses!',
+                    description: submissionResult.message,
+                });
+                router.push('/pegawai');
+                router.refresh();
+            } else {
+                 toast({
+                    title: 'Error Validasi',
+                    description: submissionResult.message,
+                    variant: 'destructive',
+                });
+            }
+        } catch (error) {
+             toast({
+                title: 'Error',
+                description: 'Terjadi kesalahan tak terduga.',
+                variant: 'destructive',
+            });
         }
-        if (data.nuptk && existingPegawai.some(p => p.nuptk === data.nuptk)) {
-            toast({ title: "Error", description: "NUPTK sudah terdaftar.", variant: "destructive" });
-            return;
-        }
-      }
-      
-      // 2. Client-side data processing (Create URLs)
-      const dataWithURLs = { ...data };
-      const processFile = (fileData: any) => {
-          if (fileData?.file instanceof File) {
-              fileData.fileURL = URL.createObjectURL(fileData.file);
-          }
-      };
-      const processMultiFile = (files: any[]) => {
-          if (Array.isArray(files)) {
-              files.forEach(fileData => processFile(fileData));
-          }
-      };
-
-      processFile(dataWithURLs.phaspoto);
-      processFile(dataWithURLs.pendidikanSD?.ijazah);
-      processFile(dataWithURLs.pendidikanSMP?.ijazah);
-      processFile(dataWithURLs.pendidikanSMA?.ijazah);
-      processFile(dataWithURLs.pendidikanDiploma?.ijazah);
-      processFile(dataWithURLs.pendidikanS1?.ijazah);
-      processFile(dataWithURLs.pendidikanS2?.ijazah);
-
-      processMultiFile(dataWithURLs.skPengangkatan);
-      processFile(dataWithURLs.skNipBaru);
-      processMultiFile(dataWithURLs.skFungsional);
-      processFile(dataWithURLs.beritaAcaraSumpah);
-      processFile(dataWithURLs.sertifikatPendidik);
-      processMultiFile(dataWithURLs.sertifikatPelatihan);
-      processMultiFile(dataWithURLs.skp);
-      processFile(dataWithURLs.karpeg);
-      processFile(dataWithURLs.karisKarsu);
-      processFile(dataWithURLs.bukuNikah);
-      processFile(dataWithURLs.kartuKeluarga);
-      processFile(dataWithURLs.ktp);
-      processFile(dataWithURLs.akteKelahiran);
-      processFile(dataWithURLs.kartuTaspen);
-      processFile(dataWithURLs.npwp);
-      processFile(dataWithURLs.kartuBpjs);
-      processFile(dataWithURLs.bukuRekening);
-      
-      // 3. Determine status and create final object
-      const completionResult = completePegawaiFormSchema.safeParse(data);
-      const status = completionResult.success ? 'Lengkap' : 'Belum Lengkap';
-      const id = pegawaiData?.id || crypto.randomUUID();
-      const newPegawai: Pegawai = { ...dataWithURLs, id, status };
-
-      // 4. Save directly to localStorage
-      try {
-        let existingPegawai: Pegawai[] = JSON.parse(localStorage.getItem('pegawaiData') || '[]');
-        if (isUpdate) {
-            existingPegawai = existingPegawai.map(p => p.id === id ? newPegawai : p);
-        } else {
-            existingPegawai.push(newPegawai);
-        }
-        localStorage.setItem('pegawaiData', JSON.stringify(existingPegawai));
-
-        const message = isUpdate ? `Data pegawai ${data.nama} berhasil diperbarui!` : `Data pegawai ${data.nama} berhasil disimpan!`;
-        logActivity(message);
-
-        toast({
-            title: 'Sukses!',
-            description: message,
-            variant: 'default',
-        });
-        router.push('/pegawai');
-        router.refresh();
-      } catch (error) {
-        toast({
-            title: 'Error Penyimpanan',
-            description: 'Gagal menyimpan data ke browser.',
-            variant: 'destructive',
-        });
-      }
     });
   };
 
@@ -261,24 +212,16 @@ function FormLabelRequired({ children }: { children: React.ReactNode }) {
 
 function DataIdentitasPegawaiForm() {
   const { control, watch, setValue, getValues } = useFormContext<PegawaiFormData>();
-  const [preview, setPreview] = useState<string | null>(getValues('phaspoto.fileURL') || null);
+  const [preview, setPreview] = useState<string | null>(getValues('pegawai_phaspoto.fileURL') || null);
   
   useEffect(() => {
-    const fileURL = getValues('phaspoto.fileURL');
+    const fileURL = getValues('pegawai_phaspoto.fileURL');
     if(fileURL && !preview) {
         setPreview(fileURL);
     }
     const subscription = watch((value, { name }) => {
-      if (name === 'phaspoto') {
-        const file = value.phaspoto?.file;
-        if (file instanceof File) {
-          const newPreview = URL.createObjectURL(file);
-          setPreview(newPreview);
-        } else if (value.phaspoto?.fileURL) {
-          setPreview(value.phaspoto.fileURL);
-        } else {
-          setPreview(null);
-        }
+      if (name === 'pegawai_phaspoto') {
+        setPreview(value.pegawai_phaspoto?.fileURL ?? null);
       }
     });
     return () => subscription.unsubscribe();
@@ -287,8 +230,8 @@ function DataIdentitasPegawaiForm() {
   const [allKabupatens, setAllKabupatens] = useState<Wilayah[]>([]);
   const [allProvinces, setAllProvinces] = useState<Wilayah[]>([]);
   
-  const alamatKabupaten = watch('alamatKabupaten');
-  const alamatKecamatan = watch('alamatKecamatan');
+  const alamatKabupaten = watch('pegawai_alamatKabupaten');
+  const alamatKecamatan = watch('pegawai_alamatKecamatan');
   
   useEffect(() => {
     setAllProvinces(getProvinces());
@@ -301,25 +244,35 @@ function DataIdentitasPegawaiForm() {
   const wilayahToOptions = (wilayah: Wilayah[]) => wilayah.map(w => ({ value: w.id, label: w.name }));
 
   useEffect(() => {
-     if(!getValues('alamatKecamatan')) setValue('alamatKecamatan', '');
+     if(!getValues('pegawai_alamatKecamatan')) setValue('pegawai_alamatKecamatan', '');
   }, [alamatKabupaten, setValue, getValues]);
 
   useEffect(() => {
-    if(!getValues('alamatDesa')) setValue('alamatDesa', '');
+    if(!getValues('pegawai_alamatDesa')) setValue('pegawai_alamatDesa', '');
   }, [alamatKecamatan, setValue, getValues]);
   
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof PegawaiFormData) => {
     const file = e.target.files?.[0];
     if (file) {
-      setValue('phaspoto', { fileName: file.name, file: file, fileURL: URL.createObjectURL(file) });
+      try {
+        const fileURL = await uploadFile(file);
+        setValue(fieldName as any, { fileName: file.name, fileURL: fileURL });
+      } catch (error) {
+        toast({ title: 'Upload Gagal', description: 'Gagal mengunggah file.', variant: 'destructive' });
+      }
     }
   };
 
-  const handlePendidikanFileChange = (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof PegawaiFormData) => {
+  const handlePendidikanFileChange = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof PegawaiFormData) => {
     const file = e.target.files?.[0];
     if (file) {
-      const currentPendidikan = getValues(fieldName as any);
-      setValue(fieldName as any, { ...currentPendidikan, ijazah: { fileName: file.name, file: file, fileURL: URL.createObjectURL(file) } });
+      try {
+        const fileURL = await uploadFile(file);
+        const currentPendidikan = getValues(fieldName as any);
+        setValue(fieldName as any, { ...currentPendidikan, ijazah: { fileName: file.name, fileURL: fileURL } });
+      } catch (error) {
+         toast({ title: 'Upload Gagal', description: 'Gagal mengunggah file.', variant: 'destructive' });
+      }
     }
   };
 
@@ -350,7 +303,7 @@ function DataIdentitasPegawaiForm() {
     <div className="space-y-6">
        <FormField
         control={control}
-        name="phaspoto"
+        name="pegawai_phaspoto"
         render={() => (
           <FormItem>
             <FormLabel>Phaspoto 3x4 cm</FormLabel>
@@ -367,7 +320,7 @@ function DataIdentitasPegawaiForm() {
                         <label htmlFor="phaspoto-upload" className="cursor-pointer">
                             <UploadCloud className="mr-2 h-4 w-4" />
                             Unggah Foto
-                             <input id="phaspoto-upload" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                             <input id="phaspoto-upload" type="file" accept="image/*" className="hidden" onChange={(e) => handleFileChange(e, 'pegawai_phaspoto')} />
                         </label>
                     </Button>
                 </FormControl>
@@ -377,10 +330,10 @@ function DataIdentitasPegawaiForm() {
         )}
       />
       <Grid>
-        <FormField control={control} name="nama" render={({ field }) => (
+        <FormField control={control} name="pegawai_nama" render={({ field }) => (
             <FormItem><FormLabelRequired>Nama</FormLabelRequired><FormControl><Input placeholder="Nama lengkap pegawai" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
-        <FormField control={control} name="jenisKelamin" render={({ field }) => (
+        <FormField control={control} name="pegawai_jenisKelamin" render={({ field }) => (
             <FormItem><FormLabelRequired>Jenis Kelamin</FormLabelRequired><FormControl>
             <RadioGroup onValueChange={field.onChange} value={field.value} className="flex items-center space-x-4 pt-2">
                 <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Laki-laki" /></FormControl><FormLabel className="font-normal">Laki-laki</FormLabel></FormItem>
@@ -388,10 +341,10 @@ function DataIdentitasPegawaiForm() {
             </RadioGroup>
             </FormControl><FormMessage /></FormItem>
         )} />
-        <FormField control={control} name="tempatLahir" render={({ field }) => (
+        <FormField control={control} name="pegawai_tempatLahir" render={({ field }) => (
             <FormItem><FormLabelRequired>Tempat Lahir</FormLabelRequired><FormControl><Input placeholder="Contoh: Jakarta" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
-        <FormField control={control} name="tanggalLahir" render={({ field }) => (
+        <FormField control={control} name="pegawai_tanggalLahir" render={({ field }) => (
             <FormItem className="flex flex-col"><FormLabelRequired>Tanggal Lahir</FormLabelRequired><Popover>
             <PopoverTrigger asChild><FormControl>
                 <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
@@ -403,16 +356,16 @@ function DataIdentitasPegawaiForm() {
             </PopoverContent>
             </Popover><FormMessage /></FormItem>
         )} />
-        <FormField control={control} name="nip" render={({ field }) => (
+        <FormField control={control} name="pegawai_nip" render={({ field }) => (
             <FormItem><FormLabel>NIP</FormLabel><FormControl><Input placeholder="Nomor Induk Pegawai" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
-        <FormField control={control} name="nuptk" render={({ field }) => (
+        <FormField control={control} name="pegawai_nuptk" render={({ field }) => (
             <FormItem><FormLabel>NUPTK</FormLabel><FormControl><Input placeholder="Nomor Unik Pendidik dan Tenaga Kependidikan" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
-         <FormField control={control} name="nrg" render={({ field }) => (
+         <FormField control={control} name="pegawai_nrg" render={({ field }) => (
             <FormItem><FormLabel>NRG</FormLabel><FormControl><Input placeholder="Nomor Registrasi Guru" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
-        <FormField control={control} name="statusPerkawinan" render={({ field }) => (
+        <FormField control={control} name="pegawai_statusPerkawinan" render={({ field }) => (
             <FormItem><FormLabelRequired>Status Perkawinan</FormLabelRequired><Select onValueChange={field.onChange} value={field.value}>
             <FormControl><SelectTrigger><SelectValue placeholder="Pilih Status" /></SelectTrigger></FormControl>
             <SelectContent>
@@ -423,7 +376,7 @@ function DataIdentitasPegawaiForm() {
             </SelectContent>
             </Select><FormMessage /></FormItem>
         )} />
-         <FormField control={control} name="tanggalPerkawinan" render={({ field }) => (
+         <FormField control={control} name="pegawai_tanggalPerkawinan" render={({ field }) => (
             <FormItem className="flex flex-col"><FormLabel>Tanggal Perkawinan</FormLabel><Popover>
             <PopoverTrigger asChild><FormControl>
                 <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
@@ -435,13 +388,13 @@ function DataIdentitasPegawaiForm() {
             </PopoverContent>
             </Popover><FormMessage /></FormItem>
         )} />
-        <FormField control={control} name="namaPasangan" render={({ field }) => (
+        <FormField control={control} name="pegawai_namaPasangan" render={({ field }) => (
             <FormItem><FormLabel>Nama Istri / Suami</FormLabel><FormControl><Input placeholder="Nama lengkap pasangan" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
-        <FormField control={control} name="jumlahAnak" render={({ field }) => (
+        <FormField control={control} name="pegawai_jumlahAnak" render={({ field }) => (
             <FormItem><FormLabel>Jumlah Anak</FormLabel><FormControl><Input type="number" placeholder="0" {...field} onChange={e => field.onChange(parseInt(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>
         )} />
-        <FormField control={control} name="jabatan" render={({ field }) => (
+        <FormField control={control} name="pegawai_jabatan" render={({ field }) => (
             <FormItem><FormLabelRequired>Jabatan</FormLabelRequired>
                 <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Pilih Jabatan" /></SelectTrigger></FormControl>
@@ -458,10 +411,10 @@ function DataIdentitasPegawaiForm() {
                 </Select>
             <FormMessage /></FormItem>
         )} />
-        <FormField control={control} name="bidangStudi" render={({ field }) => (
+        <FormField control={control} name="pegawai_bidangStudi" render={({ field }) => (
             <FormItem><FormLabelRequired>Mengampu Bidang Studi</FormLabelRequired><FormControl><Input placeholder="Contoh: Matematika" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
-        <FormField control={control} name="tugasTambahan" render={({ field }) => (
+        <FormField control={control} name="pegawai_tugasTambahan" render={({ field }) => (
             <FormItem><FormLabel>Tugas Tambahan</FormLabel><Select onValueChange={field.onChange} value={field.value}>
             <FormControl><SelectTrigger><SelectValue placeholder="Pilih Tugas Tambahan" /></SelectTrigger></FormControl>
             <SelectContent>
@@ -475,7 +428,7 @@ function DataIdentitasPegawaiForm() {
             </SelectContent>
             </Select><FormMessage /></FormItem>
         )} />
-        <FormField control={control} name="terhitungMulaiTanggal" render={({ field }) => (
+        <FormField control={control} name="pegawai_terhitungMulaiTanggal" render={({ field }) => (
             <FormItem className="flex flex-col"><FormLabelRequired>Terhitung Mulai Tanggal</FormLabelRequired><Popover>
             <PopoverTrigger asChild><FormControl>
                 <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
@@ -492,7 +445,7 @@ function DataIdentitasPegawaiForm() {
         <div className="space-y-4">
             <h3 className="text-lg font-semibold">Alamat Rumah</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <FormField control={control} name="alamatKabupaten" render={({ field }) => (
+                <FormField control={control} name="pegawai_alamatKabupaten" render={({ field }) => (
                     <FormItem><FormLabelRequired>Kabupaten</FormLabelRequired><FormControl>
                         <Combobox
                           options={wilayahToOptions(allKabupatens)}
@@ -503,7 +456,7 @@ function DataIdentitasPegawaiForm() {
                         />
                     </FormControl><FormMessage /></FormItem>
                 )} />
-                 <FormField control={control} name="alamatKecamatan" render={({ field }) => (
+                 <FormField control={control} name="pegawai_alamatKecamatan" render={({ field }) => (
                     <FormItem><FormLabelRequired>Kecamatan</FormLabelRequired><FormControl>
                         <Combobox
                           options={wilayahToOptions(kecamatans)}
@@ -515,7 +468,7 @@ function DataIdentitasPegawaiForm() {
                         />
                     </FormControl><FormMessage /></FormItem>
                 )} />
-                 <FormField control={control} name="alamatDesa" render={({ field }) => (
+                 <FormField control={control} name="pegawai_alamatDesa" render={({ field }) => (
                     <FormItem><FormLabelRequired>Desa</FormLabelRequired><FormControl>
                         <Combobox
                           options={wilayahToOptions(desas)}
@@ -527,7 +480,7 @@ function DataIdentitasPegawaiForm() {
                         />
                     </FormControl><FormMessage /></FormItem>
                 )} />
-                <FormField control={control} name="alamatDusun" render={({ field }) => (
+                <FormField control={control} name="pegawai_alamatDusun" render={({ field }) => (
                     <FormItem><FormLabelRequired>Dusun</FormLabelRequired><FormControl><Input placeholder="Nama Dusun" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
             </div>
@@ -540,103 +493,103 @@ function DataIdentitasPegawaiForm() {
                 <div className="space-y-2">
                     <FormLabel>SD/MI</FormLabel>
                     <div className="flex gap-4">
-                        <FormField control={control} name="pendidikanSD.tamatTahun" render={({ field }) => (
+                        <FormField control={control} name="pegawai_pendidikanSD.tamatTahun" render={({ field }) => (
                             <FormItem className="flex-1"><FormControl><Input placeholder="Tamat tahun..." {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-                        <FormField control={control} name="pendidikanSD.ijazah" render={() => (
+                        <FormField control={control} name="pegawai_pendidikanSD.ijazah" render={() => (
                              <FormItem><FormControl>
                                 <Button asChild variant="outline"><label htmlFor="ijazah-sd-upload" className="cursor-pointer">
-                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-sd-upload" type="file" accept=".pdf,image/*" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pendidikanSD')} />
+                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-sd-upload" type="file" accept=".pdf,image/*" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pegawai_pendidikanSD')} />
                                 </label></Button>
                             </FormControl><FormMessage /></FormItem>
                         )} />
                     </div>
-                     <p className="text-xs text-muted-foreground">{watch('pendidikanSD.ijazah.fileName')}</p>
+                     <p className="text-xs text-muted-foreground">{watch('pegawai_pendidikanSD.ijazah.fileName')}</p>
                 </div>
                 {/* SMP/MTs */}
                 <div className="space-y-2">
                     <FormLabel>SMP/MTs</FormLabel>
                     <div className="flex gap-4">
-                        <FormField control={control} name="pendidikanSMP.tamatTahun" render={({ field }) => (
+                        <FormField control={control} name="pegawai_pendidikanSMP.tamatTahun" render={({ field }) => (
                             <FormItem className="flex-1"><FormControl><Input placeholder="Tamat tahun..." {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-                        <FormField control={control} name="pendidikanSMP.ijazah" render={() => (
+                        <FormField control={control} name="pegawai_pendidikanSMP.ijazah" render={() => (
                              <FormItem><FormControl>
                                 <Button asChild variant="outline"><label htmlFor="ijazah-smp-upload" className="cursor-pointer">
-                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-smp-upload" type="file" accept=".pdf,image/*" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pendidikanSMP')} />
+                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-smp-upload" type="file" accept=".pdf,image/*" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pegawai_pendidikanSMP')} />
                                 </label></Button>
                             </FormControl><FormMessage /></FormItem>
                         )} />
                     </div>
-                    <p className="text-xs text-muted-foreground">{watch('pendidikanSMP.ijazah.fileName')}</p>
+                    <p className="text-xs text-muted-foreground">{watch('pegawai_pendidikanSMP.ijazah.fileName')}</p>
                 </div>
                 {/* SMA/MA */}
                  <div className="space-y-2">
                     <FormLabel>SMA/MA</FormLabel>
                     <div className="flex gap-4">
-                        <FormField control={control} name="pendidikanSMA.tamatTahun" render={({ field }) => (
+                        <FormField control={control} name="pegawai_pendidikanSMA.tamatTahun" render={({ field }) => (
                             <FormItem className="flex-1"><FormControl><Input placeholder="Tamat tahun..." {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-                        <FormField control={control} name="pendidikanSMA.ijazah" render={() => (
+                        <FormField control={control} name="pegawai_pendidikanSMA.ijazah" render={() => (
                              <FormItem><FormControl>
                                 <Button asChild variant="outline"><label htmlFor="ijazah-sma-upload" className="cursor-pointer">
-                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-sma-upload" type="file" accept=".pdf,image/*" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pendidikanSMA')} />
+                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-sma-upload" type="file" accept=".pdf,image/*" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pegawai_pendidikanSMA')} />
                                 </label></Button>
                             </FormControl><FormMessage /></FormItem>
                         )} />
                     </div>
-                    <p className="text-xs text-muted-foreground">{watch('pendidikanSMA.ijazah.fileName')}</p>
+                    <p className="text-xs text-muted-foreground">{watch('pegawai_pendidikanSMA.ijazah.fileName')}</p>
                 </div>
                 {/* Diploma */}
                  <div className="space-y-2">
                     <FormLabel>Diploma</FormLabel>
                     <div className="flex gap-4">
-                        <FormField control={control} name="pendidikanDiploma.tamatTahun" render={({ field }) => (
+                        <FormField control={control} name="pegawai_pendidikanDiploma.tamatTahun" render={({ field }) => (
                             <FormItem className="flex-1"><FormControl><Input placeholder="Tamat tahun..." {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-                        <FormField control={control} name="pendidikanDiploma.ijazah" render={() => (
+                        <FormField control={control} name="pegawai_pendidikanDiploma.ijazah" render={() => (
                              <FormItem><FormControl>
                                 <Button asChild variant="outline"><label htmlFor="ijazah-diploma-upload" className="cursor-pointer">
-                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-diploma-upload" type="file" accept=".pdf,image/*" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pendidikanDiploma')} />
+                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-diploma-upload" type="file" accept=".pdf,image/*" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pegawai_pendidikanDiploma')} />
                                 </label></Button>
                             </FormControl><FormMessage /></FormItem>
                         )} />
                     </div>
-                    <p className="text-xs text-muted-foreground">{watch('pendidikanDiploma.ijazah.fileName')}</p>
+                    <p className="text-xs text-muted-foreground">{watch('pegawai_pendidikanDiploma.ijazah.fileName')}</p>
                 </div>
                 {/* S1 */}
                 <div className="space-y-2">
                     <FormLabel>S1</FormLabel>
                     <div className="flex gap-4">
-                        <FormField control={control} name="pendidikanS1.tamatTahun" render={({ field }) => (
+                        <FormField control={control} name="pegawai_pendidikanS1.tamatTahun" render={({ field }) => (
                             <FormItem className="flex-1"><FormControl><Input placeholder="Tamat tahun..." {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-                        <FormField control={control} name="pendidikanS1.ijazah" render={() => (
+                        <FormField control={control} name="pegawai_pendidikanS1.ijazah" render={() => (
                              <FormItem><FormControl>
                                 <Button asChild variant="outline"><label htmlFor="ijazah-s1-upload" className="cursor-pointer">
-                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-s1-upload" type="file" accept=".pdf,image/*" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pendidikanS1')} />
+                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-s1-upload" type="file" accept=".pdf,image/*" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pegawai_pendidikanS1')} />
                                 </label></Button>
                             </FormControl><FormMessage /></FormItem>
                         )} />
                     </div>
-                    <p className="text-xs text-muted-foreground">{watch('pendidikanS1.ijazah.fileName')}</p>
+                    <p className="text-xs text-muted-foreground">{watch('pegawai_pendidikanS1.ijazah.fileName')}</p>
                 </div>
                 {/* S2 */}
                 <div className="space-y-2">
                     <FormLabel>S2</FormLabel>
                     <div className="flex gap-4">
-                        <FormField control={control} name="pendidikanS2.tamatTahun" render={({ field }) => (
+                        <FormField control={control} name="pegawai_pendidikanS2.tamatTahun" render={({ field }) => (
                             <FormItem className="flex-1"><FormControl><Input placeholder="Tamat tahun..." {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-                        <FormField control={control} name="pendidikanS2.ijazah" render={() => (
+                        <FormField control={control} name="pegawai_pendidikanS2.ijazah" render={() => (
                              <FormItem><FormControl>
                                 <Button asChild variant="outline"><label htmlFor="ijazah-s2-upload" className="cursor-pointer">
-                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-s2-upload" type="file" accept=".pdf,image/*" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pendidikanS2')} />
+                                    <UploadCloud className="mr-2 h-4 w-4" /> Ijazah <input id="ijazah-s2-upload" type="file" accept=".pdf,image/*" className="hidden" onChange={(e) => handlePendidikanFileChange(e, 'pegawai_pendidikanS2')} />
                                 </label></Button>
                             </FormControl><FormMessage /></FormItem>
                         )} />
                     </div>
-                    <p className="text-xs text-muted-foreground">{watch('pendidikanS2.ijazah.fileName')}</p>
+                    <p className="text-xs text-muted-foreground">{watch('pegawai_pendidikanS2.ijazah.fileName')}</p>
                 </div>
             </div>
         </div>
@@ -646,12 +599,18 @@ function DataIdentitasPegawaiForm() {
 
 function SingleFileUpload({ name, label }: { name: keyof PegawaiFormData, label: string }) {
     const { control, watch, setValue } = useFormContext<PegawaiFormData>();
+    const { toast } = useToast();
     const watchedFile = watch(name as any);
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            setValue(name as any, { fileName: file.name, file: file, fileURL: URL.createObjectURL(file) });
+            try {
+                const fileURL = await uploadFile(file);
+                setValue(name as any, { fileName: file.name, fileURL: fileURL });
+            } catch (error) {
+                 toast({ title: 'Upload Gagal', description: 'Gagal mengunggah file.', variant: 'destructive' });
+            }
         }
     };
 
@@ -695,16 +654,22 @@ function SingleFileUpload({ name, label }: { name: keyof PegawaiFormData, label:
 }
 
 function MultiFileUpload({ name, label }: { name: keyof PegawaiFormData, label: string }) {
-    const { control, setValue, getValues } = useFormContext<PegawaiFormData>();
+    const { control, getValues } = useFormContext<PegawaiFormData>();
+    const { toast } = useToast();
     const { fields, append, remove } = useFieldArray({
         control,
         name: name as any,
     });
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            append({ fileName: file.name, file: file, fileURL: URL.createObjectURL(file) });
+            try {
+                const fileURL = await uploadFile(file);
+                append({ fileName: file.name, fileURL: fileURL });
+            } catch (error) {
+                 toast({ title: 'Upload Gagal', description: 'Gagal mengunggah file.', variant: 'destructive' });
+            }
         }
         e.target.value = '';
     };
@@ -746,23 +711,23 @@ function FilePegawaiForm() {
     return (
         <div className="space-y-6">
              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                <MultiFileUpload name="skPengangkatan" label="SK Pengangkatan Pegawai (dari 80% s.d Sekarang)" />
-                <SingleFileUpload name="skNipBaru" label="SK NIP Baru" />
-                <MultiFileUpload name="skFungsional" label="SK Fungsional" />
-                <SingleFileUpload name="beritaAcaraSumpah" label="Berita Acara Pengambilan Sumpah PNS" />
-                <SingleFileUpload name="sertifikatPendidik" label="Sertifikat Pendidik" />
-                <MultiFileUpload name="sertifikatPelatihan" label="Sertifikat Pelatihan" />
-                <MultiFileUpload name="skp" label="SKP" />
-                <SingleFileUpload name="karpeg" label="Karpeg" />
-                <SingleFileUpload name="karisKarsu" label="Karis/Karsu" />
-                <SingleFileUpload name="bukuNikah" label="Buku Nikah" />
-                <SingleFileUpload name="kartuKeluarga" label="Kartu Keluarga" />
-                <SingleFileUpload name="ktp" label="KTP" />
-                <SingleFileUpload name="akteKelahiran" label="Akte Kelahiran" />
-                <SingleFileUpload name="kartuTaspen" label="Kartu Peserta Taspen" />
-                <SingleFileUpload name="npwp" label="NPWP" />
-                <SingleFileUpload name="kartuBpjs" label="Kartu BPJS / ASKES" />
-                <SingleFileUpload name="bukuRekening" label="Buku Rekening Gaji" />
+                <MultiFileUpload name="pegawai_skPengangkatan" label="SK Pengangkatan Pegawai (dari 80% s.d Sekarang)" />
+                <SingleFileUpload name="pegawai_skNipBaru" label="SK NIP Baru" />
+                <MultiFileUpload name="pegawai_skFungsional" label="SK Fungsional" />
+                <SingleFileUpload name="pegawai_beritaAcaraSumpah" label="Berita Acara Pengambilan Sumpah PNS" />
+                <SingleFileUpload name="pegawai_sertifikatPendidik" label="Sertifikat Pendidik" />
+                <MultiFileUpload name="pegawai_sertifikatPelatihan" label="Sertifikat Pelatihan" />
+                <MultiFileUpload name="pegawai_skp" label="SKP" />
+                <SingleFileUpload name="pegawai_karpeg" label="Karpeg" />
+                <SingleFileUpload name="pegawai_karisKarsu" label="Karis/Karsu" />
+                <SingleFileUpload name="pegawai_bukuNikah" label="Buku Nikah" />
+                <SingleFileUpload name="pegawai_kartuKeluarga" label="Kartu Keluarga" />
+                <SingleFileUpload name="pegawai_ktp" label="KTP" />
+                <SingleFileUpload name="pegawai_akteKelahiran" label="Akte Kelahiran" />
+                <SingleFileUpload name="pegawai_kartuTaspen" label="Kartu Peserta Taspen" />
+                <SingleFileUpload name="pegawai_npwp" label="NPWP" />
+                <SingleFileUpload name="pegawai_kartuBpjs" label="Kartu BPJS / ASKES" />
+                <SingleFileUpload name="pegawai_bukuRekening" label="Buku Rekening Gaji" />
             </div>
         </div>
     )
@@ -773,10 +738,10 @@ function DataValidasiForm() {
     const values = getValues();
     
     const allFields = [
-        { label: "Nama Lengkap", value: values.nama },
-        { label: "NIP", value: values.nip },
-        { label: "Jabatan", value: values.jabatan },
-        { label: "Foto Profil", value: values.phaspoto?.fileName },
+        { label: "Nama Lengkap", value: values.pegawai_nama },
+        { label: "NIP", value: values.pegawai_nip },
+        { label: "Jabatan", value: values.pegawai_jabatan },
+        { label: "Foto Profil", value: values.pegawai_phaspoto?.fileName },
     ].filter(field => field.value);
 
   return (
