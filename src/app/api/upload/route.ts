@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     let fileBufferToSave = buffer;
 
     if (isImage) {
-        // Process image to fit within 3x4 aspect ratio (e.g., 300x400) without cropping
+        // Process image to fit within 3x4 aspect ratio without cropping, maintaining aspect ratio
         fileBufferToSave = await sharp(buffer)
             .resize(300, 400, {
                 fit: 'inside', // Resize without cropping, maintaining aspect ratio
