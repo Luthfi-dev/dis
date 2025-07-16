@@ -25,7 +25,6 @@ import Image from 'next/image';
 import { Separator } from './ui/separator';
 import { getKabupatens, getKecamatans, getDesas, Wilayah, getProvinces } from '@/lib/wilayah';
 import { Combobox } from './ui/combobox';
-import { logActivity } from '@/lib/activity-log';
 
 const steps = [
   { id: 1, title: 'Identitas Pegawai', fields: [
@@ -120,7 +119,7 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
   const { handleSubmit, trigger, formState: { errors } } = methods;
 
   const handleNext = async () => {
-    const fieldsToValidate = steps[currentStep - 1].fields as FieldPath<PegawaiFormData>[];
+    const fieldsToValidate = steps.slice(0, currentStep).flatMap(s => s.fields) as FieldPath<PegawaiFormData>[];
     const isValid = await trigger(fieldsToValidate, { shouldFocus: true });
     
     if (isValid && currentStep < steps.length) {
@@ -136,8 +135,12 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
 
   const processForm = (data: PegawaiFormData) => {
     startTransition(async () => {
-        // Convert Date objects to ISO strings for server action
-        const dataForServer = JSON.parse(JSON.stringify(data));
+        const dataForServer = {
+            ...data,
+            pegawai_tanggalLahir: data.pegawai_tanggalLahir ? data.pegawai_tanggalLahir.toISOString() : undefined,
+            pegawai_tanggalPerkawinan: data.pegawai_tanggalPerkawinan ? data.pegawai_tanggalPerkawinan.toISOString() : undefined,
+            pegawai_terhitungMulaiTanggal: data.pegawai_terhitungMulaiTanggal ? data.pegawai_terhitungMulaiTanggal.toISOString() : undefined,
+        }
 
         const result = await submitPegawaiData(dataForServer, pegawaiData?.id);
 
@@ -154,17 +157,48 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
                 description: result.message || 'Terjadi kesalahan. Periksa kembali isian formulir Anda.',
                 variant: 'destructive',
             });
+             if (result.errors) {
+                // Find the first step with an error and go to it
+                const errorFields = Object.keys(result.errors);
+                const firstErrorField = errorFields[0];
+                const stepWithError = steps.find(step => step.fields.includes(firstErrorField));
+                if (stepWithError) {
+                    setCurrentStep(stepWithError.id);
+                }
+            }
         }
     });
   };
 
    const onInvalid = (errors: FieldErrors<PegawaiFormData>) => {
-    console.error("Validation Errors:", errors);
+    const errorKeys = Object.keys(errors);
+    const fieldLabels: {[key: string]: string} = {
+        pegawai_nama: 'Nama',
+        pegawai_jenisKelamin: 'Jenis Kelamin',
+        pegawai_tempatLahir: 'Tempat Lahir',
+        pegawai_tanggalLahir: 'Tanggal Lahir',
+        pegawai_statusPerkawinan: 'Status Perkawinan',
+        pegawai_jabatan: 'Jabatan',
+        pegawai_terhitungMulaiTanggal: 'TMT',
+    };
+
+    const errorMessages = errorKeys.map(key => fieldLabels[key] || key).join(', ');
+
     toast({
-        title: 'Gagal Menyimpan',
-        description: 'Data tidak valid. Silakan periksa kembali semua isian formulir Anda.',
+        title: 'Gagal Menyimpan: Data Tidak Valid',
+        description: `Silakan periksa kolom berikut: ${errorMessages}`,
         variant: 'destructive',
     });
+
+    const stepWithError = steps.find(step =>
+      step.fields.some(field => errorKeys.includes(field))
+    );
+
+    if (stepWithError) {
+      setCurrentStep(stepWithError.id);
+      // Trigger validation again to show field-specific messages
+      trigger(errorKeys as FieldPath<PegawaiFormData>[], { shouldFocus: true });
+    }
   };
 
   return (
@@ -405,8 +439,7 @@ function DataIdentitasPegawaiForm() {
                     <Input 
                         type="number" 
                         placeholder="0" 
-                        {...field}
-                        onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))}
+                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))}
                         value={field.value ?? ''}
                     />
                 </FormControl>

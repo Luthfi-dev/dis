@@ -57,7 +57,7 @@ export async function getCategorySuggestion(description: string) {
   }
 }
 
-export async function submitStudentData(data: StudentFormData, studentId?: string) {
+export async function submitStudentData(data: Omit<StudentFormData, 'id'>, studentId?: string) {
   try {
     const parsedData = studentFormSchema.parse(data);
     
@@ -101,8 +101,7 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
 
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.log(error.errors)
-      return { success: false, message: 'Data tidak valid. Periksa kembali isian Anda.', errors: error.errors };
+      return { success: false, message: 'Data tidak valid. Periksa kembali isian Anda.', errors: error.flatten().fieldErrors };
     }
     console.error('Student submission error:', error);
     return { success: false, message: 'Gagal menyimpan data siswa.' };
@@ -132,7 +131,7 @@ export async function deletePegawai(id: string): Promise<{ success: boolean; mes
 }
 
 
-export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: string) {
+export async function submitPegawaiData(data: Omit<PegawaiFormData, 'id'>, pegawaiId?: string) {
     try {
         const parsedData = pegawaiFormSchema.parse(data);
 
@@ -187,8 +186,7 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
 
     } catch (error) {
       if (error instanceof z.ZodError) {
-        console.error('Pegawai validation error:', error.flatten().fieldErrors);
-        return { success: false, message: 'Data tidak valid. Periksa kembali isian Anda.', errors: error.errors };
+        return { success: false, message: 'Data tidak valid. Periksa kembali isian Anda.', errors: error.flatten().fieldErrors };
       }
       console.error('Pegawai submission error:', error);
       return { success: false, message: 'Gagal menyimpan data pegawai.' };

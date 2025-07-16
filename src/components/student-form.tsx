@@ -150,10 +150,10 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
       : initialFormValues,
   });
 
-  const { handleSubmit, trigger, formState: { dirtyFields } } = methods;
+  const { handleSubmit, trigger, formState: { errors } } = methods;
 
   const handleNext = async () => {
-    const fieldsToValidate = steps[currentStep - 1].fields as FieldPath<StudentFormData>[];
+    const fieldsToValidate = steps.slice(0, currentStep).flatMap(s => s.fields) as FieldPath<StudentFormData>[];
     const isValid = await trigger(fieldsToValidate, { shouldFocus: true });
     
     if (isValid && currentStep < steps.length) {
@@ -169,7 +169,13 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
 
   const processForm = (data: StudentFormData) => {
     startTransition(async () => {
-        const dataForServer = JSON.parse(JSON.stringify(data));
+        const dataForServer = {
+          ...data,
+          siswa_tanggalLahir: data.siswa_tanggalLahir ? data.siswa_tanggalLahir.toISOString() : undefined,
+          siswa_tanggalSttb: data.siswa_tanggalSttb ? data.siswa_tanggalSttb.toISOString() : undefined,
+          siswa_pindahanDiterimaTanggal: data.siswa_pindahanDiterimaTanggal ? data.siswa_pindahanDiterimaTanggal.toISOString() : undefined,
+          siswa_keluarTanggal: data.siswa_keluarTanggal ? data.siswa_keluarTanggal.toISOString() : undefined,
+        }
 
         const result = await submitStudentData(dataForServer, studentData?.id);
         if (result.success) {
@@ -185,17 +191,47 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
                 description: result.message || 'Terjadi kesalahan. Periksa kembali isian formulir Anda.',
                 variant: 'destructive',
             });
+            if (result.errors) {
+              const errorFields = Object.keys(result.errors);
+              const firstErrorField = errorFields[0];
+              const stepWithError = steps.find(step => step.fields.includes(firstErrorField));
+              if (stepWithError) {
+                  setCurrentStep(stepWithError.id);
+              }
+          }
         }
     });
-};
+  };
 
   const onInvalid = (errors: FieldErrors<StudentFormData>) => {
-    console.error("Validation Errors:", errors);
+    const errorKeys = Object.keys(errors);
+    const fieldLabels: {[key: string]: string} = {
+      siswa_namaLengkap: 'Nama Lengkap',
+      siswa_nis: 'NIS',
+      siswa_nisn: 'NISN',
+      siswa_jenisKelamin: 'Jenis Kelamin',
+      siswa_tempatLahir: 'Tempat Lahir',
+      siswa_tanggalLahir: 'Tanggal Lahir',
+      siswa_agama: 'Agama',
+      siswa_kewarganegaraan: 'Kewarganegaraan',
+    };
+
+    const errorMessages = errorKeys.map(key => fieldLabels[key] || key).join(', ');
+
     toast({
-        title: 'Gagal Menyimpan',
-        description: 'Data tidak valid. Silakan periksa kembali semua isian formulir Anda.',
+        title: 'Gagal Menyimpan: Data Tidak Valid',
+        description: `Silakan periksa kolom berikut: ${errorMessages}`,
         variant: 'destructive',
     });
+
+    const stepWithError = steps.find(step =>
+      step.fields.some(field => errorKeys.includes(field))
+    );
+
+    if (stepWithError) {
+      setCurrentStep(stepWithError.id);
+      trigger(errorKeys as FieldPath<StudentFormData>[], { shouldFocus: true });
+    }
   };
 
 
@@ -435,9 +471,9 @@ function DataSiswaForm() {
                 <FormLabel>Jumlah Saudara</FormLabel>
                 <FormControl>
                     <Input 
-                        type="number" 
-                        {...field}
-                        onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))}
+                        type="number"
+                        placeholder="0"
+                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))}
                         value={field.value ?? ''}
                     />
                 </FormControl>
@@ -645,10 +681,9 @@ function DataRincianKesehatanForm() {
                 <FormField control={control} name="siswa_tinggiBadan" render={({ field }) => (
                     <FormItem><FormLabel>Tinggi Badan (cm)</FormLabel><FormControl>
                          <Input 
-                            type="number" 
-                            placeholder="Contoh: 160" 
-                            {...field}
-                            onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))}
+                            type="number"
+                            placeholder="Contoh: 160"
+                            onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))}
                             value={field.value ?? ''}
                          />
                     </FormControl><FormMessage /></FormItem>
@@ -656,10 +691,9 @@ function DataRincianKesehatanForm() {
                 <FormField control={control} name="siswa_beratBadan" render={({ field }) => (
                     <FormItem><FormLabel>Berat Badan (kg)</FormLabel><FormControl>
                         <Input 
-                            type="number" 
-                            placeholder="Contoh: 50" 
-                            {...field} 
-                            onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))}
+                            type="number"
+                            placeholder="Contoh: 50"
+                            onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))}
                             value={field.value ?? ''}
                         />
                     </FormControl><FormMessage /></FormItem>

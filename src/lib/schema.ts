@@ -22,7 +22,7 @@ export const studentFormSchema = z.object({
   siswa_nisn: z.string().length(10, "NISN harus 10 digit."),
   siswa_jenisKelamin: z.enum(['Laki-laki', 'Perempuan'], { required_error: "Jenis kelamin wajib dipilih." }),
   siswa_tempatLahir: z.string().min(1, "Tempat lahir wajib diisi."),
-  siswa_tanggalLahir: z.date({ required_error: "Tanggal lahir wajib diisi." }),
+  siswa_tanggalLahir: z.union([z.string().datetime(), z.date()]).transform(val => new Date(val)),
   siswa_agama: z.enum(['Islam', 'Kristen', 'Hindu', 'Budha'], { required_error: "Agama wajib dipilih." }),
   siswa_kewarganegaraan: z.enum(['WNI', 'WNA'], { required_error: "Kewarganegaraan wajib dipilih." }),
 
@@ -65,10 +65,10 @@ export const studentFormSchema = z.object({
   // Step 5: Perkembangan (All Optional)
   siswa_asalSekolah: z.string().optional(),
   siswa_nomorSttb: z.string().optional(),
-  siswa_tanggalSttb: z.date().optional().nullable(),
+  siswa_tanggalSttb: z.union([z.string().datetime(), z.date()]).transform(val => new Date(val)).optional(),
   siswa_pindahanAsalSekolah: z.string().optional(),
   siswa_pindahanDariTingkat: z.string().optional(),
-  siswa_pindahanDiterimaTanggal: z.date().optional().nullable(),
+  siswa_pindahanDiterimaTanggal: z.union([z.string().datetime(), z.date()]).transform(val => new Date(val)).optional(),
 
   // Step 6: Meninggalkan Sekolah (All Optional)
   siswa_lulusTahun: z.string().optional(),
@@ -78,7 +78,7 @@ export const studentFormSchema = z.object({
   siswa_pindahTingkatKelas: z.string().optional(),
   siswa_pindahKeTingkat: z.string().optional(),
   siswa_keluarAlasan: z.string().optional(),
-  siswa_keluarTanggal: z.date().optional().nullable(),
+  siswa_keluarTanggal: z.union([z.string().datetime(), z.date()]).transform(val => new Date(val)).optional(),
 
   // Step 2 & 7: Dokumen (All Optional)
   documents: z.object({
