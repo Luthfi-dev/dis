@@ -9,31 +9,43 @@ import type { Siswa } from './data';
 import type { Pegawai } from './pegawai-data';
 import { logActivity } from './activity-log';
 
-// --- Server-side simulation of data storage ---
+// This is a server-side storage simulation.
+// In a real app, this would be a database.
+if (typeof global.students === 'undefined') {
+    global.students = [];
+}
+if (typeof global.pegawai === 'undefined') {
+    global.pegawai = [];
+}
 
 const getStudentsFromStorage = (): Siswa[] => {
-    // This is a placeholder for actual database/storage logic.
-    // NOTE: This runs on the server, so it can't access client-side localStorage.
-    // We need a server-side "database" simulation if we aren't using a real one.
-    // For now, this will be empty on each server restart. This is a key
-    // concept to understand for server-driven apps.
-    // To make this work for demo, we will use a global variable.
-    if (!global.students) global.students = [];
-    return global.students;
+    return (global as any).students;
 };
 const saveStudentsToStorage = (students: Siswa[]) => {
-    global.students = students;
+    (global as any).students = students;
 };
 
 const getPegawaiFromStorage = (): Pegawai[] => {
-    if (!global.pegawai) global.pegawai = [];
-    return global.pegawai;
+    return (global as any).pegawai;
 };
 const savePegawaiToStorage = (pegawai: Pegawai[]) => {
-    global.pegawai = pegawai;
+    (global as any).pegawai = pegawai;
 };
 
 // --- Public-facing Server Actions ---
+
+export async function getSiswaById(id: string): Promise<Siswa | null> {
+    const students = getStudentsFromStorage();
+    const student = students.find(s => s.id === id) || null;
+    return student;
+}
+
+export async function getPegawaiById(id: string): Promise<Pegawai | null> {
+    const pegawai = getPegawaiFromStorage();
+    const p = pegawai.find(p => p.id === id) || null;
+    return p;
+}
+
 
 export async function getCategorySuggestion(description: string) {
   if (!description) {
@@ -158,3 +170,4 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
       return { success: false, message: 'Gagal menyimpan data pegawai.' };
     }
   }
+
