@@ -29,14 +29,17 @@ import { Separator } from './ui/separator';
 import { logActivity } from '@/lib/activity-log';
 
 const steps = [
-  { id: 1, title: 'Data Siswa' },
-  { id: 2, title: 'Dokumen Utama' },
-  { id: 3, title: 'Data Orang Tua' },
-  { id: 4, title: 'Rincian Kesehatan' },
-  { id: 5, title: 'Perkembangan Siswa' },
-  { id: 6, title: 'Meninggalkan Sekolah' },
-  { id: 7, title: 'Laporan Belajar' },
-  { id: 8, title: 'Validasi' },
+  { id: 1, title: 'Data Siswa', fields: [
+      'siswa_namaLengkap', 'siswa_nis', 'siswa_nisn', 'siswa_jenisKelamin', 
+      'siswa_tempatLahir', 'siswa_tanggalLahir', 'siswa_agama', 'siswa_kewarganegaraan'
+  ] },
+  { id: 2, title: 'Dokumen Utama', fields: [] },
+  { id: 3, title: 'Data Orang Tua', fields: [] },
+  { id: 4, title: 'Rincian Kesehatan', fields: [] },
+  { id: 5, title: 'Perkembangan Siswa', fields: [] },
+  { id: 6, title: 'Meninggalkan Sekolah', fields: [] },
+  { id: 7, title: 'Laporan Belajar', fields: [] },
+  { id: 8, title: 'Validasi', fields: [] },
 ];
 
 const initialFormValues: StudentFormData = {
@@ -150,8 +153,10 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
   const { handleSubmit, trigger, formState: { dirtyFields } } = methods;
 
   const handleNext = async () => {
-    // No validation on next, just proceed to the next step
-    if (currentStep < steps.length) {
+    const fieldsToValidate = steps[currentStep - 1].fields as FieldPath<StudentFormData>[];
+    const isValid = await trigger(fieldsToValidate, { shouldFocus: true });
+    
+    if (isValid && currentStep < steps.length) {
       setCurrentStep(prev => prev + 1);
     }
   };
@@ -164,11 +169,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
 
   const processForm = (data: StudentFormData) => {
     startTransition(async () => {
-        const dataForServer: any = { ...data };
-        if(data.siswa_tanggalLahir) dataForServer.siswa_tanggalLahir = data.siswa_tanggalLahir.toISOString();
-        if(data.siswa_tanggalSttb) dataForServer.siswa_tanggalSttb = data.siswa_tanggalSttb.toISOString();
-        if(data.siswa_pindahanDiterimaTanggal) dataForServer.siswa_pindahanDiterimaTanggal = data.siswa_pindahanDiterimaTanggal.toISOString();
-        if(data.siswa_keluarTanggal) dataForServer.siswa_keluarTanggal = data.siswa_keluarTanggal.toISOString();
+        const dataForServer = JSON.parse(JSON.stringify(data));
 
         const result = await submitStudentData(dataForServer, studentData?.id);
         if (result.success) {
@@ -430,7 +431,18 @@ function DataSiswaForm() {
             </Select><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="siswa_jumlahSaudara" render={({ field }) => (
-            <FormItem><FormLabel>Jumlah Saudara</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
+             <FormItem>
+                <FormLabel>Jumlah Saudara</FormLabel>
+                <FormControl>
+                    <Input 
+                        type="number" 
+                        {...field}
+                        onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))}
+                        value={field.value ?? ''}
+                    />
+                </FormControl>
+                <FormMessage />
+            </FormItem>
         )} />
         <FormField control={control} name="siswa_bahasa" render={({ field }) => (
             <FormItem><FormLabel>Bahasa Sehari-hari</FormLabel><FormControl><Input placeholder="Contoh: Indonesia" {...field} /></FormControl><FormMessage /></FormItem>
@@ -631,10 +643,26 @@ function DataRincianKesehatanForm() {
             </p>
             <Grid>
                 <FormField control={control} name="siswa_tinggiBadan" render={({ field }) => (
-                    <FormItem><FormLabel>Tinggi Badan (cm)</FormLabel><FormControl><Input type="number" placeholder="Contoh: 160" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Tinggi Badan (cm)</FormLabel><FormControl>
+                         <Input 
+                            type="number" 
+                            placeholder="Contoh: 160" 
+                            {...field}
+                            onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))}
+                            value={field.value ?? ''}
+                         />
+                    </FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={control} name="siswa_beratBadan" render={({ field }) => (
-                    <FormItem><FormLabel>Berat Badan (kg)</FormLabel><FormControl><Input type="number" placeholder="Contoh: 50" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))}/></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Berat Badan (kg)</FormLabel><FormControl>
+                        <Input 
+                            type="number" 
+                            placeholder="Contoh: 50" 
+                            {...field} 
+                            onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))}
+                            value={field.value ?? ''}
+                        />
+                    </FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={control} name="siswa_penyakit" render={({ field }) => (
                     <FormItem className="md:col-span-2"><FormLabel>Riwayat Penyakit</FormLabel><FormControl><Textarea placeholder="Jelaskan riwayat penyakit yang pernah diderita" {...field} /></FormControl><FormMessage /></FormItem>

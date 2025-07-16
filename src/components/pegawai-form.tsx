@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useTransition, useEffect, useMemo } from 'react';
-import { useForm, FormProvider, useFormContext, useFieldArray, FieldErrors } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext, useFieldArray, FieldErrors, FieldPath } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { pegawaiFormSchema, PegawaiFormData } from '@/lib/pegawai-schema';
 import { FormStepper } from './form-stepper';
@@ -28,9 +28,12 @@ import { Combobox } from './ui/combobox';
 import { logActivity } from '@/lib/activity-log';
 
 const steps = [
-  { id: 1, title: 'Identitas Pegawai' },
-  { id: 2, title: 'File Pegawai' },
-  { id: 3, title: 'Validasi' },
+  { id: 1, title: 'Identitas Pegawai', fields: [
+      'pegawai_nama', 'pegawai_jenisKelamin', 'pegawai_tempatLahir', 'pegawai_tanggalLahir',
+      'pegawai_statusPerkawinan', 'pegawai_jabatan', 'pegawai_terhitungMulaiTanggal'
+  ] },
+  { id: 2, title: 'File Pegawai', fields: [] },
+  { id: 3, title: 'Validasi', fields: [] },
 ];
 
 const initialFormValues: PegawaiFormData = {
@@ -117,8 +120,10 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
   const { handleSubmit, trigger, formState: { errors } } = methods;
 
   const handleNext = async () => {
-    // No validation on next, just proceed to the next step
-    if (currentStep < steps.length) {
+    const fieldsToValidate = steps[currentStep - 1].fields as FieldPath<PegawaiFormData>[];
+    const isValid = await trigger(fieldsToValidate, { shouldFocus: true });
+    
+    if (isValid && currentStep < steps.length) {
       setCurrentStep((prev) => prev + 1);
     }
   };
@@ -132,16 +137,7 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
   const processForm = (data: PegawaiFormData) => {
     startTransition(async () => {
         // Convert Date objects to ISO strings for server action
-        const dataForServer: any = { ...data };
-        if (data.pegawai_tanggalLahir) {
-            dataForServer.pegawai_tanggalLahir = data.pegawai_tanggalLahir.toISOString();
-        }
-        if (data.pegawai_tanggalPerkawinan) {
-            dataForServer.pegawai_tanggalPerkawinan = data.pegawai_tanggalPerkawinan.toISOString();
-        }
-        if (data.pegawai_terhitungMulaiTanggal) {
-            dataForServer.pegawai_terhitungMulaiTanggal = data.pegawai_terhitungMulaiTanggal.toISOString();
-        }
+        const dataForServer = JSON.parse(JSON.stringify(data));
 
         const result = await submitPegawaiData(dataForServer, pegawaiData?.id);
 
@@ -403,7 +399,19 @@ function DataIdentitasPegawaiForm() {
             <FormItem><FormLabel>Nama Istri / Suami</FormLabel><FormControl><Input placeholder="Nama lengkap pasangan" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="pegawai_jumlahAnak" render={({ field }) => (
-            <FormItem><FormLabel>Jumlah Anak</FormLabel><FormControl><Input type="number" placeholder="0" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} /></FormControl><FormMessage /></FormItem>
+            <FormItem>
+                <FormLabel>Jumlah Anak</FormLabel>
+                <FormControl>
+                    <Input 
+                        type="number" 
+                        placeholder="0" 
+                        {...field}
+                        onChange={e => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))}
+                        value={field.value ?? ''}
+                    />
+                </FormControl>
+                <FormMessage />
+            </FormItem>
         )} />
         <FormField control={control} name="pegawai_jabatan" render={({ field }) => (
             <FormItem><FormLabelRequired>Jabatan</FormLabelRequired>

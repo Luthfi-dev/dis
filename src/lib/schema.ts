@@ -8,23 +8,27 @@ const fileSchema = z.object({
   fileURL: z.string().url(),
 }).optional();
 
+// This schema is now only used for the completion check, not form validation
 const requiredFileSchema = z.object({
   fileName: z.string().min(1, 'File harus diunggah.'),
   fileURL: z.string().url('URL tidak valid'),
 });
 
+
 export const studentFormSchema = z.object({
+  // Step 1: Data Siswa (Required Fields)
   siswa_namaLengkap: z.string().min(1, "Nama lengkap wajib diisi."),
   siswa_nis: z.string().min(1, "Nomor Induk Sekolah wajib diisi."),
   siswa_nisn: z.string().length(10, "NISN harus 10 digit."),
   siswa_jenisKelamin: z.enum(['Laki-laki', 'Perempuan'], { required_error: "Jenis kelamin wajib dipilih." }),
   siswa_tempatLahir: z.string().min(1, "Tempat lahir wajib diisi."),
-  siswa_tanggalLahir: z.string().min(1, "Tanggal lahir wajib diisi.").pipe(z.coerce.date()),
+  siswa_tanggalLahir: z.date({ required_error: "Tanggal lahir wajib diisi." }),
   siswa_agama: z.enum(['Islam', 'Kristen', 'Hindu', 'Budha'], { required_error: "Agama wajib dipilih." }),
   siswa_kewarganegaraan: z.enum(['WNI', 'WNA'], { required_error: "Kewarganegaraan wajib dipilih." }),
 
+  // Optional Fields
   siswa_fotoProfil: fileSchema,
-  siswa_jumlahSaudara: z.coerce.number().optional(),
+  siswa_jumlahSaudara: z.number().optional(),
   siswa_bahasa: z.string().optional(),
   siswa_golonganDarah: z.enum(['A', 'B', 'AB', 'O']).optional(),
   
@@ -38,6 +42,7 @@ export const studentFormSchema = z.object({
   siswa_domisiliKecamatan: z.string().optional(),
   siswa_domisiliDesa: z.string().optional(),
 
+  // Step 3: Data Orang Tua (All Optional)
   siswa_namaAyah: z.string().optional(),
   siswa_namaIbu: z.string().optional(),
   siswa_pendidikanAyah: z.string().optional(),
@@ -51,18 +56,21 @@ export const studentFormSchema = z.object({
   siswa_alamatOrangTua: z.string().optional(),
   siswa_teleponOrangTua: z.string().optional(),
 
-  siswa_tinggiBadan: z.coerce.number().optional(),
-  siswa_beratBadan: z.coerce.number().optional(),
+  // Step 4: Kesehatan (All Optional)
+  siswa_tinggiBadan: z.number().optional(),
+  siswa_beratBadan: z.number().optional(),
   siswa_penyakit: z.string().optional(),
   siswa_kelainanJasmani: z.string().optional(),
 
+  // Step 5: Perkembangan (All Optional)
   siswa_asalSekolah: z.string().optional(),
   siswa_nomorSttb: z.string().optional(),
-  siswa_tanggalSttb: z.string().optional().nullable().transform(val => val ? new Date(val) : null),
+  siswa_tanggalSttb: z.date().optional().nullable(),
   siswa_pindahanAsalSekolah: z.string().optional(),
   siswa_pindahanDariTingkat: z.string().optional(),
-  siswa_pindahanDiterimaTanggal: z.string().optional().nullable().transform(val => val ? new Date(val) : null),
+  siswa_pindahanDiterimaTanggal: z.date().optional().nullable(),
 
+  // Step 6: Meninggalkan Sekolah (All Optional)
   siswa_lulusTahun: z.string().optional(),
   siswa_lulusNomorIjazah: z.string().optional(),
   siswa_lulusMelanjutkanKe: z.string().optional(),
@@ -70,8 +78,9 @@ export const studentFormSchema = z.object({
   siswa_pindahTingkatKelas: z.string().optional(),
   siswa_pindahKeTingkat: z.string().optional(),
   siswa_keluarAlasan: z.string().optional(),
-  siswa_keluarTanggal: z.string().optional().nullable().transform(val => val ? new Date(val) : null),
+  siswa_keluarTanggal: z.date().optional().nullable(),
 
+  // Step 2 & 7: Dokumen (All Optional)
   documents: z.object({
     kartuKeluarga: fileSchema,
     ktpAyah: fileSchema,
@@ -94,6 +103,8 @@ export const studentFormSchema = z.object({
 
 export type StudentFormData = z.infer<typeof studentFormSchema>;
 
+// This schema is used to determine the "status" of the record.
+// It is NOT used for blocking form submission.
 export const completeStudentFormSchema = studentFormSchema.extend({
     siswa_bahasa: z.string().min(1, "Bahasa sehari-hari wajib diisi."),
     siswa_golonganDarah: z.enum(['A', 'B', 'AB', 'O'], { required_error: "Golongan darah wajib dipilih." }),
@@ -102,7 +113,7 @@ export const completeStudentFormSchema = studentFormSchema.extend({
     siswa_alamatKkKecamatan: z.string().min(1, "Kecamatan (KK) wajib dipilih."),
     siswa_alamatKkDesa: z.string().min(1, "Desa (KK) wajib diisi."),
     siswa_telepon: z.string().min(1, "Nomor HP/WA wajib diisi."),
-
+    siswa_fotoProfil: fileSchema.refine(val => val?.fileURL, { message: "Foto profil wajib diunggah." }),
     documents: z.object({
         kartuKeluarga: requiredFileSchema,
         ktpAyah: requiredFileSchema,

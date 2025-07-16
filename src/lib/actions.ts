@@ -85,7 +85,11 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
     
     if (studentId) {
         const index = allStudents.findIndex(s => s.id === studentId);
-        if (index !== -1) allStudents[index] = finalData;
+        if (index !== -1) {
+            allStudents[index] = finalData;
+        } else {
+             allStudents.push(finalData); // If somehow editing a non-existent user, add them
+        }
     } else {
         allStudents.push(finalData);
     }
@@ -167,7 +171,11 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
 
         if (pegawaiId) {
             const index = allPegawai.findIndex(p => (p.id === pegawaiId));
-            if (index !== -1) allPegawai[index] = finalData;
+            if (index !== -1) {
+                allPegawai[index] = finalData;
+            } else {
+                 allPegawai.push(finalData); // If somehow editing a non-existent user, add them
+            }
         } else {
             allPegawai.push(finalData);
         }
