@@ -2,7 +2,7 @@
 import { z } from 'zod';
 
 const fileSchema = z.object({
-  fileName: z.string().min(1, "File harus diunggah"),
+  fileName: z.string(),
   file: z.any().optional(),
   fileURL: z.string().optional(),
 }).optional();
