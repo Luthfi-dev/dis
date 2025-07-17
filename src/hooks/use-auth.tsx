@@ -3,7 +3,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import type { User } from '@/lib/auth';
 import { loginAction, updateUserAction } from '@/lib/auth';
-import { logActivity } from '@/lib/activity-log';
 
 interface AuthContextType {
   user: User | null;
@@ -49,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setUser(null);
     localStorage.removeItem(SESSION_KEY);
-    setLoading(false);
+    setLoading(false); // This line was missing the logic
   };
   
   const updateUser = useCallback(async (updatedUserData: Partial<User> & { id: string }) => {
