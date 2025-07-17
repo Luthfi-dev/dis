@@ -40,31 +40,33 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
     try {
         const sanitizedData = sanitizeData(data);
         
+        const isComplete = sanitizedData.siswa_namaLengkap && sanitizedData.siswa_nis && sanitizedData.siswa_nisn;
+        const status = isComplete ? 'Lengkap' : 'Belum Lengkap';
+
+        // Explicitly stringify JSON fields
+        const dataForDb: Record<string, any> = {
+            ...sanitizedData,
+            status,
+            documents: JSON.stringify(sanitizedData.documents || {})
+        };
+
         if (studentId) {
             // --- UPDATE LOGIC ---
-            const { ...updateData } = sanitizedData;
-            const isComplete = updateData.siswa_namaLengkap && updateData.siswa_nis && updateData.siswa_nisn;
-            const status = isComplete ? 'Lengkap' : 'Belum Lengkap';
-            
-            const finalData = { ...updateData, status, documents: JSON.stringify(updateData.documents || {}) };
-            
-            const fields = Object.keys(finalData);
-            const values = Object.values(finalData);
+            const { id, ...updateData } = dataForDb; // Exclude id from update payload
+            const fields = Object.keys(updateData);
+            const values = Object.values(updateData);
 
             const sql = `UPDATE siswa SET ${fields.map(f => `${f} = ?`).join(', ')} WHERE id = ?`;
             const queryValues = [...values, studentId];
-
+            
             await pool.query(sql, queryValues);
-            const message = `Data siswa ${finalData.siswa_namaLengkap} berhasil diperbarui!`;
+            const message = `Data siswa ${updateData.siswa_namaLengkap} berhasil diperbarui!`;
             return { success: true, message };
 
         } else {
             // --- CREATE LOGIC ---
             const id = crypto.randomUUID();
-            const isComplete = sanitizedData.siswa_namaLengkap && sanitizedData.siswa_nis && sanitizedData.siswa_nisn;
-            const status = isComplete ? 'Lengkap' : 'Belum Lengkap';
-
-            const finalData = { ...sanitizedData, id, status, documents: JSON.stringify(sanitizedData.documents || {}) };
+            const finalData = { ...dataForDb, id };
             
             const fields = Object.keys(finalData);
             const values = Object.values(finalData);
@@ -157,56 +159,38 @@ export async function deletePegawai(id: string): Promise<{ success: boolean; mes
 export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: string) {
     try {
         const sanitizedData = sanitizeData(data);
-        const id = pegawaiId || crypto.randomUUID();
         
         const status = sanitizedData.pegawai_nama && sanitizedData.pegawai_nip ? 'Lengkap' : 'Belum Lengkap';
         
-        const finalData = { 
-            ...sanitizedData, 
-            id, 
+        const dataForDb: Record<string, any> = {
+            ...sanitizedData,
             status,
-            pegawai_phaspoto: JSON.stringify(sanitizedData.pegawai_phaspoto),
-            pegawai_pendidikanSD: JSON.stringify(sanitizedData.pegawai_pendidikanSD),
-            pegawai_pendidikanSMP: JSON.stringify(sanitizedData.pegawai_pendidikanSMP),
-            pegawai_pendidikanSMA: JSON.stringify(sanitizedData.pegawai_pendidikanSMA),
-            pegawai_pendidikanDiploma: JSON.stringify(sanitizedData.pegawai_pendidikanDiploma),
-            pegawai_pendidikanS1: JSON.stringify(sanitizedData.pegawai_pendidikanS1),
-            pegawai_pendidikanS2: JSON.stringify(sanitizedData.pegawai_pendidikanS2),
-            pegawai_skPengangkatan: JSON.stringify(sanitizedData.pegawai_skPengangkatan),
-            pegawai_skNipBaru: JSON.stringify(sanitizedData.pegawai_skNipBaru),
-            pegawai_skFungsional: JSON.stringify(sanitizedData.pegawai_skFungsional),
-            pegawai_beritaAcaraSumpah: JSON.stringify(sanitizedData.pegawai_beritaAcaraSumpah),
-            pegawai_sertifikatPendidik: JSON.stringify(sanitizedData.pegawai_sertifikatPendidik),
-            pegawai_sertifikatPelatihan: JSON.stringify(sanitizedData.pegawai_sertifikatPelatihan),
-            pegawai_skp: JSON.stringify(sanitizedData.pegawai_skp),
-            pegawai_karpeg: JSON.stringify(sanitizedData.pegawai_karpeg),
-            pegawai_karisKarsu: JSON.stringify(sanitizedData.pegawai_karisKarsu),
-            pegawai_bukuNikah: JSON.stringify(sanitizedData.pegawai_bukuNikah),
-            pegawai_kartuKeluarga: JSON.stringify(sanitizedData.pegawai_kartuKeluarga),
-            pegawai_ktp: JSON.stringify(sanitizedData.pegawai_ktp),
-            pegawai_akteKelahiran: JSON.stringify(sanitizedData.pegawai_akteKelahiran),
-            pegawai_kartuTaspen: JSON.stringify(sanitizedData.pegawai_kartuTaspen),
-            pegawai_npwp: JSON.stringify(sanitizedData.pegawai_npwp),
-            pegawai_kartuBpjs: JSON.stringify(sanitizedData.pegawai_kartuBpjs),
-            pegawai_bukuRekening: JSON.stringify(sanitizedData.pegawai_bukuRekening),
         };
-        
-        const { id: _, ...updateData } = finalData;
 
-        if (pegawaiId) {
-             const fields = Object.keys(updateData).map(f => `${f} = ?`).join(', ');
-             const values = Object.values(updateData);
-             const sql = `UPDATE pegawai SET ${fields} WHERE id = ?`;
-             const queryValues = [...values, pegawaiId];
-             await pool.query(sql, queryValues);
-        } else {
-             const fields = Object.keys(finalData);
-             const values = Object.values(finalData);
-             const sql = `INSERT INTO pegawai (${fields.join(', ')}) VALUES (${values.map(() => '?').join(', ')})`;
-             await pool.query(sql, values);
+        // Explicitly stringify all object/array fields
+        for (const key in dataForDb) {
+            if (typeof dataForDb[key] === 'object' && dataForDb[key] !== null) {
+                dataForDb[key] = JSON.stringify(dataForDb[key]);
+            }
         }
 
-        const message = pegawaiId ? `Data pegawai ${finalData.pegawai_nama} berhasil diperbarui!` : `Data pegawai ${finalData.pegawai_nama} berhasil disimpan!`;
+        if (pegawaiId) {
+            const { id, ...updateData } = dataForDb;
+            const fields = Object.keys(updateData).map(f => `${f} = ?`).join(', ');
+            const values = Object.values(updateData);
+            const sql = `UPDATE pegawai SET ${fields} WHERE id = ?`;
+            const queryValues = [...values, pegawaiId];
+            await pool.query(sql, queryValues);
+        } else {
+            const id = crypto.randomUUID();
+            const finalData = { ...dataForDb, id };
+            const fields = Object.keys(finalData);
+            const values = Object.values(finalData);
+            const sql = `INSERT INTO pegawai (${fields.join(', ')}) VALUES (${values.map(() => '?').join(', ')})`;
+            await pool.query(sql, values);
+        }
+
+        const message = pegawaiId ? `Data pegawai ${sanitizedData.pegawai_nama} berhasil diperbarui!` : `Data pegawai ${sanitizedData.pegawai_nama} berhasil disimpan!`;
 
         return { success: true, message };
     } catch (error: any) {
@@ -214,5 +198,3 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
         return { success: false, message: `Gagal menyimpan data pegawai karena kesalahan server: ${error.message}` };
     }
 }
-
-    
