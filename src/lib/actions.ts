@@ -7,6 +7,7 @@ import { sanitizeAndFormatData } from './utils';
 import type { PegawaiFormData } from '@/lib/pegawai-data';
 import type { StudentFormData } from '@/lib/student-data-t';
 import pool from './db';
+import { logActivity } from './activity-log';
 
 // --- Public-facing Server Actions ---
 
@@ -55,7 +56,8 @@ export async function deleteSiswa(id: string): Promise<{ success: boolean; messa
     try {
       const [result]:any = await pool.query('DELETE FROM siswa WHERE id = ?', [id]);
       if (result.affectedRows > 0) {
-          return { success: true, message: `Data siswa berhasil dihapus.` };
+          const message = `Data siswa berhasil dihapus.`;
+          return { success: true, message };
       }
       return { success: false, message: 'Gagal menghapus data siswa.' };
     } catch (error: any) {
@@ -73,6 +75,7 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
             // --- UPDATE LOGIC ---
             dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
             const { id, ...updateData } = dataForDb; // Exclude id from update payload
+            
             const fields = Object.keys(updateData).map(f => `${f} = ?`).join(', ');
             const values = Object.values(updateData);
 
@@ -90,8 +93,9 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
             
             const fields = Object.keys(dataForDb);
             const values = Object.values(dataForDb);
+            const placeholders = fields.map(() => '?').join(', ');
 
-            const sql = `INSERT INTO siswa (${fields.join(', ')}) VALUES (${fields.map(() => '?').join(', ')})`;
+            const sql = `INSERT INTO siswa (${fields.join(', ')}) VALUES (${placeholders})`;
             
             await pool.query(sql, values);
             const message = `Data siswa ${dataForDb.siswa_namaLengkap} berhasil disimpan!`;
@@ -165,19 +169,22 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
         const isComplete = dataForDb.pegawai_nama && dataForDb.pegawai_nip;
         
         if (pegawaiId) {
+             // --- UPDATE LOGIC ---
             dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
             const { id, ...updateData } = dataForDb;
             const fields = Object.keys(updateData).map(f => `${f} = ?`).join(', ');
             const values = Object.values(updateData);
             const sql = `UPDATE pegawai SET ${fields} WHERE id = ?`;
-            const queryValues = [...values, pegawaiId];
-            await pool.query(sql, queryValues);
+            await pool.query(sql, [...values, pegawaiId]);
+
         } else {
+             // --- CREATE LOGIC ---
             dataForDb.id = crypto.randomUUID();
             dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
             const fields = Object.keys(dataForDb);
             const values = Object.values(dataForDb);
-            const sql = `INSERT INTO pegawai (${fields.join(', ')}) VALUES (${fields.map(() => '?').join(', ')})`;
+            const placeholders = fields.map(() => '?').join(', ');
+            const sql = `INSERT INTO pegawai (${fields.join(', ')}) VALUES (${placeholders})`;
             await pool.query(sql, values);
         }
 
@@ -189,3 +196,5 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
         return { success: false, message: `Gagal menyimpan data pegawai karena kesalahan server: ${error.message}` };
     }
 }
+
+    
