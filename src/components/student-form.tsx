@@ -25,60 +25,58 @@ import Image from 'next/image';
 import { getProvinces, getKabupatens, getKecamatans, getDesas, Wilayah } from '@/lib/wilayah';
 import { Combobox } from './ui/combobox';
 import { Separator } from './ui/separator';
-import { logActivity } from '@/lib/activity-log';
 
 const steps = [
   { id: 1, title: 'Data Siswa' },
   { id: 2, title: 'Dokumen Utama' },
   { id: 3, title: 'Data Orang Tua' },
-  { id: 4, title: 'Rincian Kesehatan' },
-  { id: 5, title: 'Perkembangan Siswa' },
-  { id: 6, title: 'Meninggalkan Sekolah' },
-  { id: 7, title: 'Laporan Belajar' },
-  { id: 8, title: 'Validasi' },
+  { id: 4, title: 'Perkembangan Siswa' },
+  { id: 5, title: 'Meninggalkan Sekolah' },
+  { id: 6, title: 'Laporan Belajar' },
+  { id: 7, title: 'Validasi' },
 ];
 
 const initialFormValues: StudentFormData = {
   siswa_fotoProfil: undefined,
-  siswa_namaLengkap: 'Siti Test Siswa',
-  siswa_nis: '12345',
-  siswa_nisn: '0012345678',
-  siswa_jenisKelamin: 'Perempuan',
-  siswa_tempatLahir: 'Jakarta',
-  siswa_tanggalLahir: new Date('2008-07-12'),
-  siswa_agama: 'Islam',
-  siswa_kewarganegaraan: 'WNI',
-  siswa_jumlahSaudara: 2,
-  siswa_bahasa: 'Indonesia',
-  siswa_golonganDarah: 'A',
-  siswa_telepon: '081234567890',
-  siswa_alamatKkProvinsi: '32',
-  siswa_alamatKkKabupaten: '3273',
-  siswa_alamatKkKecamatan: '327301',
-  siswa_alamatKkDesa: '3273011001',
-  siswa_domisiliProvinsi: '32',
-  siswa_domisiliKabupaten: '3273',
-  siswa_domisiliKecamatan: '327301',
-  siswa_domisiliDesa: '3273011001',
-  siswa_namaAyah: 'Ayah Test',
-  siswa_namaIbu: 'Ibu Test',
-  siswa_pendidikanAyah: 'S1',
-  siswa_pendidikanIbu: 'SMA',
-  siswa_pekerjaanAyah: 'Karyawan Swasta',
-  siswa_pekerjaanIbu: 'Ibu Rumah Tangga',
+  siswa_namaLengkap: '',
+  siswa_nis: '',
+  siswa_nisn: '',
+  siswa_jenisKelamin: undefined,
+  siswa_tempatLahir: '',
+  siswa_tanggalLahir: undefined,
+  siswa_agama: undefined,
+  siswa_kewarganegaraan: undefined,
+  siswa_jumlahSaudara: undefined,
+  siswa_bahasa: '',
+  siswa_golonganDarah: undefined,
+  siswa_telepon: '',
+  siswa_alamatKkProvinsi: '',
+  siswa_alamatKkKabupaten: '',
+  siswa_alamatKkKecamatan: '',
+  siswa_alamatKkDesa: '',
+  siswa_domisiliProvinsi: '',
+  siswa_domisiliKabupaten: '',
+  siswa_domisiliKecamatan: '',
+  siswa_domisiliDesa: '',
+  siswa_namaAyah: '',
+  siswa_namaIbu: '',
+  siswa_pendidikanAyah: '',
+  siswa_pendidikanIbu: '',
+  siswa_pekerjaanAyah: '',
+  siswa_pekerjaanIbu: '',
   siswa_namaWali: '',
   siswa_hubunganWali: '',
   siswa_pendidikanWali: '',
   siswa_pekerjaanWali: '',
-  siswa_alamatOrangTua: 'Jl. Test No. 123',
-  siswa_teleponOrangTua: '089876543210',
-  siswa_tinggiBadan: 160,
-  siswa_beratBadan: 50,
-  siswa_penyakit: 'Tidak ada',
-  siswa_kelainanJasmani: 'Tidak ada',
-  siswa_asalSekolah: 'SMP Test',
-  siswa_nomorSttb: 'STTB123456',
-  siswa_tanggalSttb: new Date('2023-06-01'),
+  siswa_alamatOrangTua: '',
+  siswa_teleponOrangTua: '',
+  siswa_tinggiBadan: undefined,
+  siswa_beratBadan: undefined,
+  siswa_penyakit: '',
+  siswa_kelainanJasmani: '',
+  siswa_asalSekolah: '',
+  siswa_nomorSttb: '',
+  siswa_tanggalSttb: undefined,
   siswa_pindahanAsalSekolah: '',
   siswa_pindahanDariTingkat: '',
   siswa_pindahanDiterimaTanggal: undefined,
@@ -138,7 +136,6 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
     mode: 'onBlur', 
     defaultValues: studentData
       ? {
-        ...initialFormValues,
         ...studentData,
       }
       : initialFormValues,
@@ -147,7 +144,6 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
   const { handleSubmit, trigger, getValues, formState: { errors } } = methods;
   
   const handleNext = async () => {
-    // We only validate on the server, so just move to the next step
     if (currentStep < steps.length) {
         setCurrentStep((prev) => prev + 1);
     }
@@ -169,7 +165,8 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
                 description: result.message,
             });
             if (result.message) {
-              logActivity(result.message);
+              // Activity log is client side only
+              // logActivity(result.message);
             }
             router.push('/siswa');
             router.refresh();
@@ -198,11 +195,10 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
             {currentStep === 1 && <DataSiswaForm />}
             {currentStep === 2 && <DataDokumenUtamaForm />}
             {currentStep === 3 && <DataOrangTuaForm />}
-            {currentStep === 4 && <DataRincianKesehatanForm />}
-            {currentStep === 5 && <DataPerkembanganForm />}
-            {currentStep === 6 && <DataMeninggalkanSekolahForm />}
-            {currentStep === 7 && <DataLaporanBelajarForm />}
-            {currentStep === 8 && <DataValidasiForm />}
+            {currentStep === 4 && <DataPerkembanganForm />}
+            {currentStep === 5 && <DataMeninggalkanSekolahForm />}
+            {currentStep === 6 && <DataLaporanBelajarForm />}
+            {currentStep === 7 && <DataValidasiForm />}
           </CardContent>
         </Card>
 
@@ -279,7 +275,6 @@ function DataSiswaForm() {
 
   const wilayahToOptions = (wilayah: Wilayah[]) => wilayah.map(w => ({ value: w.id, label: w.name }));
 
-  // Reset dependent fields when a parent field changes
   useEffect(() => {
     if(!getValues('siswa_alamatKkKabupaten')) setValue('siswa_alamatKkKabupaten', '');
   }, [alamatKkProvinsi, setValue, getValues]);
@@ -604,46 +599,6 @@ function DataOrangTuaForm() {
     </div>
   );
 }
-
-function DataRincianKesehatanForm() {
-    const { control } = useFormContext<StudentFormData>();
-    return (
-        <div className="space-y-6">
-            <p className="text-sm text-muted-foreground">
-                Isi rincian kesehatan siswa. Kolom ini bersifat opsional.
-            </p>
-            <Grid>
-                <FormField control={control} name="siswa_tinggiBadan" render={({ field }) => (
-                    <FormItem><FormLabel>Tinggi Badan (cm)</FormLabel><FormControl>
-                         <Input 
-                            type="number"
-                            placeholder="Contoh: 160"
-                            onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))}
-                            value={field.value ?? ''}
-                         />
-                    </FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={control} name="siswa_beratBadan" render={({ field }) => (
-                    <FormItem><FormLabel>Berat Badan (kg)</FormLabel><FormControl>
-                        <Input 
-                            type="number"
-                            placeholder="Contoh: 50"
-                            onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))}
-                            value={field.value ?? ''}
-                        />
-                    </FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={control} name="siswa_penyakit" render={({ field }) => (
-                    <FormItem className="md:col-span-2"><FormLabel>Riwayat Penyakit</FormLabel><FormControl><Textarea placeholder="Jelaskan riwayat penyakit yang pernah diderita" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={control} name="siswa_kelainanJasmani" render={({ field }) => (
-                    <FormItem className="md:col-span-2"><FormLabel>Kelainan Jasmani</FormLabel><FormControl><Textarea placeholder="Jelaskan jika ada kelainan jasmani" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-            </Grid>
-        </div>
-    );
-}
-
 
 function DataPerkembanganForm() {
     const { control } = useFormContext<StudentFormData>();

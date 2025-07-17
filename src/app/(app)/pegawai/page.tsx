@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, Eye, FilePen, Trash2, Search, FileSearch } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Eye, FilePen, Trash2, Search, FileSearch, Upload, Download } from 'lucide-react';
 import { Pegawai } from '@/lib/pegawai-data';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -137,6 +137,14 @@ export default function PegawaiPage() {
           <p className="text-muted-foreground">Kelola data induk pegawai di sini.</p>
         </div>
         <div className="flex gap-2 flex-wrap justify-start sm:justify-end">
+           <Button variant="outline">
+            <Download className="mr-2 h-4 w-4" />
+            Template
+          </Button>
+          <Button variant="outline">
+            <Upload className="mr-2 h-4 w-4" />
+            Import
+          </Button>
           <Button asChild>
             <Link href="/pegawai/tambah">
               <PlusCircle className="mr-2 h-4 w-4" />

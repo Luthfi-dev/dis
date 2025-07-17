@@ -3,40 +3,35 @@
 
 import type { Siswa } from './data';
 import type { Pegawai } from './pegawai-data';
-import { mergeDeep, sanitizeData } from './utils';
+import { sanitizeData } from './utils';
 import type { PegawaiFormData } from '@/lib/pegawai-data';
 import type { StudentFormData } from '@/lib/student-data-t';
-
-
-// --- Server-side Storage Simulation ---
-if (typeof global.students === 'undefined') {
-    (global as any).students = [];
-}
-if (typeof global.pegawai === 'undefined') {
-    (global as any).pegawai = [];
-}
-const allStudents: Siswa[] = (global as any).students;
-const allPegawai: Pegawai[] = (global as any).pegawai;
-
+import pool from './db';
 
 // --- Public-facing Server Actions ---
 
 // SISWA ACTIONS
 export async function getSiswa(): Promise<Siswa[]> {
-    return allStudents;
+    const [rows] = await pool.query('SELECT * FROM siswa');
+    return (rows as Siswa[]).map(row => ({
+        ...row,
+        documents: typeof row.documents === 'string' ? JSON.parse(row.documents) : row.documents
+    }));
 }
 
 export async function getSiswaById(id: string): Promise<Siswa | null> {
-    const student = allStudents.find(s => s.id === id) || null;
-    return student;
+    const [rows] = await pool.query('SELECT * FROM siswa WHERE id = ?', [id]);
+    const siswa = (rows as Siswa[])[0] || null;
+    if (siswa) {
+        siswa.documents = typeof siswa.documents === 'string' ? JSON.parse(siswa.documents) : siswa.documents;
+    }
+    return siswa;
 }
 
 export async function deleteSiswa(id: string): Promise<{ success: boolean; message: string }> {
-    const studentIndex = allStudents.findIndex(s => s.id === id);
-    if (studentIndex > -1) {
-        const studentName = allStudents[studentIndex].siswa_namaLengkap;
-        allStudents.splice(studentIndex, 1);
-        return { success: true, message: `Data siswa ${studentName} berhasil dihapus.` };
+    const [result]:any = await pool.query('DELETE FROM siswa WHERE id = ?', [id]);
+    if (result.affectedRows > 0) {
+        return { success: true, message: `Data siswa berhasil dihapus.` };
     }
     return { success: false, message: 'Gagal menghapus data siswa.' };
 }
@@ -46,23 +41,25 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
         const sanitizedData = sanitizeData(data);
         const id = studentId || crypto.randomUUID();
         
-        // Simple completeness check
         const isComplete = sanitizedData.siswa_namaLengkap && sanitizedData.siswa_nis && sanitizedData.siswa_nisn;
         const status = isComplete ? 'Lengkap' : 'Belum Lengkap';
         
-        const finalData: Siswa = { ...sanitizedData, id, status };
+        const finalData = { ...sanitizedData, id, status, documents: JSON.stringify(sanitizedData.documents || {}) };
         
-        const existingStudentIndex = allStudents.findIndex(s => s.id === id);
+        const fields = Object.keys(finalData);
+        const values = Object.values(finalData);
+        
+        const sql = studentId
+          ? `UPDATE siswa SET ${fields.map(f => `${f} = ?`).join(', ')} WHERE id = ?`
+          : `INSERT INTO siswa (${fields.join(', ')}) VALUES (${values.map(() => '?').join(', ')})`;
+        
+        const queryValues = studentId ? [...values, studentId] : values;
 
-        if (existingStudentIndex !== -1) {
-            allStudents[existingStudentIndex] = finalData;
-        } else {
-            allStudents.push(finalData);
-        }
+        await pool.query(sql, queryValues);
 
         const message = studentId ? `Data siswa ${finalData.siswa_namaLengkap} berhasil diperbarui!` : `Data siswa ${finalData.siswa_namaLengkap} berhasil disimpan!`;
         
-        return { success: true, message, student: finalData };
+        return { success: true, message };
     } catch (error: any) {
         console.error("Student submission server error:", error);
         return { success: false, message: `Gagal menyimpan data siswa karena kesalahan server: ${error.message}` };
@@ -72,20 +69,44 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
 
 // PEGAWAI ACTIONS
 export async function getPegawai(): Promise<Pegawai[]> {
-    return allPegawai;
+    const [rows] = await pool.query('SELECT * FROM pegawai');
+     return (rows as Pegawai[]).map(row => ({
+        ...row,
+        pegawai_pendidikanSD: typeof row.pegawai_pendidikanSD === 'string' ? JSON.parse(row.pegawai_pendidikanSD) : row.pegawai_pendidikanSD,
+        pegawai_pendidikanSMP: typeof row.pegawai_pendidikanSMP === 'string' ? JSON.parse(row.pegawai_pendidikanSMP) : row.pegawai_pendidikanSMP,
+        pegawai_pendidikanSMA: typeof row.pegawai_pendidikanSMA === 'string' ? JSON.parse(row.pegawai_pendidikanSMA) : row.pegawai_pendidikanSMA,
+        pegawai_pendidikanDiploma: typeof row.pegawai_pendidikanDiploma === 'string' ? JSON.parse(row.pegawai_pendidikanDiploma) : row.pegawai_pendidikanDiploma,
+        pegawai_pendidikanS1: typeof row.pegawai_pendidikanS1 === 'string' ? JSON.parse(row.pegawai_pendidikanS1) : row.pegawai_pendidikanS1,
+        pegawai_pendidikanS2: typeof row.pegawai_pendidikanS2 === 'string' ? JSON.parse(row.pegawai_pendidikanS2) : row.pegawai_pendidikanS2,
+        pegawai_skPengangkatan: typeof row.pegawai_skPengangkatan === 'string' ? JSON.parse(row.pegawai_skPengangkatan) : row.pegawai_skPengangkatan,
+        pegawai_skFungsional: typeof row.pegawai_skFungsional === 'string' ? JSON.parse(row.pegawai_skFungsional) : row.pegawai_skFungsional,
+        pegawai_sertifikatPelatihan: typeof row.pegawai_sertifikatPelatihan === 'string' ? JSON.parse(row.pegawai_sertifikatPelatihan) : row.pegawai_sertifikatPelatihan,
+        pegawai_skp: typeof row.pegawai_skp === 'string' ? JSON.parse(row.pegawai_skp) : row.pegawai_skp,
+    }));
 }
 
 export async function getPegawaiById(id: string): Promise<Pegawai | null> {
-    const p = allPegawai.find(p => p.id === id) || null;
+    const [rows] = await pool.query('SELECT * FROM pegawai WHERE id = ?', [id]);
+    const p = (rows as Pegawai[])[0] || null;
+    if (p) {
+        p.pegawai_pendidikanSD = typeof p.pegawai_pendidikanSD === 'string' ? JSON.parse(p.pegawai_pendidikanSD) : p.pegawai_pendidikanSD;
+        p.pegawai_pendidikanSMP = typeof p.pegawai_pendidikanSMP === 'string' ? JSON.parse(p.pegawai_pendidikanSMP) : p.pegawai_pendidikanSMP;
+        p.pegawai_pendidikanSMA = typeof p.pegawai_pendidikanSMA === 'string' ? JSON.parse(p.pegawai_pendidikanSMA) : p.pegawai_pendidikanSMA;
+        p.pegawai_pendidikanDiploma = typeof p.pegawai_pendidikanDiploma === 'string' ? JSON.parse(p.pegawai_pendidikanDiploma) : p.pegawai_pendidikanDiploma;
+        p.pegawai_pendidikanS1 = typeof p.pegawai_pendidikanS1 === 'string' ? JSON.parse(p.pegawai_pendidikanS1) : p.pegawai_pendidikanS1;
+        p.pegawai_pendidikanS2 = typeof p.pegawai_pendidikanS2 === 'string' ? JSON.parse(p.pegawai_pendidikanS2) : p.pegawai_pendidikanS2;
+        p.pegawai_skPengangkatan = typeof p.pegawai_skPengangkatan === 'string' ? JSON.parse(p.pegawai_skPengangkatan) : p.pegawai_skPengangkatan;
+        p.pegawai_skFungsional = typeof p.pegawai_skFungsional === 'string' ? JSON.parse(p.pegawai_skFungsional) : p.pegawai_skFungsional;
+        p.pegawai_sertifikatPelatihan = typeof p.pegawai_sertifikatPelatihan === 'string' ? JSON.parse(p.pegawai_sertifikatPelatihan) : p.pegawai_sertifikatPelatihan;
+        p.pegawai_skp = typeof p.pegawai_skp === 'string' ? JSON.parse(p.pegawai_skp) : p.pegawai_skp;
+    }
     return p;
 }
 
 export async function deletePegawai(id: string): Promise<{ success: boolean; message: string }> {
-    const pegawaiIndex = allPegawai.findIndex(p => p.id === id);
-    if (pegawaiIndex > -1) {
-        const pegawaiName = allPegawai[pegawaiIndex].pegawai_nama;
-        allPegawai.splice(pegawaiIndex, 1);
-        return { success: true, message: `Data pegawai ${pegawaiName} berhasil dihapus.` };
+    const [result]:any = await pool.query('DELETE FROM pegawai WHERE id = ?', [id]);
+    if (result.affectedRows > 0) {
+        return { success: true, message: `Data pegawai berhasil dihapus.` };
     }
     return { success: false, message: 'Gagal menghapus data pegawai.' };
 }
@@ -95,22 +116,52 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
         const sanitizedData = sanitizeData(data);
         const id = pegawaiId || crypto.randomUUID();
         
-        // A very simple check for completeness. We can make this more robust later.
         const status = sanitizedData.pegawai_nama && sanitizedData.pegawai_nip ? 'Lengkap' : 'Belum Lengkap';
         
-        const finalData: Pegawai = { ...sanitizedData, id, status };
+        const finalData = { 
+            ...sanitizedData, 
+            id, 
+            status,
+            pegawai_phaspoto: JSON.stringify(sanitizedData.pegawai_phaspoto),
+            pegawai_pendidikanSD: JSON.stringify(sanitizedData.pegawai_pendidikanSD),
+            pegawai_pendidikanSMP: JSON.stringify(sanitizedData.pegawai_pendidikanSMP),
+            pegawai_pendidikanSMA: JSON.stringify(sanitizedData.pegawai_pendidikanSMA),
+            pegawai_pendidikanDiploma: JSON.stringify(sanitizedData.pegawai_pendidikanDiploma),
+            pegawai_pendidikanS1: JSON.stringify(sanitizedData.pegawai_pendidikanS1),
+            pegawai_pendidikanS2: JSON.stringify(sanitizedData.pegawai_pendidikanS2),
+            pegawai_skPengangkatan: JSON.stringify(sanitizedData.pegawai_skPengangkatan),
+            pegawai_skNipBaru: JSON.stringify(sanitizedData.pegawai_skNipBaru),
+            pegawai_skFungsional: JSON.stringify(sanitizedData.pegawai_skFungsional),
+            pegawai_beritaAcaraSumpah: JSON.stringify(sanitizedData.pegawai_beritaAcaraSumpah),
+            pegawai_sertifikatPendidik: JSON.stringify(sanitizedData.pegawai_sertifikatPendidik),
+            pegawai_sertifikatPelatihan: JSON.stringify(sanitizedData.pegawai_sertifikatPelatihan),
+            pegawai_skp: JSON.stringify(sanitizedData.pegawai_skp),
+            pegawai_karpeg: JSON.stringify(sanitizedData.pegawai_karpeg),
+            pegawai_karisKarsu: JSON.stringify(sanitizedData.pegawai_karisKarsu),
+            pegawai_bukuNikah: JSON.stringify(sanitizedData.pegawai_bukuNikah),
+            pegawai_kartuKeluarga: JSON.stringify(sanitizedData.pegawai_kartuKeluarga),
+            pegawai_ktp: JSON.stringify(sanitizedData.pegawai_ktp),
+            pegawai_akteKelahiran: JSON.stringify(sanitizedData.pegawai_akteKelahiran),
+            pegawai_kartuTaspen: JSON.stringify(sanitizedData.pegawai_kartuTaspen),
+            pegawai_npwp: JSON.stringify(sanitizedData.pegawai_npwp),
+            pegawai_kartuBpjs: JSON.stringify(sanitizedData.pegawai_kartuBpjs),
+            pegawai_bukuRekening: JSON.stringify(sanitizedData.pegawai_bukuRekening),
+        };
         
-        const existingPegawaiIndex = allPegawai.findIndex(p => p.id === id);
+        const fields = Object.keys(finalData);
+        const values = Object.values(finalData);
 
-        if (existingPegawaiIndex !== -1) {
-            allPegawai[existingPegawaiIndex] = finalData;
-        } else {
-            allPegawai.push(finalData);
-        }
+        const sql = pegawaiId
+          ? `UPDATE pegawai SET ${fields.map(f => `${f} = ?`).join(', ')} WHERE id = ?`
+          : `INSERT INTO pegawai (${fields.join(', ')}) VALUES (${values.map(() => '?').join(', ')})`;
+        
+        const queryValues = pegawaiId ? [...values, pegawaiId] : values;
+
+        await pool.query(sql, queryValues);
 
         const message = pegawaiId ? `Data pegawai ${finalData.pegawai_nama} berhasil diperbarui!` : `Data pegawai ${finalData.pegawai_nama} berhasil disimpan!`;
 
-        return { success: true, message, pegawai: finalData };
+        return { success: true, message };
     } catch (error: any) {
         console.error("Pegawai submission server error:", error);
         return { success: false, message: `Gagal menyimpan data pegawai karena kesalahan server: ${error.message}` };

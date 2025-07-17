@@ -8,8 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Users, Briefcase, ArrowRight, History, BookCopy } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { useAuth } from '@/hooks/use-auth';
-import type { Siswa } from '@/lib/data';
-import type { Pegawai } from '@/lib/pegawai-data';
+import { getSiswa, getPegawai } from '@/lib/actions';
 import { getActivities, Activity } from '@/lib/activity-log';
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -21,16 +20,19 @@ export default function DashboardPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
 
   useEffect(() => {
-    try {
-      const siswaData = localStorage.getItem('siswaData');
-      const pegawaiData = localStorage.getItem('pegawaiData');
-      
-      setSiswaCount(siswaData ? JSON.parse(siswaData).length : 0);
-      setPegawaiCount(pegawaiData ? JSON.parse(pegawaiData).length : 0);
-      setActivities(getActivities());
-    } catch (error) {
-      console.error("Failed to load dashboard data from localStorage", error);
+    async function fetchData() {
+        try {
+            const siswaData = await getSiswa();
+            const pegawaiData = await getPegawai();
+            
+            setSiswaCount(siswaData.length);
+            setPegawaiCount(pegawaiData.length);
+            setActivities(getActivities());
+        } catch (error) {
+            console.error("Failed to load dashboard data from server", error);
+        }
     }
+    fetchData();
   }, []);
 
   const chartData = [
