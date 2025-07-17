@@ -49,6 +49,14 @@ export async function updateUserAction(updatedUserData: Partial<User> & { id: st
         if (dataToUpdate.password) {
             const saltRounds = 10;
             dataToUpdate.password = await bcrypt.hash(dataToUpdate.password, saltRounds);
+        } else {
+            delete dataToUpdate.password; // Don't update password if it's empty
+        }
+
+        if (Object.keys(dataToUpdate).length === 0) {
+            // Nothing to update, but we should refetch the user to be safe
+             const [currentRows]: any[] = await pool.query('SELECT id, email, name, role, status, avatar FROM users WHERE id = ?', [id]);
+             return { success: true, user: currentRows[0] };
         }
 
         const fields = Object.keys(dataToUpdate).map(key => `${key} = ?`).join(', ');
@@ -85,6 +93,9 @@ export async function saveUser(user: Partial<User> & { id?: string }): Promise<{
 
         if (isUpdating) {
             const { id, ...updateData } = user;
+            if (Object.keys(updateData).length === 0) {
+                 return { success: true, message: 'Tidak ada perubahan untuk disimpan.' };
+            }
             const fields = Object.keys(updateData).map(key => `${key} = ?`).join(', ');
             const values = Object.values(updateData);
             await pool.query(`UPDATE users SET ${fields} WHERE id = ?`, [...values, id]);
@@ -99,7 +110,10 @@ export async function saveUser(user: Partial<User> & { id?: string }): Promise<{
         }
     } catch (error: any) {
         console.error("Error saving user:", error);
-        return { success: false, message: error.message };
+        if (error.code === 'ER_DUP_ENTRY') {
+            return { success: false, message: 'Email sudah terdaftar.' };
+        }
+        return { success: false, message: `Gagal menyimpan pengguna: ${error.message}` };
     }
 }
 
@@ -112,6 +126,20 @@ export async function deleteUser(id: string): Promise<{ success: boolean; messag
         return { success: false, message: 'Pengguna tidak ditemukan.' };
     } catch (error: any) {
         console.error("Error deleting user:", error);
-        return { success: false, message: error.message };
+        return { success: false, message: `Gagal menghapus pengguna: ${error.message}` };
+    }
+}
+
+export async function generateHash(password: string): Promise<{ success: boolean, hash?: string, error?: string }> {
+    if (!password) {
+        return { success: false, error: 'Password tidak boleh kosong.' };
+    }
+    try {
+        const saltRounds = 10;
+        const hash = await bcrypt.hash(password, saltRounds);
+        return { success: true, hash };
+    } catch(error: any) {
+        console.error("Error generating hash:", error);
+        return { success: false, error: `Gagal membuat hash: ${error.message}` };
     }
 }
