@@ -322,7 +322,7 @@ function DataIdentitasPegawaiForm() {
       />
       <Grid>
         <FormField control={control} name="pegawai_nama" render={({ field }) => (
-            <FormItem><FormLabelRequired>Nama</FormLabelRequired><FormControl><Input placeholder="Nama lengkap pegawai" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabelRequired>Nama</FormLabelRequired><FormControl><Input placeholder="Nama lengkap pegawai" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="pegawai_jenisKelamin" render={({ field }) => (
             <FormItem><FormLabelRequired>Jenis Kelamin</FormLabelRequired><FormControl>
@@ -333,7 +333,7 @@ function DataIdentitasPegawaiForm() {
             </FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="pegawai_tempatLahir" render={({ field }) => (
-            <FormItem><FormLabelRequired>Tempat Lahir</FormLabelRequired><FormControl><Input placeholder="Contoh: Jakarta" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabelRequired>Tempat Lahir</FormLabelRequired><FormControl><Input placeholder="Contoh: Jakarta" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="pegawai_tanggalLahir" render={({ field }) => (
             <FormItem className="flex flex-col"><FormLabelRequired>Tanggal Lahir</FormLabelRequired><Popover>
@@ -348,13 +348,13 @@ function DataIdentitasPegawaiForm() {
             </Popover><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="pegawai_nip" render={({ field }) => (
-            <FormItem><FormLabel>NIP</FormLabel><FormControl><Input placeholder="Nomor Induk Pegawai" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>NIP</FormLabel><FormControl><Input placeholder="Nomor Induk Pegawai" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="pegawai_nuptk" render={({ field }) => (
-            <FormItem><FormLabel>NUPTK</FormLabel><FormControl><Input placeholder="Nomor Unik Pendidik dan Tenaga Kependidikan" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>NUPTK</FormLabel><FormControl><Input placeholder="Nomor Unik Pendidik dan Tenaga Kependidikan" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
         )} />
          <FormField control={control} name="pegawai_nrg" render={({ field }) => (
-            <FormItem><FormLabel>NRG</FormLabel><FormControl><Input placeholder="Nomor Registrasi Guru" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>NRG</FormLabel><FormControl><Input placeholder="Nomor Registrasi Guru" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="pegawai_statusPerkawinan" render={({ field }) => (
             <FormItem><FormLabelRequired>Status Perkawinan</FormLabelRequired><Select onValueChange={field.onChange} value={field.value}>
@@ -380,7 +380,7 @@ function DataIdentitasPegawaiForm() {
             </Popover><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="pegawai_namaPasangan" render={({ field }) => (
-            <FormItem><FormLabel>Nama Istri / Suami</FormLabel><FormControl><Input placeholder="Nama lengkap pasangan" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Nama Istri / Suami</FormLabel><FormControl><Input placeholder="Nama lengkap pasangan" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="pegawai_jumlahAnak" render={({ field }) => (
             <FormItem>
@@ -415,7 +415,7 @@ function DataIdentitasPegawaiForm() {
             <FormMessage /></FormItem>
         )} />
         <FormField control={control} name="pegawai_bidangStudi" render={({ field }) => (
-            <FormItem><FormLabel>Mengampu Bidang Studi</FormLabel><FormControl><Input placeholder="Contoh: Matematika" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Mengampu Bidang Studi</FormLabel><FormControl><Input placeholder="Contoh: Matematika" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="pegawai_tugasTambahan" render={({ field }) => (
             <FormItem><FormLabel>Tugas Tambahan</FormLabel><Select onValueChange={field.onChange} value={field.value}>
@@ -484,7 +484,7 @@ function DataIdentitasPegawaiForm() {
                     </FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={control} name="pegawai_alamatDusun" render={({ field }) => (
-                    <FormItem><FormLabel>Dusun</FormLabel><FormControl><Input placeholder="Nama Dusun" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Dusun</FormLabel><FormControl><Input placeholder="Nama Dusun" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
             </div>
         </div>
@@ -497,7 +497,7 @@ function DataIdentitasPegawaiForm() {
                     <FormLabel>SD/MI</FormLabel>
                     <div className="flex gap-4">
                         <FormField control={control} name="pegawai_pendidikanSD.tamatTahun" render={({ field }) => (
-                            <FormItem className="flex-1"><FormControl><Input placeholder="Tamat tahun..." {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem className="flex-1"><FormControl><Input placeholder="Tamat tahun..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                         )} />
                         <FormField control={control} name="pegawai_pendidikanSD.ijazah" render={() => (
                              <FormItem><FormControl>
@@ -514,7 +514,7 @@ function DataIdentitasPegawaiForm() {
                     <FormLabel>SMP/MTs</FormLabel>
                     <div className="flex gap-4">
                         <FormField control={control} name="pegawai_pendidikanSMP.tamatTahun" render={({ field }) => (
-                            <FormItem className="flex-1"><FormControl><Input placeholder="Tamat tahun..." {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem className="flex-1"><FormControl><Input placeholder="Tamat tahun..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                         )} />
                         <FormField control={control} name="pegawai_pendidikanSMP.ijazah" render={() => (
                              <FormItem><FormControl>
@@ -531,7 +531,7 @@ function DataIdentitasPegawaiForm() {
                     <FormLabel>SMA/MA</FormLabel>
                     <div className="flex gap-4">
                         <FormField control={control} name="pegawai_pendidikanSMA.tamatTahun" render={({ field }) => (
-                            <FormItem className="flex-1"><FormControl><Input placeholder="Tamat tahun..." {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem className="flex-1"><FormControl><Input placeholder="Tamat tahun..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                         )} />
                         <FormField control={control} name="pegawai_pendidikanSMA.ijazah" render={() => (
                              <FormItem><FormControl>
@@ -548,7 +548,7 @@ function DataIdentitasPegawaiForm() {
                     <FormLabel>Diploma</FormLabel>
                     <div className="flex gap-4">
                         <FormField control={control} name="pegawai_pendidikanDiploma.tamatTahun" render={({ field }) => (
-                            <FormItem className="flex-1"><FormControl><Input placeholder="Tamat tahun..." {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem className="flex-1"><FormControl><Input placeholder="Tamat tahun..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                         )} />
                         <FormField control={control} name="pegawai_pendidikanDiploma.ijazah" render={() => (
                              <FormItem><FormControl>
@@ -565,7 +565,7 @@ function DataIdentitasPegawaiForm() {
                     <FormLabel>S1</FormLabel>
                     <div className="flex gap-4">
                         <FormField control={control} name="pegawai_pendidikanS1.tamatTahun" render={({ field }) => (
-                            <FormItem className="flex-1"><FormControl><Input placeholder="Tamat tahun..." {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem className="flex-1"><FormControl><Input placeholder="Tamat tahun..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                         )} />
                         <FormField control={control} name="pegawai_pendidikanS1.ijazah" render={() => (
                              <FormItem><FormControl>
@@ -582,7 +582,7 @@ function DataIdentitasPegawaiForm() {
                     <FormLabel>S2</FormLabel>
                     <div className="flex gap-4">
                         <FormField control={control} name="pegawai_pendidikanS2.tamatTahun" render={({ field }) => (
-                            <FormItem className="flex-1"><FormControl><Input placeholder="Tamat tahun..." {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem className="flex-1"><FormControl><Input placeholder="Tamat tahun..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                         )} />
                         <FormField control={control} name="pegawai_pendidikanS2.ijazah" render={() => (
                              <FormItem><FormControl>

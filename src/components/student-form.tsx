@@ -375,13 +375,13 @@ function DataSiswaForm() {
       />
       <Grid>
         <FormField control={control} name="siswa_namaLengkap" render={({ field }) => (
-            <FormItem><FormLabelRequired>Nama</FormLabelRequired><FormControl><Input placeholder="Nama lengkap siswa" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabelRequired>Nama</FormLabelRequired><FormControl><Input placeholder="Nama lengkap siswa" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="siswa_nis" render={({ field }) => (
-            <FormItem><FormLabelRequired>Nomor Induk Sekolah</FormLabelRequired><FormControl><Input placeholder="NIS" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabelRequired>Nomor Induk Sekolah</FormLabelRequired><FormControl><Input placeholder="NIS" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="siswa_nisn" render={({ field }) => (
-            <FormItem><FormLabelRequired>Nomor Induk Nasional Siswa</FormLabelRequired><FormControl><Input placeholder="10 digit NISN" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabelRequired>Nomor Induk Nasional Siswa</FormLabelRequired><FormControl><Input placeholder="10 digit NISN" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="siswa_jenisKelamin" render={({ field }) => (
             <FormItem><FormLabelRequired>Jenis Kelamin</FormLabelRequired><FormControl>
@@ -395,7 +395,7 @@ function DataSiswaForm() {
             <h3 className="text-sm font-medium"><FormLabelRequired>Kelahiran Siswa</FormLabelRequired></h3>
             <Grid>
                 <FormField control={control} name="siswa_tempatLahir" render={({ field }) => (
-                    <FormItem><FormLabel>Tempat Lahir</FormLabel><FormControl><Input placeholder="Contoh: Jakarta" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Tempat Lahir</FormLabel><FormControl><Input placeholder="Contoh: Jakarta" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={control} name="siswa_tanggalLahir" render={({ field }) => (
                     <FormItem className="flex flex-col"><FormLabel>Tanggal Lahir</FormLabel><Popover>
@@ -443,7 +443,7 @@ function DataSiswaForm() {
             </FormItem>
         )} />
         <FormField control={control} name="siswa_bahasa" render={({ field }) => (
-            <FormItem><FormLabel>Bahasa Sehari-hari</FormLabel><FormControl><Input placeholder="Contoh: Indonesia" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Bahasa Sehari-hari</FormLabel><FormControl><Input placeholder="Contoh: Indonesia" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="siswa_golonganDarah" render={({ field }) => (
         <FormItem><FormLabel>Golongan Darah</FormLabel><Select onValueChange={field.onChange} value={field.value}>
@@ -452,7 +452,7 @@ function DataSiswaForm() {
         </Select><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="siswa_telepon" render={({ field }) => (
-            <FormItem><FormLabel>Nomor HP/WA</FormLabel><FormControl><Input placeholder="08xxxxxxxxxx" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Nomor HP/WA</FormLabel><FormControl><Input placeholder="08xxxxxxxxxx" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
         )} />
         
         <div className="md:col-span-2 space-y-2">
@@ -571,10 +571,10 @@ function DataSiswaForm() {
                     <FormItem><FormLabel>Berat Badan (kg)</FormLabel><FormControl><Input type="number" placeholder="50" {...field} onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
                  <FormField control={control} name="siswa_penyakit" render={({ field }) => (
-                    <FormItem><FormLabel>Riwayat Penyakit</FormLabel><FormControl><Input placeholder="Contoh: Asma" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Riwayat Penyakit</FormLabel><FormControl><Input placeholder="Contoh: Asma" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
                  <FormField control={control} name="siswa_kelainanJasmani" render={({ field }) => (
-                    <FormItem><FormLabel>Kelainan Jasmani</FormLabel><FormControl><Input placeholder="Contoh: Tidak ada" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Kelainan Jasmani</FormLabel><FormControl><Input placeholder="Contoh: Tidak ada" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
             </Grid>
         </div>
@@ -591,10 +591,10 @@ function DataOrangTuaForm() {
             <h3 className="text-md font-semibold mb-3">a. Nama Orang Tua Kandung</h3>
             <Grid>
                 <FormField control={control} name="siswa_namaAyah" render={({ field }) => (
-                    <FormItem><FormLabel>Nama Ayah</FormLabel><FormControl><Input placeholder="Nama lengkap ayah" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Nama Ayah</FormLabel><FormControl><Input placeholder="Nama lengkap ayah" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={control} name="siswa_namaIbu" render={({ field }) => (
-                    <FormItem><FormLabel>Nama Ibu</FormLabel><FormControl><Input placeholder="Nama lengkap ibu" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Nama Ibu</FormLabel><FormControl><Input placeholder="Nama lengkap ibu" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
             </Grid>
         </div>
@@ -603,16 +603,16 @@ function DataOrangTuaForm() {
             <h3 className="text-md font-semibold mb-3">b. Pendidikan & Pekerjaan</h3>
             <Grid>
                 <FormField control={control} name="siswa_pendidikanAyah" render={({ field }) => (
-                    <FormItem><FormLabel>Pendidikan Tertinggi Ayah</FormLabel><FormControl><Input placeholder="Contoh: S1" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Pendidikan Tertinggi Ayah</FormLabel><FormControl><Input placeholder="Contoh: S1" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
                  <FormField control={control} name="siswa_pekerjaanAyah" render={({ field }) => (
-                    <FormItem><FormLabel>Pekerjaan Ayah</FormLabel><FormControl><Input placeholder="Contoh: Wiraswasta" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Pekerjaan Ayah</FormLabel><FormControl><Input placeholder="Contoh: Wiraswasta" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={control} name="siswa_pendidikanIbu" render={({ field }) => (
-                    <FormItem><FormLabel>Pendidikan Tertinggi Ibu</FormLabel><FormControl><Input placeholder="Contoh: SMA" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Pendidikan Tertinggi Ibu</FormLabel><FormControl><Input placeholder="Contoh: SMA" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
                  <FormField control={control} name="siswa_pekerjaanIbu" render={({ field }) => (
-                    <FormItem><FormLabel>Pekerjaan Ibu</FormLabel><FormControl><Input placeholder="Contoh: Ibu Rumah Tangga" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Pekerjaan Ibu</FormLabel><FormControl><Input placeholder="Contoh: Ibu Rumah Tangga" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
             </Grid>
         </div>
@@ -621,16 +621,16 @@ function DataOrangTuaForm() {
             <h3 className="text-md font-semibold mb-3">c. Wali Murid (jika ada)</h3>
             <Grid>
                 <FormField control={control} name="siswa_namaWali" render={({ field }) => (
-                    <FormItem><FormLabel>Nama Wali</FormLabel><FormControl><Input placeholder="Nama lengkap wali" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Nama Wali</FormLabel><FormControl><Input placeholder="Nama lengkap wali" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
                  <FormField control={control} name="siswa_hubunganWali" render={({ field }) => (
-                    <FormItem><FormLabel>Hubungan Keluarga</FormLabel><FormControl><Input placeholder="Contoh: Paman" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Hubungan Keluarga</FormLabel><FormControl><Input placeholder="Contoh: Paman" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
                  <FormField control={control} name="siswa_pendidikanWali" render={({ field }) => (
-                    <FormItem><FormLabel>Pendidikan Terakhir</FormLabel><FormControl><Input placeholder="Pendidikan terakhir wali" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Pendidikan Terakhir</FormLabel><FormControl><Input placeholder="Pendidikan terakhir wali" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={control} name="siswa_pekerjaanWali" render={({ field }) => (
-                    <FormItem><FormLabel>Pekerjaan</FormLabel><FormControl><Input placeholder="Pekerjaan wali" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Pekerjaan</FormLabel><FormControl><Input placeholder="Pekerjaan wali" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
             </Grid>
         </div>
@@ -639,10 +639,10 @@ function DataOrangTuaForm() {
              <h3 className="text-md font-semibold mb-3">d. Kontak & Alamat Orang Tua / Wali</h3>
              <Grid>
                 <FormField control={control} name="siswa_alamatOrangTua" render={({ field }) => (
-                    <FormItem><FormLabel>Alamat Orang Tua/Wali</FormLabel><FormControl><Textarea placeholder="Alamat lengkap orang tua/wali" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Alamat Orang Tua/Wali</FormLabel><FormControl><Textarea placeholder="Alamat lengkap orang tua/wali" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={control} name="siswa_teleponOrangTua" render={({ field }) => (
-                    <FormItem><FormLabel>Telepon Orang Tua/Wali</FormLabel><FormControl><Input placeholder="Nomor telepon" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Telepon Orang Tua/Wali</FormLabel><FormControl><Input placeholder="Nomor telepon" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
              </Grid>
         </div>
@@ -658,10 +658,10 @@ function DataPerkembanganForm() {
                 <h3 className="text-md font-semibold mb-3">a. Masuk Menjadi Siswa Baru Tingkat I</h3>
                 <Grid>
                     <FormField control={control} name="siswa_asalSekolah" render={({ field }) => (
-                        <FormItem><FormLabel>1. Asal Sekolah</FormLabel><FormControl><Input placeholder="Contoh: TK Tunas Bangsa" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>1. Asal Sekolah</FormLabel><FormControl><Input placeholder="Contoh: TK Tunas Bangsa" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField control={control} name="siswa_nomorSttb" render={({ field }) => (
-                        <FormItem><FormLabel>2. Nomor STTB</FormLabel><FormControl><Input placeholder="Nomor STTB" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>2. Nomor STTB</FormLabel><FormControl><Input placeholder="Nomor STTB" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField control={control} name="siswa_tanggalSttb" render={({ field }) => (
                         <FormItem className="flex flex-col"><FormLabel>3. Tanggal STTB</FormLabel><Popover>
@@ -682,10 +682,10 @@ function DataPerkembanganForm() {
                 <h3 className="text-md font-semibold mb-3">b. Pindahan Dari Sekolah Lain</h3>
                 <Grid>
                      <FormField control={control} name="siswa_pindahanAsalSekolah" render={({ field }) => (
-                        <FormItem><FormLabel>1. Asal Sekolah</FormLabel><FormControl><Input placeholder="Nama sekolah asal" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>1. Asal Sekolah</FormLabel><FormControl><Input placeholder="Nama sekolah asal" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                     )} />
                      <FormField control={control} name="siswa_pindahanDariTingkat" render={({ field }) => (
-                        <FormItem><FormLabel>2. Dari Tingkat</FormLabel><FormControl><Input placeholder="Contoh: Kelas 4" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>2. Dari Tingkat</FormLabel><FormControl><Input placeholder="Contoh: Kelas 4" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField control={control} name="siswa_pindahanDiterimaTanggal" render={({ field }) => (
                         <FormItem className="flex flex-col"><FormLabel>3. Diterima Tanggal</FormLabel><Popover>
@@ -713,13 +713,13 @@ function DataMeninggalkanSekolahForm() {
                 <h3 className="text-md font-semibold mb-3">a. Tamat Belajar / Lulus</h3>
                 <Grid>
                     <FormField control={control} name="siswa_lulusTahun" render={({ field }) => (
-                        <FormItem><FormLabel>Tahun</FormLabel><FormControl><Input placeholder="Contoh: 2024" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Tahun</FormLabel><FormControl><Input placeholder="Contoh: 2024" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField control={control} name="siswa_lulusNomorIjazah" render={({ field }) => (
-                        <FormItem><FormLabel>Nomor Ijazah / STTB</FormLabel><FormControl><Input placeholder="Nomor Ijazah" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Nomor Ijazah / STTB</FormLabel><FormControl><Input placeholder="Nomor Ijazah" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField control={control} name="siswa_lulusMelanjutkanKe" render={({ field }) => (
-                        <FormItem><FormLabel>Melanjutkan ke sekolah</FormLabel><FormControl><Input placeholder="Nama sekolah lanjutan" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Melanjutkan ke sekolah</FormLabel><FormControl><Input placeholder="Nama sekolah lanjutan" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                     )} />
                 </Grid>
             </div>
@@ -728,13 +728,13 @@ function DataMeninggalkanSekolahForm() {
                 <h3 className="text-md font-semibold mb-3">b. Pindah Sekolah</h3>
                 <Grid>
                      <FormField control={control} name="siswa_pindahTingkatKelas" render={({ field }) => (
-                        <FormItem><FormLabel>Tingkat kelas yang ditinggalkan</FormLabel><FormControl><Input placeholder="Contoh: Kelas 5" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Tingkat kelas yang ditinggalkan</FormLabel><FormControl><Input placeholder="Contoh: Kelas 5" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField control={control} name="siswa_pindahKeSekolah" render={({ field }) => (
-                        <FormItem><FormLabel>Ke sekolah</FormLabel><FormControl><Input placeholder="Nama sekolah tujuan" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Ke sekolah</FormLabel><FormControl><Input placeholder="Nama sekolah tujuan" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField control={control} name="siswa_pindahKeTingkat" render={({ field }) => (
-                        <FormItem><FormLabel>Ke Tingkat</FormLabel><FormControl><Input placeholder="Tingkat di sekolah baru" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Ke Tingkat</FormLabel><FormControl><Input placeholder="Tingkat di sekolah baru" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                     )} />
                 </Grid>
             </div>
@@ -743,7 +743,7 @@ function DataMeninggalkanSekolahForm() {
                 <h3 className="text-md font-semibold mb-3">c. Keluar Sekolah</h3>
                 <Grid className="md:grid-cols-1">
                     <FormField control={control} name="siswa_keluarAlasan" render={({ field }) => (
-                        <FormItem><FormLabel>Alasan keluar sekolah</FormLabel><FormControl><Textarea placeholder="Jelaskan alasan keluar" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Alasan keluar sekolah</FormLabel><FormControl><Textarea placeholder="Jelaskan alasan keluar" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                     )} />
                     <FormField control={control} name="siswa_keluarTanggal" render={({ field }) => (
                         <FormItem className="flex flex-col max-w-sm"><FormLabel>Hari dan tanggal keluar sekolah</FormLabel><Popover>
