@@ -37,76 +37,7 @@ const steps = [
   { id: 7, title: 'Validasi' },
 ];
 
-const initialFormValues: StudentFormData = {
-  siswa_namaLengkap: '',
-  siswa_nis: '',
-  siswa_nisn: '',
-  siswa_jenisKelamin: undefined,
-  siswa_tempatLahir: '',
-  siswa_tanggalLahir: undefined,
-  siswa_agama: undefined,
-  siswa_kewarganegaraan: undefined,
-  siswa_jumlahSaudara: undefined,
-  siswa_bahasa: '',
-  siswa_golonganDarah: undefined,
-  siswa_telepon: '',
-  siswa_alamatKkProvinsi: '',
-  siswa_alamatKkKabupaten: '',
-  siswa_alamatKkKecamatan: '',
-  siswa_alamatKkDesa: '',
-  siswa_domisiliProvinsi: '',
-  siswa_domisiliKabupaten: '',
-  siswa_domisiliKecamatan: '',
-  siswa_domisiliDesa: '',
-  siswa_namaAyah: '',
-  siswa_namaIbu: '',
-  siswa_pendidikanAyah: '',
-  siswa_pendidikanIbu: '',
-  siswa_pekerjaanAyah: '',
-  siswa_pekerjaanIbu: '',
-  siswa_namaWali: '',
-  siswa_hubunganWali: '',
-  siswa_pendidikanWali: '',
-  siswa_pekerjaanWali: '',
-  siswa_alamatOrangTua: '',
-  siswa_teleponOrangTua: '',
-  siswa_tinggiBadan: undefined,
-  siswa_beratBadan: undefined,
-  siswa_penyakit: '',
-  siswa_kelainanJasmani: '',
-  siswa_asalSekolah: '',
-  siswa_nomorSttb: '',
-  siswa_tanggalSttb: undefined,
-  siswa_pindahanAsalSekolah: '',
-  siswa_pindahanDariTingkat: '',
-  siswa_pindahanDiterimaTanggal: undefined,
-  siswa_lulusTahun: '',
-  siswa_lulusNomorIjazah: '',
-  siswa_lulusMelanjutkanKe: '',
-  siswa_pindahKeSekolah: '',
-  siswa_pindahTingkatKelas: '',
-  siswa_pindahKeTingkat: '',
-  siswa_keluarAlasan: '',
-  siswa_keluarTanggal: undefined,
-  documents: {
-    kartuKeluarga: undefined,
-    ktpAyah: undefined,
-    ktpIbu: undefined,
-    kartuIndonesiaPintar: undefined,
-    ijazah: undefined,
-    aktaKelahiran: undefined,
-    akteKematianAyah: undefined,
-    akteKematianIbu: undefined,
-    raporSmt1: undefined,
-    raporSmt2: undefined,
-    raporSmt3: undefined,
-    raporSmt4: undefined,
-    raporSmt5: undefined,
-    raporSmt6: undefined,
-    ijazahSmp: undefined,
-    transkripSmp: undefined,
-  }
-};
+const initialFormValues: StudentFormData = {};
 
 async function uploadFile(file: File) {
     const formData = new FormData();
@@ -232,7 +163,7 @@ function FormLabelRequired({ children }: { children: React.ReactNode }) {
 }
 
 function DataSiswaForm() {
-  const { control, watch, setValue, getValues } = useFormContext<StudentFormData>();
+  const { control, watch, setValue, getValues, formState: { isDirty } } = useFormContext<StudentFormData>();
   const [preview, setPreview] = useState<string | null>(getValues('siswa_fotoProfil.fileURL') || null);
   const { toast } = useToast();
   
@@ -251,17 +182,21 @@ function DataSiswaForm() {
 
   
   const [provinces, setProvinces] = useState<Wilayah[]>([]);
+  // State for Alamat KK
   const [kkKabupatens, setKkKabupatens] = useState<Wilayah[]>([]);
   const [kkKecamatans, setKkKecamatans] = useState<Wilayah[]>([]);
   const [kkDesas, setKkDesas] = useState<Wilayah[]>([]);
+  // State for Domisili
   const [domisiliKabupatens, setDomisiliKabupatens] = useState<Wilayah[]>([]);
   const [domisiliKecamatans, setDomisiliKecamatans] = useState<Wilayah[]>([]);
   const [domisiliDesas, setDomisiliDesas] = useState<Wilayah[]>([]);
 
+  // Watchers for Alamat KK
   const alamatKkProvinsi = watch('siswa_alamatKkProvinsi');
   const alamatKkKabupaten = watch('siswa_alamatKkKabupaten');
   const alamatKkKecamatan = watch('siswa_alamatKkKecamatan');
   
+  // Watchers for Domisili
   const domisiliProvinsi = watch('siswa_domisiliProvinsi');
   const domisiliKabupaten = watch('siswa_domisiliKabupaten');
   const domisiliKecamatan = watch('siswa_domisiliKecamatan');
@@ -270,65 +205,85 @@ function DataSiswaForm() {
     getProvinces().then(setProvinces);
   }, []);
 
+  // --- LOGIC FOR ALAMAT KK ---
   useEffect(() => {
-    if (alamatKkProvinsi) {
-      getKabupatens(alamatKkProvinsi).then(setKkKabupatens);
-    } else {
-      setKkKabupatens([]);
+    const fetchKab = async () => {
+        if (alamatKkProvinsi) {
+            setKkKabupatens(await getKabupatens(alamatKkProvinsi));
+            if(isDirty) {
+                setValue('siswa_alamatKkKabupaten', '');
+                setValue('siswa_alamatKkKecamatan', '');
+                setValue('siswa_alamatKkDesa', '');
+            }
+        }
     }
-    setValue('siswa_alamatKkKabupaten', '');
-    setValue('siswa_alamatKkKecamatan', '');
-    setValue('siswa_alamatKkDesa', '');
-  }, [alamatKkProvinsi, setValue]);
+    fetchKab();
+  }, [alamatKkProvinsi, setValue, isDirty]);
 
   useEffect(() => {
-    if (alamatKkKabupaten) {
-      getKecamatans(alamatKkKabupaten).then(setKkKecamatans);
-    } else {
-      setKkKecamatans([]);
+    const fetchKec = async () => {
+        if (alamatKkKabupaten) {
+            setKkKecamatans(await getKecamatans(alamatKkKabupaten));
+            if(isDirty) {
+                setValue('siswa_alamatKkKecamatan', '');
+                setValue('siswa_alamatKkDesa', '');
+            }
+        }
     }
-     setValue('siswa_alamatKkKecamatan', '');
-     setValue('siswa_alamatKkDesa', '');
-  }, [alamatKkKabupaten, setValue]);
+    fetchKec();
+  }, [alamatKkKabupaten, setValue, isDirty]);
 
   useEffect(() => {
-    if (alamatKkKecamatan) {
-        getDesas(alamatKkKecamatan).then(setKkDesas);
-    } else {
-        setKkDesas([]);
+    const fetchDesa = async () => {
+        if (alamatKkKecamatan) {
+            setKkDesas(await getDesas(alamatKkKecamatan));
+            if(isDirty) {
+                setValue('siswa_alamatKkDesa', '');
+            }
+        }
     }
-    setValue('siswa_alamatKkDesa', '');
-  }, [alamatKkKecamatan, setValue]);
+    fetchDesa();
+  }, [alamatKkKecamatan, setValue, isDirty]);
 
+   // --- LOGIC FOR DOMISILI ---
    useEffect(() => {
-    if (domisiliProvinsi) {
-      getKabupatens(domisiliProvinsi).then(setDomisiliKabupatens);
-    } else {
-      setDomisiliKabupatens([]);
+    const fetchKab = async () => {
+        if (domisiliProvinsi) {
+            setDomisiliKabupatens(await getKabupatens(domisiliProvinsi));
+            if(isDirty) {
+                setValue('siswa_domisiliKabupaten', '');
+                setValue('siswa_domisiliKecamatan', '');
+                setValue('siswa_domisiliDesa', '');
+            }
+        }
     }
-    setValue('siswa_domisiliKabupaten', '');
-    setValue('siswa_domisiliKecamatan', '');
-    setValue('siswa_domisiliDesa', '');
-  }, [domisiliProvinsi, setValue]);
+    fetchKab();
+  }, [domisiliProvinsi, setValue, isDirty]);
 
   useEffect(() => {
-    if (domisiliKabupaten) {
-      getKecamatans(domisiliKabupaten).then(setDomisiliKecamatans);
-    } else {
-      setDomisiliKecamatans([]);
+    const fetchKec = async () => {
+        if (domisiliKabupaten) {
+            setDomisiliKecamatans(await getKecamatans(domisiliKabupaten));
+            if(isDirty) {
+                setValue('siswa_domisiliKecamatan', '');
+                setValue('siswa_domisiliDesa', '');
+            }
+        }
     }
-    setValue('siswa_domisiliKecamatan', '');
-    setValue('siswa_domisiliDesa', '');
-  }, [domisiliKabupaten, setValue]);
+    fetchKec();
+  }, [domisiliKabupaten, setValue, isDirty]);
   
   useEffect(() => {
-    if (domisiliKecamatan) {
-      getDesas(domisiliKecamatan).then(setDomisiliDesas);
-    } else {
-      setDomisiliDesas([]);
+    const fetchDesa = async () => {
+        if (domisiliKecamatan) {
+            setDomisiliDesas(await getDesas(domisiliKecamatan));
+            if(isDirty) {
+                setValue('siswa_domisiliDesa', '');
+            }
+        }
     }
-    setValue('siswa_domisiliDesa', '');
-  }, [domisiliKecamatan, setValue]);
+    fetchDesa();
+  }, [domisiliKecamatan, setValue, isDirty]);
 
 
   const wilayahToOptions = (wilayah: Wilayah[]) => wilayah.map(w => ({ value: w.id, label: w.name }));
