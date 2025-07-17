@@ -13,21 +13,42 @@ import pool from './db';
 // SISWA ACTIONS
 export async function getSiswa(): Promise<Siswa[]> {
     const [rows] = await pool.query('SELECT * FROM siswa');
-    return (rows as Siswa[]).map(row => ({
-        ...row,
-        documents: typeof row.documents === 'string' ? JSON.parse(row.documents) : row.documents,
-        siswa_fotoProfil: typeof row.siswa_fotoProfil === 'string' ? JSON.parse(row.siswa_fotoProfil) : row.siswa_fotoProfil,
-    }));
+    return (rows as Siswa[]).map(row => {
+        const parsedRow: any = { ...row };
+        for (const key in parsedRow) {
+            if (typeof parsedRow[key] === 'string') {
+                try {
+                    if (parsedRow[key].startsWith('{') || parsedRow[key].startsWith('[')) {
+                        parsedRow[key] = JSON.parse(parsedRow[key]);
+                    }
+                } catch (e) {
+                    // Not a JSON string, leave it as is
+                }
+            }
+        }
+        return parsedRow;
+    });
 }
 
 export async function getSiswaById(id: string): Promise<Siswa | null> {
     const [rows] = await pool.query('SELECT * FROM siswa WHERE id = ?', [id]);
     const siswa = (rows as Siswa[])[0] || null;
     if (siswa) {
-        siswa.documents = typeof siswa.documents === 'string' ? JSON.parse(siswa.documents) : siswa.documents;
-        siswa.siswa_fotoProfil = typeof siswa.siswa_fotoProfil === 'string' ? JSON.parse(siswa.siswa_fotoProfil) : siswa.siswa_fotoProfil;
+        const parsedSiswa: any = { ...siswa };
+         for (const key in parsedSiswa) {
+            if (typeof parsedSiswa[key] === 'string') {
+                try {
+                     if (parsedSiswa[key].startsWith('{') || parsedSiswa[key].startsWith('[')) {
+                        parsedSiswa[key] = JSON.parse(parsedSiswa[key]);
+                    }
+                } catch (e) {
+                     // Not a JSON string, leave it as is
+                }
+            }
+        }
+        return parsedSiswa;
     }
-    return siswa;
+    return null;
 }
 
 export async function deleteSiswa(id: string): Promise<{ success: boolean; message: string }> {
@@ -47,10 +68,10 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
         const dataForDb = sanitizeAndFormatData(data);
         
         const isComplete = dataForDb.siswa_namaLengkap && dataForDb.siswa_nis && dataForDb.siswa_nisn;
-        dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
-
+        
         if (studentId) {
             // --- UPDATE LOGIC ---
+            dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
             const { id, ...updateData } = dataForDb; // Exclude id from update payload
             const fields = Object.keys(updateData).map(f => `${f} = ?`).join(', ');
             const values = Object.values(updateData);
@@ -65,11 +86,12 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
         } else {
             // --- CREATE LOGIC ---
             dataForDb.id = crypto.randomUUID();
+            dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
             
             const fields = Object.keys(dataForDb);
             const values = Object.values(dataForDb);
 
-            const sql = `INSERT INTO siswa (${fields.join(', ')}) VALUES (${values.map(() => '?').join(', ')})`;
+            const sql = `INSERT INTO siswa (${fields.join(', ')}) VALUES (${fields.map(() => '?').join(', ')})`;
             
             await pool.query(sql, values);
             const message = `Data siswa ${dataForDb.siswa_namaLengkap} berhasil disimpan!`;
@@ -88,8 +110,7 @@ export async function getPegawai(): Promise<Pegawai[]> {
      return (rows as Pegawai[]).map(row => {
         const parsedRow: any = { ...row };
         for (const key in parsedRow) {
-            // Check if key starts with 'pegawai_' to avoid parsing non-pegawai fields
-            if (key.startsWith('pegawai_') && typeof parsedRow[key] === 'string') {
+            if (typeof parsedRow[key] === 'string') {
                 try {
                     // Only parse if it looks like a JSON object or array
                     if (parsedRow[key].startsWith('{') || parsedRow[key].startsWith('[')) {
@@ -110,7 +131,7 @@ export async function getPegawaiById(id: string): Promise<Pegawai | null> {
     if (p) {
         const parsedP: any = { ...p };
          for (const key in parsedP) {
-            if (key.startsWith('pegawai_') && typeof parsedP[key] === 'string') {
+            if (typeof parsedP[key] === 'string') {
                 try {
                      if (parsedP[key].startsWith('{') || parsedP[key].startsWith('[')) {
                         parsedP[key] = JSON.parse(parsedP[key]);
@@ -142,9 +163,9 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
         const dataForDb = sanitizeAndFormatData(data);
         
         const isComplete = dataForDb.pegawai_nama && dataForDb.pegawai_nip;
-        dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
-
+        
         if (pegawaiId) {
+            dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
             const { id, ...updateData } = dataForDb;
             const fields = Object.keys(updateData).map(f => `${f} = ?`).join(', ');
             const values = Object.values(updateData);
@@ -153,9 +174,10 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
             await pool.query(sql, queryValues);
         } else {
             dataForDb.id = crypto.randomUUID();
+            dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
             const fields = Object.keys(dataForDb);
             const values = Object.values(dataForDb);
-            const sql = `INSERT INTO pegawai (${fields.join(', ')}) VALUES (${values.map(() => '?').join(', ')})`;
+            const sql = `INSERT INTO pegawai (${fields.join(', ')}) VALUES (${fields.map(() => '?').join(', ')})`;
             await pool.query(sql, values);
         }
 
