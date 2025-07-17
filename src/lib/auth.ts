@@ -46,7 +46,7 @@ export async function updateUserAction(updatedUserData: Partial<User> & { id: st
     try {
         const { id, ...dataToUpdate } = updatedUserData;
 
-        if (dataToUpdate.password) {
+        if (dataToUpdate.password && dataToUpdate.password.length > 0) {
             const saltRounds = 10;
             dataToUpdate.password = await bcrypt.hash(dataToUpdate.password, saltRounds);
         } else {
@@ -54,7 +54,6 @@ export async function updateUserAction(updatedUserData: Partial<User> & { id: st
         }
 
         if (Object.keys(dataToUpdate).length === 0) {
-            // Nothing to update, but we should refetch the user to be safe
              const [currentRows]: any[] = await pool.query('SELECT id, email, name, role, status, avatar FROM users WHERE id = ?', [id]);
              return { success: true, user: currentRows[0] };
         }
@@ -84,7 +83,7 @@ export async function saveUser(user: Partial<User> & { id?: string }): Promise<{
     try {
         const isUpdating = !!user.id;
         
-        if (user.password) {
+        if (user.password && user.password.length > 0) {
             const saltRounds = 10;
             user.password = await bcrypt.hash(user.password, saltRounds); 
         } else {
@@ -101,6 +100,9 @@ export async function saveUser(user: Partial<User> & { id?: string }): Promise<{
             await pool.query(`UPDATE users SET ${fields} WHERE id = ?`, [...values, id]);
             return { success: true, message: 'Pengguna berhasil diperbarui.' };
         } else {
+            if (!user.password) {
+                return { success: false, message: 'Password wajib diisi untuk pengguna baru.' };
+            }
             user.id = user.id || crypto.randomUUID();
             const fields = Object.keys(user);
             const placeholders = fields.map(() => '?').join(', ');
