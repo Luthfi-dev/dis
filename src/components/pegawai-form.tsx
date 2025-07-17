@@ -32,26 +32,26 @@ const steps = [
 ];
 
 const initialFormValues: PegawaiFormData = {
-    pegawai_phaspoto: undefined,
     pegawai_nama: '',
     pegawai_jenisKelamin: undefined,
     pegawai_tempatLahir: '',
     pegawai_tanggalLahir: undefined,
+    pegawai_statusPerkawinan: undefined,
+    pegawai_jabatan: undefined,
+    pegawai_terhitungMulaiTanggal: undefined,
+    pegawai_phaspoto: undefined,
     pegawai_nip: '',
     pegawai_nuptk: '',
     pegawai_nrg: '',
-    pegawai_statusPerkawinan: undefined,
     pegawai_tanggalPerkawinan: undefined,
     pegawai_namaPasangan: '',
     pegawai_jumlahAnak: undefined,
-    pegawai_jabatan: undefined,
     pegawai_bidangStudi: '',
     pegawai_tugasTambahan: undefined,
-    pegawai_terhitungMulaiTanggal: undefined,
-    pegawai_alamatDusun: '',
-    pegawai_alamatDesa: '',
-    pegawai_alamatKecamatan: '',
     pegawai_alamatKabupaten: '',
+    pegawai_alamatKecamatan: '',
+    pegawai_alamatDesa: '',
+    pegawai_alamatDusun: '',
     pegawai_pendidikanSD: { tamatTahun: '', ijazah: undefined },
     pegawai_pendidikanSMP: { tamatTahun: '', ijazah: undefined },
     pegawai_pendidikanSMA: { tamatTahun: '', ijazah: undefined },
@@ -198,7 +198,7 @@ function FormLabelRequired({ children }: { children: React.ReactNode }) {
 }
 
 function DataIdentitasPegawaiForm() {
-  const { control, watch, setValue, getValues } = useFormContext<PegawaiFormData>();
+  const { control, watch, setValue, getValues, formState: {isDirty} } = useFormContext<PegawaiFormData>();
   const { toast } = useToast();
   const [preview, setPreview] = useState<string | null>(getValues('pegawai_phaspoto.fileURL') || null);
   
@@ -225,25 +225,38 @@ function DataIdentitasPegawaiForm() {
   useEffect(() => {
     getKabupatens('32').then(setAllKabupatens); // Default to Jawa Barat
   }, []);
+  
+  useEffect(() => {
+      const fetchWilayah = async () => {
+        if (alamatKabupaten) {
+          const newKecamatans = await getKecamatans(alamatKabupaten);
+          setKecamatans(newKecamatans);
+          
+          if(isDirty) {
+            setValue('pegawai_alamatKecamatan', '');
+            setValue('pegawai_alamatDesa', '');
+          }
+        } else {
+          setKecamatans([]);
+        }
+      };
+      fetchWilayah();
+  }, [alamatKabupaten, setValue, isDirty]);
 
   useEffect(() => {
-    if (alamatKabupaten) {
-        getKecamatans(alamatKabupaten).then(setKecamatans);
-    } else {
-        setKecamatans([]);
-    }
-    setValue('pegawai_alamatKecamatan', '');
-    setValue('pegawai_alamatDesa', '');
-  }, [alamatKabupaten, setValue]);
-
-  useEffect(() => {
-    if (alamatKecamatan) {
-        getDesas(alamatKecamatan).then(setDesas);
-    } else {
-        setDesas([]);
-    }
-    setValue('pegawai_alamatDesa', '');
-  }, [alamatKecamatan, setValue]);
+      const fetchWilayah = async () => {
+          if (alamatKecamatan) {
+            const newDesas = await getDesas(alamatKecamatan);
+            setDesas(newDesas);
+            if(isDirty) {
+              setValue('pegawai_alamatDesa', '');
+            }
+          } else {
+            setDesas([]);
+          }
+      };
+      fetchWilayah();
+  }, [alamatKecamatan, setValue, isDirty]);
 
   const wilayahToOptions = (wilayah: Wilayah[]) => wilayah.map(w => ({ value: w.id, label: w.name }));
   
