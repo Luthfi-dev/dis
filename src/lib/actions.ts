@@ -74,21 +74,18 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
         
         if (studentId) {
             // --- UPDATE LOGIC ---
-            const { id, ...updateData } = dataForDb; // id is already in studentId
-            
-            const fields = Object.keys(updateData).map(f => `${f} = ?`).join(', ');
-            const values = Object.values(updateData);
+            const fields = Object.keys(dataForDb).map(f => `${f} = ?`).join(', ');
+            const values = Object.values(dataForDb);
 
             const sql = `UPDATE siswa SET ${fields} WHERE id = ?`;
-            const queryValues = [...values, studentId];
+            await pool.query(sql, [...values, studentId]);
             
-            await pool.query(sql, queryValues);
-            const message = `Data siswa ${dataForDb.siswa_namaLengkap} berhasil diperbarui!`;
+            const message = `Data siswa ${data.siswa_namaLengkap} berhasil diperbarui!`;
+            logActivity(message);
             return { success: true, message };
 
         } else {
             // --- CREATE LOGIC ---
-            // ID is now auto-incremented by the database, so we don't set it here.
             const fields = Object.keys(dataForDb);
             const values = Object.values(dataForDb);
             const placeholders = fields.map(() => '?').join(', ');
@@ -96,7 +93,8 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
             const sql = `INSERT INTO siswa (${fields.join(', ')}) VALUES (${placeholders})`;
             
             await pool.query(sql, values);
-            const message = `Data siswa ${dataForDb.siswa_namaLengkap} berhasil disimpan!`;
+            const message = `Data siswa ${data.siswa_namaLengkap} berhasil disimpan!`;
+            logActivity(message);
             return { success: true, message };
         }
     } catch (error: any) {
@@ -152,7 +150,9 @@ export async function deletePegawai(id: string): Promise<{ success: boolean; mes
      try {
         const [result]:any = await pool.query('DELETE FROM pegawai WHERE id = ?', [id]);
         if (result.affectedRows > 0) {
-            return { success: true, message: `Data pegawai berhasil dihapus.` };
+            const message = `Data pegawai berhasil dihapus.`;
+            logActivity(message);
+            return { success: true, message };
         }
         return { success: false, message: 'Gagal menghapus data pegawai.' };
     } catch (error: any) {
@@ -169,23 +169,23 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
         
         if (pegawaiId) {
              // --- UPDATE LOGIC ---
-            const { id, ...updateData } = dataForDb; // id is already in pegawaiId
-            const fields = Object.keys(updateData).map(f => `${f} = ?`).join(', ');
-            const values = Object.values(updateData);
+            const fields = Object.keys(dataForDb).map(f => `${f} = ?`).join(', ');
+            const values = Object.values(dataForDb);
             const sql = `UPDATE pegawai SET ${fields} WHERE id = ?`;
             await pool.query(sql, [...values, pegawaiId]);
-            const message = `Data pegawai ${dataForDb.pegawai_nama} berhasil diperbarui!`;
+            const message = `Data pegawai ${data.pegawai_nama} berhasil diperbarui!`;
+            logActivity(message);
             return { success: true, message };
 
         } else {
              // --- CREATE LOGIC ---
-            // ID is now auto-incremented by the database.
             const fields = Object.keys(dataForDb);
             const values = Object.values(dataForDb);
             const placeholders = fields.map(() => '?').join(', ');
             const sql = `INSERT INTO pegawai (${fields.join(', ')}) VALUES (${placeholders})`;
             await pool.query(sql, values);
-            const message = `Data pegawai ${dataForDb.pegawai_nama} berhasil disimpan!`;
+            const message = `Data pegawai ${data.pegawai_nama} berhasil disimpan!`;
+            logActivity(message);
             return { success: true, message };
         }
 

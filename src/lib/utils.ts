@@ -66,35 +66,34 @@ function formatMySqlDateTime(date: Date) {
  * @param data The object or value to process.
  * @returns The processed object or value.
  */
-export function sanitizeAndFormatData<T>(data: T): any {
-  if (data instanceof Date) {
-      return formatMySqlDateTime(data);
+export function sanitizeAndFormatData(data: any): any {
+  if (data === null || data === undefined) {
+    return null;
   }
 
-  if (typeof data === 'string') {
-    return data === '' ? null : escapeHtml(data);
-  }
+  const sanitizedData: { [key: string]: any } = {};
 
-  if (Array.isArray(data)) {
-    // Stringify arrays
-    return JSON.stringify(data.map(item => sanitizeAndFormatData(item)));
-  }
+  for (const key in data) {
+    if (Object.prototype.hasOwnProperty.call(data, key)) {
+      let value = data[key];
 
-  if (data && typeof data === 'object') {
-    const sanitizedObj: { [key: string]: any } = {};
-    for (const key in data) {
-      if (Object.prototype.hasOwnProperty.call(data, key)) {
-          const value = (data as any)[key];
-          // Check for file-like object { fileName, fileURL } and stringify it.
-          if (value && typeof value === 'object' && 'fileName' in value && 'fileURL' in value) {
-              sanitizedObj[key] = JSON.stringify(value);
-          } else {
-              sanitizedObj[key] = sanitizeAndFormatData(value);
-          }
+      if (value instanceof Date) {
+        sanitizedData[key] = formatMySqlDateTime(value);
+      } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        // This handles objects like 'documents', 'siswa_fotoProfil', etc.
+        sanitizedData[key] = JSON.stringify(value);
+      } else if (Array.isArray(value)) {
+        // This handles arrays like 'pegawai_skPengangkatan'
+        sanitizedData[key] = JSON.stringify(value);
+      } else if (typeof value === 'string') {
+        sanitizedData[key] = value === '' ? null : escapeHtml(value);
+      } else if (value === undefined) {
+        sanitizedData[key] = null;
+      } else {
+        sanitizedData[key] = value;
       }
     }
-    return sanitizedObj;
   }
-  
-  return data === undefined ? null : data;
+
+  return sanitizedData;
 }
