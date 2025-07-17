@@ -30,12 +30,27 @@ export default function PreviewSiswaPage({ params }: { params: { id: string } })
   const { id } = params;
   const [student, setStudent] = useState<Siswa | null>(null);
   const [loading, setLoading] = useState(true);
+  const [alamatKk, setAlamatKk] = useState({provinsi: '', kabupaten: '', kecamatan: '', desa: ''});
+  const [domisili, setDomisili] = useState({provinsi: '', kabupaten: '', kecamatan: '', desa: ''});
 
   useEffect(() => {
     const fetchStudent = async () => {
         const result = await getSiswaById(id);
         if (result) {
             setStudent(result);
+            // Fetch wilayah names
+            const [kkProv, kkKab, kkKec, kkDes, domProv, domKab, domKec, domDes] = await Promise.all([
+                getProvinceName(result.siswa_alamatKkProvinsi),
+                getKabupatenName(result.siswa_alamatKkKabupaten),
+                getKecamatanName(result.siswa_alamatKkKecamatan),
+                getDesaName(result.siswa_alamatKkDesa),
+                getProvinceName(result.siswa_domisiliProvinsi),
+                getKabupatenName(result.siswa_domisiliKabupaten),
+                getKecamatanName(result.siswa_domisiliKecamatan),
+                getDesaName(result.siswa_domisiliDesa),
+            ]);
+            setAlamatKk({provinsi: kkProv, kabupaten: kkKab, kecamatan: kkKec, desa: kkDes});
+            setDomisili({provinsi: domProv, kabupaten: domKab, kecamatan: domKec, desa: domDes});
         }
         setLoading(false);
     };
@@ -132,17 +147,17 @@ export default function PreviewSiswaPage({ params }: { params: { id: string } })
                     <div className="space-y-4">
                         <div className="p-4 bg-muted/50 rounded-lg space-y-3">
                             <h4 className='font-semibold text-md'>Alamat Sesuai KK</h4>
-                            <InfoRow label="Desa" value={getDesaName(student.siswa_alamatKkDesa)} icon={Home} />
-                            <InfoRow label="Kecamatan" value={getKecamatanName(student.siswa_alamatKkKecamatan)} icon={Home} />
-                            <InfoRow label="Kabupaten" value={getKabupatenName(student.siswa_alamatKkKabupaten)} icon={Home} />
-                            <InfoRow label="Provinsi" value={getProvinceName(student.siswa_alamatKkProvinsi)} icon={Home} />
+                            <InfoRow label="Desa" value={alamatKk.desa} icon={Home} />
+                            <InfoRow label="Kecamatan" value={alamatKk.kecamatan} icon={Home} />
+                            <InfoRow label="Kabupaten" value={alamatKk.kabupaten} icon={Home} />
+                            <InfoRow label="Provinsi" value={alamatKk.provinsi} icon={Home} />
                         </div>
                         <div className="p-4 bg-muted/50 rounded-lg space-y-3">
                             <h4 className='font-semibold text-md'>Domisili</h4>
-                            <InfoRow label="Desa" value={getDesaName(student.siswa_domisiliDesa)} icon={MapPin} />
-                            <InfoRow label="Kecamatan" value={getKecamatanName(student.siswa_domisiliKecamatan)} icon={MapPin} />
-                            <InfoRow label="Kabupaten" value={getKabupatenName(student.siswa_domisiliKabupaten)} icon={MapPin} />
-                            <InfoRow label="Provinsi" value={getProvinceName(student.siswa_domisiliProvinsi)} icon={MapPin} />
+                            <InfoRow label="Desa" value={domisili.desa} icon={MapPin} />
+                            <InfoRow label="Kecamatan" value={domisili.kecamatan} icon={MapPin} />
+                            <InfoRow label="Kabupaten" value={domisili.kabupaten} icon={MapPin} />
+                            <InfoRow label="Provinsi" value={domisili.provinsi} icon={MapPin} />
                         </div>
                     </div>
                 </section>

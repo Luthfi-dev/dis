@@ -208,26 +208,36 @@ function DataIdentitasPegawaiForm() {
   }, [watch, getValues, preview]);
 
   const [allKabupatens, setAllKabupatens] = useState<Wilayah[]>([]);
-  
+  const [kecamatans, setKecamatans] = useState<Wilayah[]>([]);
+  const [desas, setDesas] = useState<Wilayah[]>([]);
+
   const alamatKabupaten = watch('pegawai_alamatKabupaten');
   const alamatKecamatan = watch('pegawai_alamatKecamatan');
   
   useEffect(() => {
-    setAllKabupatens(getKabupatens());
+    getKabupatens('32').then(setAllKabupatens); // Default to Jawa Barat
   }, []);
 
-  const kecamatans = useMemo(() => getKecamatans(alamatKabupaten), [alamatKabupaten]);
-  const desas = useMemo(() => getDesas(alamatKecamatan), [alamatKecamatan]);
+  useEffect(() => {
+    if (alamatKabupaten) {
+        getKecamatans(alamatKabupaten).then(setKecamatans);
+    } else {
+        setKecamatans([]);
+    }
+    setValue('pegawai_alamatKecamatan', '');
+    setValue('pegawai_alamatDesa', '');
+  }, [alamatKabupaten, setValue]);
+
+  useEffect(() => {
+    if (alamatKecamatan) {
+        getDesas(alamatKecamatan).then(setDesas);
+    } else {
+        setDesas([]);
+    }
+    setValue('pegawai_alamatDesa', '');
+  }, [alamatKecamatan, setValue]);
 
   const wilayahToOptions = (wilayah: Wilayah[]) => wilayah.map(w => ({ value: w.id, label: w.name }));
-
-  useEffect(() => {
-     if(!getValues('pegawai_alamatKecamatan')) setValue('pegawai_alamatKecamatan', '');
-  }, [alamatKabupaten, setValue, getValues]);
-
-  useEffect(() => {
-    if(!getValues('pegawai_alamatDesa')) setValue('pegawai_alamatDesa', '');
-  }, [alamatKecamatan, setValue, getValues]);
   
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: keyof PegawaiFormData) => {
     const file = e.target.files?.[0];

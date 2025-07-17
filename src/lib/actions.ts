@@ -43,24 +43,29 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
         const isComplete = sanitizedData.siswa_namaLengkap && sanitizedData.siswa_nis && sanitizedData.siswa_nisn;
         const status = isComplete ? 'Lengkap' : 'Belum Lengkap';
 
-        // Explicitly stringify JSON fields
         const dataForDb: Record<string, any> = {
             ...sanitizedData,
             status,
-            documents: JSON.stringify(sanitizedData.documents || {})
         };
+        
+        // Ensure all object/array fields are stringified
+        for (const key in dataForDb) {
+            if (typeof dataForDb[key] === 'object' && dataForDb[key] !== null) {
+                dataForDb[key] = JSON.stringify(dataForDb[key]);
+            }
+        }
 
         if (studentId) {
             // --- UPDATE LOGIC ---
             const { id, ...updateData } = dataForDb; // Exclude id from update payload
-            const fields = Object.keys(updateData);
+            const fields = Object.keys(updateData).map(f => `${f} = ?`).join(', ');
             const values = Object.values(updateData);
 
-            const sql = `UPDATE siswa SET ${fields.map(f => `${f} = ?`).join(', ')} WHERE id = ?`;
+            const sql = `UPDATE siswa SET ${fields} WHERE id = ?`;
             const queryValues = [...values, studentId];
             
             await pool.query(sql, queryValues);
-            const message = `Data siswa ${updateData.siswa_namaLengkap} berhasil diperbarui!`;
+            const message = `Data siswa ${sanitizedData.siswa_namaLengkap} berhasil diperbarui!`;
             return { success: true, message };
 
         } else {

@@ -50,13 +50,13 @@ const initialFormValues: StudentFormData = {
   siswa_golonganDarah: 'A',
   siswa_telepon: '081234567890',
   siswa_alamatKkProvinsi: '32',
-  siswa_alamatKkKabupaten: '3201',
-  siswa_alamatKkKecamatan: '320113',
-  siswa_alamatKkDesa: '3201132001',
+  siswa_alamatKkKabupaten: '3273',
+  siswa_alamatKkKecamatan: '327301',
+  siswa_alamatKkDesa: '3273011001',
   siswa_domisiliProvinsi: '32',
-  siswa_domisiliKabupaten: '3201',
-  siswa_domisiliKecamatan: '320113',
-  siswa_domisiliDesa: '3201132001',
+  siswa_domisiliKabupaten: '3273',
+  siswa_domisiliKecamatan: '327301',
+  siswa_domisiliDesa: '3273011001',
   siswa_namaAyah: 'BAMBANG',
   siswa_namaIbu: 'SITI',
   siswa_pendidikanAyah: 'S1',
@@ -251,7 +251,13 @@ function DataSiswaForm() {
 
   
   const [provinces, setProvinces] = useState<Wilayah[]>([]);
-  
+  const [kkKabupatens, setKkKabupatens] = useState<Wilayah[]>([]);
+  const [kkKecamatans, setKkKecamatans] = useState<Wilayah[]>([]);
+  const [kkDesas, setKkDesas] = useState<Wilayah[]>([]);
+  const [domisiliKabupatens, setDomisiliKabupatens] = useState<Wilayah[]>([]);
+  const [domisiliKecamatans, setDomisiliKecamatans] = useState<Wilayah[]>([]);
+  const [domisiliDesas, setDomisiliDesas] = useState<Wilayah[]>([]);
+
   const alamatKkProvinsi = watch('siswa_alamatKkProvinsi');
   const alamatKkKabupaten = watch('siswa_alamatKkKabupaten');
   const alamatKkKecamatan = watch('siswa_alamatKkKecamatan');
@@ -261,42 +267,71 @@ function DataSiswaForm() {
   const domisiliKecamatan = watch('siswa_domisiliKecamatan');
 
   useEffect(() => {
-    setProvinces(getProvinces());
+    getProvinces().then(setProvinces);
   }, []);
 
-  const kkKabupatens = useMemo(() => getKabupatens(alamatKkProvinsi), [alamatKkProvinsi]);
-  const kkKecamatans = useMemo(() => getKecamatans(alamatKkKabupaten), [alamatKkKabupaten]);
-  const kkDesas = useMemo(() => getDesas(alamatKkKecamatan), [alamatKkKecamatan]);
-
-  const domisiliKabupatens = useMemo(() => getKabupatens(domisiliProvinsi), [domisiliProvinsi]);
-  const domisiliKecamatans = useMemo(() => getKecamatans(domisiliKabupaten), [domisiliKabupaten]);
-  const domisiliDesas = useMemo(() => getDesas(domisiliKecamatan), [domisiliKecamatan]);
-
-  const wilayahToOptions = (wilayah: Wilayah[]) => wilayah.map(w => ({ value: w.id, label: w.name }));
+  useEffect(() => {
+    if (alamatKkProvinsi) {
+      getKabupatens(alamatKkProvinsi).then(setKkKabupatens);
+    } else {
+      setKkKabupatens([]);
+    }
+    setValue('siswa_alamatKkKabupaten', '');
+    setValue('siswa_alamatKkKecamatan', '');
+    setValue('siswa_alamatKkDesa', '');
+  }, [alamatKkProvinsi, setValue]);
 
   useEffect(() => {
-    if(!getValues('siswa_alamatKkKabupaten')) setValue('siswa_alamatKkKabupaten', '');
-  }, [alamatKkProvinsi, setValue, getValues]);
+    if (alamatKkKabupaten) {
+      getKecamatans(alamatKkKabupaten).then(setKkKecamatans);
+    } else {
+      setKkKecamatans([]);
+    }
+     setValue('siswa_alamatKkKecamatan', '');
+     setValue('siswa_alamatKkDesa', '');
+  }, [alamatKkKabupaten, setValue]);
 
   useEffect(() => {
-     if(!getValues('siswa_alamatKkKecamatan')) setValue('siswa_alamatKkKecamatan', '');
-  }, [alamatKkKabupaten, setValue, getValues]);
+    if (alamatKkKecamatan) {
+        getDesas(alamatKkKecamatan).then(setKkDesas);
+    } else {
+        setKkDesas([]);
+    }
+    setValue('siswa_alamatKkDesa', '');
+  }, [alamatKkKecamatan, setValue]);
+
+   useEffect(() => {
+    if (domisiliProvinsi) {
+      getKabupatens(domisiliProvinsi).then(setDomisiliKabupatens);
+    } else {
+      setDomisiliKabupatens([]);
+    }
+    setValue('siswa_domisiliKabupaten', '');
+    setValue('siswa_domisiliKecamatan', '');
+    setValue('siswa_domisiliDesa', '');
+  }, [domisiliProvinsi, setValue]);
 
   useEffect(() => {
-    if(!getValues('siswa_alamatKkDesa')) setValue('siswa_alamatKkDesa', '');
-  }, [alamatKkKecamatan, setValue, getValues]);
-
-  useEffect(() => {
-    if(!getValues('siswa_domisiliKabupaten')) setValue('siswa_domisiliKabupaten', '');
-  }, [domisiliProvinsi, setValue, getValues]);
-
-  useEffect(() => {
-    if(!getValues('siswa_domisiliKecamatan')) setValue('siswa_domisiliKecamatan', '');
-  }, [domisiliKabupaten, setValue, getValues]);
+    if (domisiliKabupaten) {
+      getKecamatans(domisiliKabupaten).then(setDomisiliKecamatans);
+    } else {
+      setDomisiliKecamatans([]);
+    }
+    setValue('siswa_domisiliKecamatan', '');
+    setValue('siswa_domisiliDesa', '');
+  }, [domisiliKabupaten, setValue]);
   
   useEffect(() => {
-    if(!getValues('siswa_domisiliDesa')) setValue('siswa_domisiliDesa', '');
-  }, [domisiliKecamatan, setValue, getValues]);
+    if (domisiliKecamatan) {
+      getDesas(domisiliKecamatan).then(setDomisiliDesas);
+    } else {
+      setDomisiliDesas([]);
+    }
+    setValue('siswa_domisiliDesa', '');
+  }, [domisiliKecamatan, setValue]);
+
+
+  const wilayahToOptions = (wilayah: Wilayah[]) => wilayah.map(w => ({ value: w.id, label: w.name }));
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -526,6 +561,24 @@ function DataSiswaForm() {
                     </FormControl><FormMessage /></FormItem>
                 )} />
             </div>
+        </div>
+        <Separator className="md:col-span-2 my-4" />
+        <div className="md:col-span-2">
+            <h3 className="text-sm font-medium mb-2"><FormLabel>Kesehatan Siswa</FormLabel></h3>
+            <Grid>
+                 <FormField control={control} name="siswa_tinggiBadan" render={({ field }) => (
+                    <FormItem><FormLabel>Tinggi Badan (cm)</FormLabel><FormControl><Input type="number" placeholder="160" {...field} onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                )} />
+                 <FormField control={control} name="siswa_beratBadan" render={({ field }) => (
+                    <FormItem><FormLabel>Berat Badan (kg)</FormLabel><FormControl><Input type="number" placeholder="50" {...field} onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                )} />
+                 <FormField control={control} name="siswa_penyakit" render={({ field }) => (
+                    <FormItem><FormLabel>Riwayat Penyakit</FormLabel><FormControl><Input placeholder="Contoh: Asma" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                 <FormField control={control} name="siswa_kelainanJasmani" render={({ field }) => (
+                    <FormItem><FormLabel>Kelainan Jasmani</FormLabel><FormControl><Input placeholder="Contoh: Tidak ada" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+            </Grid>
         </div>
       </Grid>
     </div>

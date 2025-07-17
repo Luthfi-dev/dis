@@ -59,12 +59,17 @@ export default function PreviewPegawaiPage({ params }: { params: { id: string } 
   const { id } = params;
   const [pegawai, setPegawai] = useState<Pegawai | null>(null);
   const [loading, setLoading] = useState(true);
+  const [alamat, setAlamat] = useState({kabupaten: '', kecamatan: '', desa: ''});
 
   useEffect(() => {
     const fetchPegawai = async () => {
         const result = await getPegawaiById(id);
         if(result) {
             setPegawai(result);
+            const kabName = await getKabupatenName(result.pegawai_alamatKabupaten);
+            const kecName = await getKecamatanName(result.pegawai_alamatKecamatan);
+            const desaName = await getDesaName(result.pegawai_alamatDesa);
+            setAlamat({kabupaten: kabName, kecamatan: kecName, desa: desaName});
         }
         setLoading(false);
     };
@@ -166,9 +171,9 @@ export default function PreviewPegawaiPage({ params }: { params: { id: string } 
                 <section>
                     <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">C. Alamat Rumah</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
-                         <InfoRow label="Kabupaten" value={getKabupatenName(pegawai.pegawai_alamatKabupaten)} icon={MapPin} />
-                         <InfoRow label="Kecamatan" value={getKecamatanName(pegawai.pegawai_alamatKecamatan)} icon={MapPin} />
-                         <InfoRow label="Desa" value={getDesaName(pegawai.pegawai_alamatDesa)} icon={Home} />
+                         <InfoRow label="Kabupaten" value={alamat.kabupaten} icon={MapPin} />
+                         <InfoRow label="Kecamatan" value={alamat.kecamatan} icon={MapPin} />
+                         <InfoRow label="Desa" value={alamat.desa} icon={Home} />
                          <InfoRow label="Dusun" value={pegawai.pegawai_alamatDusun} icon={Home} />
                     </div>
                 </section>

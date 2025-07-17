@@ -52,12 +52,27 @@ export default function LihatSiswaPage({ params }: { params: { id: string } }) {
     const { id } = params;
     const [student, setStudent] = useState<Siswa | null>(null);
     const [loading, setLoading] = useState(true);
+    const [alamatKk, setAlamatKk] = useState({provinsi: '', kabupaten: '', kecamatan: '', desa: ''});
+    const [domisili, setDomisili] = useState({provinsi: '', kabupaten: '', kecamatan: '', desa: ''});
 
     useEffect(() => {
         const fetchStudent = async () => {
             const result = await getSiswaById(id);
             if (result) {
                 setStudent(result);
+                // Fetch wilayah names
+                const [kkProv, kkKab, kkKec, kkDes, domProv, domKab, domKec, domDes] = await Promise.all([
+                    getProvinceName(result.siswa_alamatKkProvinsi),
+                    getKabupatenName(result.siswa_alamatKkKabupaten),
+                    getKecamatanName(result.siswa_alamatKkKecamatan),
+                    getDesaName(result.siswa_alamatKkDesa),
+                    getProvinceName(result.siswa_domisiliProvinsi),
+                    getKabupatenName(result.siswa_domisiliKabupaten),
+                    getKecamatanName(result.siswa_domisiliKecamatan),
+                    getDesaName(result.siswa_domisiliDesa),
+                ]);
+                setAlamatKk({provinsi: kkProv, kabupaten: kkKab, kecamatan: kkKec, desa: kkDes});
+                setDomisili({provinsi: domProv, kabupaten: domKab, kecamatan: domKec, desa: domDes});
             }
             setLoading(false);
         };
@@ -146,19 +161,19 @@ export default function LihatSiswaPage({ params }: { params: { id: string } }) {
              <div>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">Alamat Sesuai KK</h3>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                    <DetailItem label="Kabupaten" value={getKabupatenName(student.siswa_alamatKkKabupaten)} icon={Home}/>
-                    <DetailItem label="Kecamatan" value={getKecamatanName(student.siswa_alamatKkKecamatan)} icon={Home}/>
-                    <DetailItem label="Desa" value={getDesaName(student.siswa_alamatKkDesa)} icon={Home}/>
-                    <DetailItem label="Provinsi" value={getProvinceName(student.siswa_alamatKkProvinsi)} icon={Home}/>
+                    <DetailItem label="Provinsi" value={alamatKk.provinsi} icon={Home}/>
+                    <DetailItem label="Kabupaten" value={alamatKk.kabupaten} icon={Home}/>
+                    <DetailItem label="Kecamatan" value={alamatKk.kecamatan} icon={Home}/>
+                    <DetailItem label="Desa" value={alamatKk.desa} icon={Home}/>
                 </div>
              </div>
              <div>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">Alamat Domisili</h3>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                    <DetailItem label="Provinsi" value={getProvinceName(student.siswa_domisiliProvinsi)} icon={MapPin}/>
-                    <DetailItem label="Kabupaten" value={getKabupatenName(student.siswa_domisiliKabupaten)} icon={MapPin}/>
-                    <DetailItem label="Kecamatan" value={getKecamatanName(student.siswa_domisiliKecamatan)} icon={MapPin}/>
-                    <DetailItem label="Desa" value={getDesaName(student.siswa_domisiliDesa)} icon={MapPin}/>
+                    <DetailItem label="Provinsi" value={domisili.provinsi} icon={MapPin}/>
+                    <DetailItem label="Kabupaten" value={domisili.kabupaten} icon={MapPin}/>
+                    <DetailItem label="Kecamatan" value={domisili.kecamatan} icon={MapPin}/>
+                    <DetailItem label="Desa" value={domisili.desa} icon={MapPin}/>
                 </div>
              </div>
           </CardContent>

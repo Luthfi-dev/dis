@@ -79,12 +79,19 @@ function MultiDocumentItem({ label, documents }: { label: string; documents?: { 
 export function LihatPegawaiClient({ id }: { id: string }) {
     const [pegawai, setPegawai] = useState<Pegawai | null>(null);
     const [loading, setLoading] = useState(true);
+    const [alamat, setAlamat] = useState({kabupaten: '', kecamatan: '', desa: ''});
+
 
     useEffect(() => {
         const fetchPegawai = async () => {
             const result = await getPegawaiById(id);
             if(result) {
                 setPegawai(result);
+                // Fetch wilayah names
+                const kabName = await getKabupatenName(result.pegawai_alamatKabupaten);
+                const kecName = await getKecamatanName(result.pegawai_alamatKecamatan);
+                const desaName = await getDesaName(result.pegawai_alamatDesa);
+                setAlamat({kabupaten: kabName, kecamatan: kecName, desa: desaName});
             }
             setLoading(false);
         };
@@ -173,9 +180,9 @@ export function LihatPegawaiClient({ id }: { id: string }) {
              <div>
                 <h3 className="text-lg font-semibold mb-2 border-b pb-2">Alamat Rumah</h3>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                    <DetailItem label="Kabupaten" value={getKabupatenName(pegawai.pegawai_alamatKabupaten)} icon={Home}/>
-                    <DetailItem label="Kecamatan" value={getKecamatanName(pegawai.pegawai_alamatKecamatan)} icon={Home}/>
-                    <DetailItem label="Desa" value={getDesaName(pegawai.pegawai_alamatDesa)} icon={Home}/>
+                    <DetailItem label="Kabupaten" value={alamat.kabupaten} icon={Home}/>
+                    <DetailItem label="Kecamatan" value={alamat.kecamatan} icon={Home}/>
+                    <DetailItem label="Desa" value={alamat.desa} icon={Home}/>
                     <DetailItem label="Dusun" value={pegawai.pegawai_alamatDusun} icon={Home}/>
                 </div>
              </div>
