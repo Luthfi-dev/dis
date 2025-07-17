@@ -3,7 +3,7 @@
 
 import type { Siswa } from './data';
 import type { Pegawai } from './pegawai-data';
-import { sanitizeData } from './utils';
+import { sanitizeAndFormatData } from './utils';
 import type { PegawaiFormData } from '@/lib/pegawai-data';
 import type { StudentFormData } from '@/lib/student-data-t';
 import pool from './db';
@@ -31,34 +31,23 @@ export async function getSiswaById(id: string): Promise<Siswa | null> {
 }
 
 export async function deleteSiswa(id: string): Promise<{ success: boolean; message: string }> {
-    const [result]:any = await pool.query('DELETE FROM siswa WHERE id = ?', [id]);
-    if (result.affectedRows > 0) {
-        return { success: true, message: `Data siswa berhasil dihapus.` };
+    try {
+      const [result]:any = await pool.query('DELETE FROM siswa WHERE id = ?', [id]);
+      if (result.affectedRows > 0) {
+          return { success: true, message: `Data siswa berhasil dihapus.` };
+      }
+      return { success: false, message: 'Gagal menghapus data siswa.' };
+    } catch (error: any) {
+        return { success: false, message: `Gagal menghapus data siswa: ${error.message}` };
     }
-    return { success: false, message: 'Gagal menghapus data siswa.' };
 }
 
 export async function submitStudentData(data: StudentFormData, studentId?: string) {
     try {
-        const sanitizedData = sanitizeData(data);
+        const dataForDb = sanitizeAndFormatData(data);
         
-        const isComplete = sanitizedData.siswa_namaLengkap && sanitizedData.siswa_nis && sanitizedData.siswa_nisn;
-        const status = isComplete ? 'Lengkap' : 'Belum Lengkap';
-
-        const dataForDb: Record<string, any> = {
-            ...sanitizedData,
-            status,
-        };
-        
-        // Ensure all object/array fields are stringified and empty strings are converted to null
-        for (const key in dataForDb) {
-            if (typeof dataForDb[key] === 'object' && dataForDb[key] !== null) {
-                dataForDb[key] = JSON.stringify(dataForDb[key]);
-            }
-             if (dataForDb[key] === '') {
-                dataForDb[key] = null;
-            }
-        }
+        const isComplete = dataForDb.siswa_namaLengkap && dataForDb.siswa_nis && dataForDb.siswa_nisn;
+        dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
 
         if (studentId) {
             // --- UPDATE LOGIC ---
@@ -70,21 +59,20 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
             const queryValues = [...values, studentId];
             
             await pool.query(sql, queryValues);
-            const message = `Data siswa ${sanitizedData.siswa_namaLengkap} berhasil diperbarui!`;
+            const message = `Data siswa ${dataForDb.siswa_namaLengkap} berhasil diperbarui!`;
             return { success: true, message };
 
         } else {
             // --- CREATE LOGIC ---
-            const id = crypto.randomUUID();
-            const finalData = { ...dataForDb, id };
+            dataForDb.id = crypto.randomUUID();
             
-            const fields = Object.keys(finalData);
-            const values = Object.values(finalData);
+            const fields = Object.keys(dataForDb);
+            const values = Object.values(dataForDb);
 
             const sql = `INSERT INTO siswa (${fields.join(', ')}) VALUES (${values.map(() => '?').join(', ')})`;
             
             await pool.query(sql, values);
-            const message = `Data siswa ${finalData.siswa_namaLengkap} berhasil disimpan!`;
+            const message = `Data siswa ${dataForDb.siswa_namaLengkap} berhasil disimpan!`;
             return { success: true, message };
         }
     } catch (error: any) {
@@ -100,9 +88,13 @@ export async function getPegawai(): Promise<Pegawai[]> {
      return (rows as Pegawai[]).map(row => {
         const parsedRow: any = { ...row };
         for (const key in parsedRow) {
+            // Check if key starts with 'pegawai_' to avoid parsing non-pegawai fields
             if (key.startsWith('pegawai_') && typeof parsedRow[key] === 'string') {
                 try {
-                    parsedRow[key] = JSON.parse(parsedRow[key]);
+                    // Only parse if it looks like a JSON object or array
+                    if (parsedRow[key].startsWith('{') || parsedRow[key].startsWith('[')) {
+                        parsedRow[key] = JSON.parse(parsedRow[key]);
+                    }
                 } catch (e) {
                     // Not a JSON string, leave it as is
                 }
@@ -120,7 +112,9 @@ export async function getPegawaiById(id: string): Promise<Pegawai | null> {
          for (const key in parsedP) {
             if (key.startsWith('pegawai_') && typeof parsedP[key] === 'string') {
                 try {
-                    parsedP[key] = JSON.parse(parsedP[key]);
+                     if (parsedP[key].startsWith('{') || parsedP[key].startsWith('[')) {
+                        parsedP[key] = JSON.parse(parsedP[key]);
+                    }
                 } catch (e) {
                      // Not a JSON string, leave it as is
                 }
@@ -132,33 +126,23 @@ export async function getPegawaiById(id: string): Promise<Pegawai | null> {
 }
 
 export async function deletePegawai(id: string): Promise<{ success: boolean; message: string }> {
-    const [result]:any = await pool.query('DELETE FROM pegawai WHERE id = ?', [id]);
-    if (result.affectedRows > 0) {
-        return { success: true, message: `Data pegawai berhasil dihapus.` };
+     try {
+        const [result]:any = await pool.query('DELETE FROM pegawai WHERE id = ?', [id]);
+        if (result.affectedRows > 0) {
+            return { success: true, message: `Data pegawai berhasil dihapus.` };
+        }
+        return { success: false, message: 'Gagal menghapus data pegawai.' };
+    } catch (error: any) {
+        return { success: false, message: `Gagal menghapus data pegawai: ${error.message}` };
     }
-    return { success: false, message: 'Gagal menghapus data pegawai.' };
 }
 
 export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: string) {
     try {
-        const sanitizedData = sanitizeData(data);
+        const dataForDb = sanitizeAndFormatData(data);
         
-        const status = sanitizedData.pegawai_nama && sanitizedData.pegawai_nip ? 'Lengkap' : 'Belum Lengkap';
-        
-        const dataForDb: Record<string, any> = {
-            ...sanitizedData,
-            status,
-        };
-
-        // Explicitly stringify all object/array fields and handle empty strings
-        for (const key in dataForDb) {
-            if (typeof dataForDb[key] === 'object' && dataForDb[key] !== null) {
-                dataForDb[key] = JSON.stringify(dataForDb[key]);
-            }
-            if (dataForDb[key] === '') {
-                dataForDb[key] = null;
-            }
-        }
+        const isComplete = dataForDb.pegawai_nama && dataForDb.pegawai_nip;
+        dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
 
         if (pegawaiId) {
             const { id, ...updateData } = dataForDb;
@@ -168,15 +152,14 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
             const queryValues = [...values, pegawaiId];
             await pool.query(sql, queryValues);
         } else {
-            const id = crypto.randomUUID();
-            const finalData = { ...dataForDb, id };
-            const fields = Object.keys(finalData);
-            const values = Object.values(finalData);
+            dataForDb.id = crypto.randomUUID();
+            const fields = Object.keys(dataForDb);
+            const values = Object.values(dataForDb);
             const sql = `INSERT INTO pegawai (${fields.join(', ')}) VALUES (${values.map(() => '?').join(', ')})`;
             await pool.query(sql, values);
         }
 
-        const message = pegawaiId ? `Data pegawai ${sanitizedData.pegawai_nama} berhasil diperbarui!` : `Data pegawai ${sanitizedData.pegawai_nama} berhasil disimpan!`;
+        const message = pegawaiId ? `Data pegawai ${dataForDb.pegawai_nama} berhasil diperbarui!` : `Data pegawai ${dataForDb.pegawai_nama} berhasil disimpan!`;
 
         return { success: true, message };
     } catch (error: any) {

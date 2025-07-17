@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/toast"
 import { Copy } from "lucide-react"
 import { Button } from "./button"
+import { ScrollArea } from "./scroll-area"
+import { cn } from "@/lib/utils"
 
 export function Toaster() {
   const { toasts, toast } = useToast()
@@ -29,18 +31,25 @@ export function Toaster() {
   return (
     <ToastProvider>
       {toasts.map(function ({ id, title, description, action, variant, ...props }) {
-        // Updated logic: show copy button if variant is destructive and description is a long string.
-        const isError = variant === 'destructive' && typeof description === 'string' && description.length > 50;
+        const isError = variant === 'destructive' && !!description;
 
         return (
-          <Toast key={id} variant={variant} {...props}>
+          <Toast key={id} variant={variant} {...props} className={cn(isError && "w-[480px]")}>
             <div className="grid gap-1 flex-1">
               {title && <ToastTitle>{title}</ToastTitle>}
               {description && (
-                <ToastDescription>{description}</ToastDescription>
+                isError ? (
+                  <ScrollArea className="h-20 w-full rounded-md border bg-destructive-foreground/10 p-2">
+                    <pre className="text-xs text-destructive-foreground whitespace-pre-wrap break-all select-text">
+                      {description as string}
+                    </pre>
+                  </ScrollArea>
+                ) : (
+                   <ToastDescription>{description}</ToastDescription>
+                )
               )}
             </div>
-             <div className="flex items-center gap-2">
+             <div className="flex flex-col items-center gap-2 self-start">
               {action}
               {isError && (
                 <Button 
@@ -52,8 +61,8 @@ export function Toaster() {
                     <Copy className="h-4 w-4" />
                 </Button>
               )}
+               <ToastClose className="static transform-none" />
             </div>
-            <ToastClose />
           </Toast>
         )
       })}

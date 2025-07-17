@@ -40,6 +40,7 @@ export function mergeDeep(target: any, source: any): any {
  * @returns The sanitized string.
  */
 function escapeHtml(str: string): string {
+  if (typeof str !== 'string') return str;
   return str
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -48,29 +49,52 @@ function escapeHtml(str: string): string {
     .replace(/'/g, "&#039;");
 }
 
+function formatMySqlDateTime(date: Date) {
+    if (!(date instanceof Date) || isNaN(date.getTime())) {
+        return null;
+    }
+    const pad = (num: number) => num.toString().padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
 /**
- * Recursively sanitizes all string properties of an object.
- * @param data The object or value to sanitize.
- * @returns The sanitized object or value.
+ * Recursively sanitizes and formats data for database insertion.
+ * - Escapes HTML in strings.
+ * - Converts empty strings to null.
+ * - Stringifies objects/arrays.
+ * - Formats Date objects for MySQL.
+ * @param data The object or value to process.
+ * @returns The processed object or value.
  */
-export function sanitizeData<T>(data: T): T {
+export function sanitizeAndFormatData<T>(data: T): any {
+  if (data instanceof Date) {
+      return formatMySqlDateTime(data);
+  }
+
   if (typeof data === 'string') {
-    return escapeHtml(data) as T;
+    return data === '' ? null : escapeHtml(data);
   }
 
   if (Array.isArray(data)) {
-    return data.map(item => sanitizeData(item)) as T;
+    // Stringify arrays
+    return JSON.stringify(data.map(item => sanitizeAndFormatData(item)));
   }
 
   if (data && typeof data === 'object') {
     const sanitizedObj: { [key: string]: any } = {};
     for (const key in data) {
       if (Object.prototype.hasOwnProperty.call(data, key)) {
-        sanitizedObj[key] = sanitizeData((data as any)[key]);
+          const value = (data as any)[key];
+          // Check for file-like object { fileName, fileURL } and stringify it.
+          if (value && typeof value === 'object' && 'fileName' in value && 'fileURL' in value) {
+              sanitizedObj[key] = JSON.stringify(value);
+          } else {
+              sanitizedObj[key] = sanitizeAndFormatData(value);
+          }
       }
     }
-    return sanitizedObj as T;
+    return sanitizedObj;
   }
   
-  return data;
+  return data === undefined ? null : data;
 }
