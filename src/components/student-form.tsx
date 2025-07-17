@@ -65,7 +65,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
 
   const methods = useForm<StudentFormData>({
     mode: 'onBlur', 
-    defaultValues: initialFormValues,
+    defaultValues: studentData || initialFormValues,
   });
 
   const { handleSubmit, trigger, getValues, formState: { errors }, reset } = methods;
@@ -122,7 +122,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
             <CardDescription>Sesi {currentStep} dari {steps.length}. Kolom dengan tanda * wajib diisi.</CardDescription>
           </CardHeader>
           <CardContent>
-            {currentStep === 1 && <DataSiswaForm />}
+            {currentStep === 1 && <DataSiswaForm studentData={studentData} />}
             {currentStep === 2 && <DataDokumenUtamaForm />}
             {currentStep === 3 && <DataOrangTuaForm />}
             {currentStep === 4 && <DataPerkembanganForm />}
@@ -162,7 +162,7 @@ function FormLabelRequired({ children }: { children: React.ReactNode }) {
     return <FormLabel>{children} <span className="text-destructive">*</span></FormLabel>
 }
 
-function DataSiswaForm() {
+function DataSiswaForm({ studentData }: { studentData?: Partial<Siswa> & { id: string } }) {
   const { control, watch, setValue, getValues, formState: { isDirty } } = useFormContext<StudentFormData>();
   const [preview, setPreview] = useState<string | null>(getValues('siswa_fotoProfil.fileURL') || null);
   const { toast } = useToast();
@@ -203,7 +203,16 @@ function DataSiswaForm() {
 
   useEffect(() => {
     getProvinces().then(setProvinces);
-  }, []);
+    if(studentData){
+      if(studentData.siswa_alamatKkProvinsi) getKabupatens(studentData.siswa_alamatKkProvinsi).then(setKkKabupatens);
+      if(studentData.siswa_alamatKkKabupaten) getKecamatans(studentData.siswa_alamatKkKabupaten).then(setKkKecamatans);
+      if(studentData.siswa_alamatKkKecamatan) getDesas(studentData.siswa_alamatKkKecamatan).then(setKkDesas);
+
+      if(studentData.siswa_domisiliProvinsi) getKabupatens(studentData.siswa_domisiliProvinsi).then(setDomisiliKabupatens);
+      if(studentData.siswa_domisiliKabupaten) getKecamatans(studentData.siswa_domisiliKabupaten).then(setDomisiliKecamatans);
+      if(studentData.siswa_domisiliKecamatan) getDesas(studentData.siswa_domisiliKecamatan).then(setDomisiliDesas);
+    }
+  }, [studentData]);
 
   // --- LOGIC FOR ALAMAT KK ---
   useEffect(() => {

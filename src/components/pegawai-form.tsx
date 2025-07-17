@@ -103,7 +103,7 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
 
   const methods = useForm<PegawaiFormData>({
     mode: 'onBlur', 
-    defaultValues: initialFormValues,
+    defaultValues: pegawaiData || initialFormValues,
   });
 
   const { handleSubmit, reset } = methods;
@@ -161,7 +161,7 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
             <CardDescription>Sesi {currentStep} dari {steps.length}. Kolom dengan tanda * wajib diisi.</CardDescription>
           </CardHeader>
           <CardContent>
-            {currentStep === 1 && <DataIdentitasPegawaiForm />}
+            {currentStep === 1 && <DataIdentitasPegawaiForm pegawaiData={pegawaiData} />}
             {currentStep === 2 && <FilePegawaiForm />}
             {currentStep === 3 && <DataValidasiForm />}
           </CardContent>
@@ -197,7 +197,7 @@ function FormLabelRequired({ children }: { children: React.ReactNode }) {
     return <FormLabel>{children} <span className="text-destructive">*</span></FormLabel>
 }
 
-function DataIdentitasPegawaiForm() {
+function DataIdentitasPegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & { id: string } }) {
   const { control, watch, setValue, getValues, formState: {isDirty} } = useFormContext<PegawaiFormData>();
   const { toast } = useToast();
   const [preview, setPreview] = useState<string | null>(getValues('pegawai_phaspoto.fileURL') || null);
@@ -224,7 +224,11 @@ function DataIdentitasPegawaiForm() {
   
   useEffect(() => {
     getKabupatens('32').then(setAllKabupatens); // Default to Jawa Barat
-  }, []);
+    if (pegawaiData) {
+        if(pegawaiData.pegawai_alamatKabupaten) getKecamatans(pegawaiData.pegawai_alamatKabupaten).then(setKecamatans);
+        if(pegawaiData.pegawai_alamatKecamatan) getDesas(pegawaiData.pegawai_alamatKecamatan).then(setDesas);
+    }
+  }, [pegawaiData]);
   
   useEffect(() => {
       const fetchWilayah = async () => {
