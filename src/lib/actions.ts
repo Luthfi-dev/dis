@@ -70,11 +70,11 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
         const dataForDb = sanitizeAndFormatData(data);
         
         const isComplete = dataForDb.siswa_namaLengkap && dataForDb.siswa_nis && dataForDb.siswa_nisn;
+        dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
         
         if (studentId) {
             // --- UPDATE LOGIC ---
-            dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
-            const { id, ...updateData } = dataForDb; // Exclude id from update payload
+            const { id, ...updateData } = dataForDb;
             
             const fields = Object.keys(updateData).map(f => `${f} = ?`).join(', ');
             const values = Object.values(updateData);
@@ -88,9 +88,7 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
 
         } else {
             // --- CREATE LOGIC ---
-            dataForDb.id = crypto.randomUUID();
-            dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
-            
+            // ID is now auto-incremented by the database, so we don't set it here.
             const fields = Object.keys(dataForDb);
             const values = Object.values(dataForDb);
             const placeholders = fields.map(() => '?').join(', ');
@@ -167,34 +165,32 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
         const dataForDb = sanitizeAndFormatData(data);
         
         const isComplete = dataForDb.pegawai_nama && dataForDb.pegawai_nip;
+        dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
         
         if (pegawaiId) {
              // --- UPDATE LOGIC ---
-            dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
             const { id, ...updateData } = dataForDb;
             const fields = Object.keys(updateData).map(f => `${f} = ?`).join(', ');
             const values = Object.values(updateData);
             const sql = `UPDATE pegawai SET ${fields} WHERE id = ?`;
             await pool.query(sql, [...values, pegawaiId]);
+            const message = `Data pegawai ${dataForDb.pegawai_nama} berhasil diperbarui!`;
+            return { success: true, message };
 
         } else {
              // --- CREATE LOGIC ---
-            dataForDb.id = crypto.randomUUID();
-            dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
+            // ID is now auto-incremented by the database.
             const fields = Object.keys(dataForDb);
             const values = Object.values(dataForDb);
             const placeholders = fields.map(() => '?').join(', ');
             const sql = `INSERT INTO pegawai (${fields.join(', ')}) VALUES (${placeholders})`;
             await pool.query(sql, values);
+            const message = `Data pegawai ${dataForDb.pegawai_nama} berhasil disimpan!`;
+            return { success: true, message };
         }
 
-        const message = pegawaiId ? `Data pegawai ${dataForDb.pegawai_nama} berhasil diperbarui!` : `Data pegawai ${dataForDb.pegawai_nama} berhasil disimpan!`;
-
-        return { success: true, message };
     } catch (error: any) {
         console.error("Pegawai submission server error:", error);
         return { success: false, message: `Gagal menyimpan data pegawai karena kesalahan server: ${error.message}` };
     }
 }
-
-    
