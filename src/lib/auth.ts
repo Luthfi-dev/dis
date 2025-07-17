@@ -2,8 +2,7 @@
 'use server';
 import 'server-only';
 import pool from './db';
-
-// This file now directly interacts with the database for all auth operations.
+import bcrypt from 'bcrypt';
 
 export type User = {
   id: string;
@@ -12,7 +11,7 @@ export type User = {
   role: 'superadmin' | 'admin' | 'user';
   status: 'active' | 'blocked';
   avatar?: string;
-  password?: string; // This should only be the hashed password from the DB
+  password?: string;
 };
 
 export async function loginAction(email: string, pass: string): Promise<{ success: boolean; user?: User; error?: string }> {
@@ -28,10 +27,8 @@ export async function loginAction(email: string, pass: string): Promise<{ succes
             return { success: false, error: 'Akun Anda telah diblokir.' };
         }
         
-        // This is NOT secure hashing. Replace with bcrypt in a real app.
-        // For this example, we assume password stored in DB is already "hashed"
-        const providedHashedPassword = `hashed_${pass}`;
-        if (user.password !== providedHashedPassword) {
+        const isPasswordValid = await bcrypt.compare(pass, user.password);
+        if (!isPasswordValid) {
             return { success: false, error: 'Email atau password salah.' };
         }
         
@@ -50,8 +47,8 @@ export async function updateUserAction(updatedUserData: Partial<User> & { id: st
         const { id, ...dataToUpdate } = updatedUserData;
 
         if (dataToUpdate.password) {
-            // This is NOT secure hashing. Replace with bcrypt in a real app.
-            dataToUpdate.password = `hashed_${dataToUpdate.password}`;
+            const saltRounds = 10;
+            dataToUpdate.password = await bcrypt.hash(dataToUpdate.password, saltRounds);
         }
 
         const fields = Object.keys(dataToUpdate).map(key => `${key} = ?`).join(', ');
@@ -62,7 +59,6 @@ export async function updateUserAction(updatedUserData: Partial<User> & { id: st
         const [rows]: any[] = await pool.query('SELECT id, email, name, role, status, avatar FROM users WHERE id = ?', [id]);
         const updatedUser = rows[0];
         
-        // Removed client-side logActivity call
         return { success: true, user: updatedUser };
 
     } catch (error: any) {
@@ -71,25 +67,18 @@ export async function updateUserAction(updatedUserData: Partial<User> & { id: st
     }
 }
 
-/**
- * Fetches all users from the database, excluding superadmin.
- * Used for the user management page.
- */
 export async function getUsers(): Promise<User[]> {
     const [rows] = await pool.query("SELECT id, email, name, role, status, avatar FROM users WHERE role != 'superadmin'");
     return rows as User[];
 }
 
-/**
- * Saves or updates a user in the database.
- * Hashes password if provided.
- */
 export async function saveUser(user: Partial<User> & { id?: string }): Promise<{ success: boolean; message: string }> {
     try {
         const isUpdating = !!user.id;
         
         if (user.password) {
-            user.password = `hashed_${user.password}`; 
+            const saltRounds = 10;
+            user.password = await bcrypt.hash(user.password, saltRounds); 
         } else {
             delete user.password;
         }
@@ -114,10 +103,6 @@ export async function saveUser(user: Partial<User> & { id?: string }): Promise<{
     }
 }
 
-
-/**
- * Deletes a user from the database.
- */
 export async function deleteUser(id: string): Promise<{ success: boolean; message: string }> {
     try {
         const [result]: any = await pool.query('DELETE FROM users WHERE id = ?', [id]);
