@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, FilePen, Trash2 } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, FilePen, Trash2, Loader2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,7 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from '@/lib/auth';
-import { getUsers, saveUsers } from '@/lib/auth';
+import { getUsers, saveUser, deleteUser } from '@/lib/auth';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 
@@ -38,24 +38,23 @@ type FormData = Omit<User, 'id'> & { id?: string; password?: string };
 
 export default function UsersPage() {
   const [userList, setUserList] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [formData, setFormData] = useState<FormData>({ email: '', name: '', role: 'admin', status: 'active', password: '' });
   const { toast } = useToast();
 
-  useEffect(() => {
-    setUserList(getUsers().filter(u => u.role !== 'superadmin'));
-  }, []);
-
-  const saveData = (data: User[]) => {
-    const allUsers = [
-      getUsers().find(u => u.role === 'superadmin')!, 
-      ...data
-    ];
-    saveUsers(allUsers);
-    setUserList(data);
+  const fetchUsers = async () => {
+    setLoading(true);
+    const users = await getUsers();
+    setUserList(users);
+    setLoading(false);
   };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const handleAdd = () => {
     setSelectedUser(null);
@@ -74,43 +73,47 @@ export default function UsersPage() {
     setIsAlertOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (!selectedUser) return;
-    const updatedList = userList.filter(u => u.id !== selectedUser.id);
-    saveData(updatedList);
-    toast({ title: "Sukses!", description: "Data pengguna berhasil dihapus." });
+    const result = await deleteUser(selectedUser.id);
+    if (result.success) {
+      toast({ title: "Sukses!", description: result.message });
+      fetchUsers(); // Refresh list
+    } else {
+      toast({ title: "Gagal", description: result.message, variant: "destructive" });
+    }
     setIsAlertOpen(false);
     setSelectedUser(null);
   };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (selectedUser) { // Editing
-      const updatedList = userList.map(u => u.id === selectedUser.id ? { ...selectedUser, ...formData, id: selectedUser.id } : u);
-      saveData(updatedList);
-      toast({ title: "Sukses!", description: "Data pengguna berhasil diperbarui." });
-    } else { // Adding
+    if (!selectedUser) { // Adding new user
       if (!formData.email || !formData.password || !formData.name) {
           toast({ title: "Error!", description: "Email, Nama, dan Password wajib diisi.", variant: "destructive" });
           return;
       }
-      if (getUsers().some(u => u.email === formData.email)) {
-        toast({ title: "Error!", description: "Email sudah digunakan.", variant: "destructive" });
-        return;
-      }
-      const newUser: User = {
-        id: crypto.randomUUID(),
-        email: formData.email,
-        name: formData.name,
-        role: formData.role,
-        status: formData.status,
-      };
-      saveData([...userList, newUser]);
-      // Note: In a real app, password would be hashed and saved on a server.
-      // Here we are not saving the password directly for mock purposes.
-      toast({ title: "Sukses!", description: "Data pengguna berhasil ditambahkan." });
     }
+    
+    const payload: FormData = {
+        ...formData,
+        id: selectedUser?.id
+    };
+    
+    if (!payload.password) {
+        delete payload.password; // Don't send empty password
+    }
+
+    const result = await saveUser(payload);
+
+    if (result.success) {
+      toast({ title: "Sukses!", description: result.message });
+      fetchUsers();
+    } else {
+      toast({ title: "Gagal!", description: result.message, variant: "destructive" });
+    }
+    
     setIsFormOpen(false);
     setSelectedUser(null);
   };
@@ -144,7 +147,13 @@ export default function UsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {userList.length > 0 ? (
+              {loading ? (
+                 <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center">
+                        <Loader2 className="mx-auto h-6 w-6 animate-spin" />
+                    </TableCell>
+                </TableRow>
+              ) : userList.length > 0 ? (
                 userList.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.name}</TableCell>

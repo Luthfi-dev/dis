@@ -1,8 +1,10 @@
 
-'use client';
+'use server';
+import 'server-only';
+import pool from './db';
+import { logActivity } from './activity-log';
 
-// This is a mock authentication service that mimics JWT-style authentication.
-// It uses localStorage to persist the "session" and includes mock user data.
+// This file now directly interacts with the database for all auth operations.
 
 export type User = {
   id: string;
@@ -11,162 +13,71 @@ export type User = {
   role: 'superadmin' | 'admin' | 'user';
   status: 'active' | 'blocked';
   avatar?: string;
-  // This is not stored but used for mock login/update
-  password?: string;
+  password?: string; // This should only be the hashed password from the DB
 };
 
-const USERS_KEY = 'eduarchive_users';
-const SESSION_KEY = 'eduarchive_session';
+/**
+ * Fetches all users from the database, excluding superadmin.
+ * Used for the user management page.
+ */
+export async function getUsers(): Promise<User[]> {
+    const [rows] = await pool.query("SELECT id, email, name, role, status, avatar FROM users WHERE role != 'superadmin'");
+    return rows as User[];
+}
 
-// --- Mock User Database ---
-const defaultUsers: User[] = [
-  {
-    id: '1',
-    email: 'superadmin@gmail.com',
-    name: 'Super Admin',
-    role: 'superadmin',
-    status: 'active',
-    password: 'superadmin*#',
-  },
-  {
-    id: '2',
-    email: 'admin@eduarchive.com',
-    name: 'Administrator',
-    role: 'admin',
-    status: 'active',
-    password: 'password123',
-  },
-  {
-    id: '3',
-    email: 'blocked@eduarchive.com',
-    name: 'Blocked User',
-    role: 'admin',
-    status: 'blocked',
-    password: 'password123',
-  },
-];
-
-const getFromStorage = <T>(key: string, defaultValue: T): T => {
-    if (typeof window === 'undefined') {
-        return defaultValue;
-    }
+/**
+ * Saves or updates a user in the database.
+ * Hashes password if provided.
+ */
+export async function saveUser(user: Partial<User> & { id?: string }): Promise<{ success: boolean; message: string }> {
     try {
-        const item = window.localStorage.getItem(key);
-        if (item === null) {
-            window.localStorage.setItem(key, JSON.stringify(defaultValue));
-            return defaultValue;
+        const isUpdating = !!user.id;
+        
+        // In a real app, use a strong hashing library like bcrypt or argon2
+        // For simplicity, we'll simulate hashing. A real implementation is required for production.
+        if (user.password) {
+            // This is NOT secure hashing. Replace with bcrypt in a real app.
+            user.password = `hashed_${user.password}`; 
+        } else {
+            delete user.password; // Don't save empty password
         }
-        return JSON.parse(item);
-    } catch (error) {
-        console.error(`Error reading from localStorage key “${key}”:`, error);
-        return defaultValue;
-    }
-};
 
-export const getUsers = (): User[] => getFromStorage<User[]>(USERS_KEY, defaultUsers);
-export const saveUsers = (users: User[]) => {
-    if (typeof window !== 'undefined') {
-        localStorage.setItem(USERS_KEY, JSON.stringify(users));
+        if (isUpdating) {
+            const { id, ...updateData } = user;
+            const fields = Object.keys(updateData).map(key => `${key} = ?`).join(', ');
+            const values = Object.values(updateData);
+            await pool.query(`UPDATE users SET ${fields} WHERE id = ?`, [...values, id]);
+            logActivity(`Memperbarui pengguna ${user.name || ''}`);
+            return { success: true, message: 'Pengguna berhasil diperbarui.' };
+        } else {
+            user.id = user.id || crypto.randomUUID();
+            const fields = Object.keys(user);
+            const placeholders = fields.map(() => '?').join(', ');
+            const values = Object.values(user);
+            await pool.query(`INSERT INTO users (${fields.join(', ')}) VALUES (${placeholders})`, values);
+            logActivity(`Menambahkan pengguna baru: ${user.name}`);
+            return { success: true, message: 'Pengguna berhasil ditambahkan.' };
+        }
+    } catch (error: any) {
+        console.error("Error saving user:", error);
+        return { success: false, message: error.message };
     }
-};
-
-// Initialize users if not present
-if (typeof window !== 'undefined' && !localStorage.getItem(USERS_KEY)) {
-    saveUsers(defaultUsers);
 }
 
 
 /**
- * Simulates a login request.
+ * Deletes a user from the database.
  */
-export async function mockLogin(email: string, pass: string): Promise<{ success: boolean; user?: User; error?: string }> {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  const users = getUsers();
-  const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-
-  if (!user) {
-    return { success: false, error: 'Email atau password salah.' };
-  }
-
-  if (user.status === 'blocked') {
-    return { success: false, error: 'Akun Anda telah diblokir.' };
-  }
-
-  // In a real app, you'd compare a hashed password. Here, we check the mock plain text password.
-  if (user.password !== pass) {
-    return { success: false, error: 'Email atau password salah.' };
-  }
-
-  try {
-    const sessionUser = { ...user };
-    delete sessionUser.password; // Don't store password in session
-    localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
-    return { success: true, user: sessionUser };
-  } catch (error) {
-    return { success: false, error: 'Gagal membuat sesi di browser.' };
-  }
-}
-
-/**
- * Updates a user's information.
- */
-export async function updateUser(updatedUserData: Partial<User> & { id: string }): Promise<{ success: boolean; user?: User; error?: string }> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-
-    const users = getUsers();
-    const userIndex = users.findIndex(u => u.id === updatedUserData.id);
-
-    if (userIndex === -1) {
-        return { success: false, error: 'Pengguna tidak ditemukan.' };
+export async function deleteUser(id: string): Promise<{ success: boolean; message: string }> {
+    try {
+        const [result]: any = await pool.query('DELETE FROM users WHERE id = ?', [id]);
+        if (result.affectedRows > 0) {
+            logActivity(`Menghapus pengguna dengan ID: ${id}`);
+            return { success: true, message: 'Pengguna berhasil dihapus.' };
+        }
+        return { success: false, message: 'Pengguna tidak ditemukan.' };
+    } catch (error: any) {
+        console.error("Error deleting user:", error);
+        return { success: false, message: error.message };
     }
-
-    const originalUser = users[userIndex];
-    const newUser = { ...originalUser, ...updatedUserData };
-
-    users[userIndex] = newUser;
-    saveUsers(users);
-
-    const sessionUser = { ...newUser };
-    delete sessionUser.password;
-
-    // If the updated user is the one in session, update the session too
-    const currentSession = checkMockSession();
-    if (currentSession && currentSession.id === newUser.id) {
-        localStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
-    }
-    
-    return { success: true, user: sessionUser };
-}
-
-
-/**
- * Simulates a logout request.
- */
-export async function mockLogout(): Promise<void> {
-  await new Promise(resolve => setTimeout(resolve, 200));
-  try {
-    localStorage.removeItem(SESSION_KEY);
-  } catch (error) {
-    console.error("Failed to clear session from localStorage", error);
-  }
-}
-
-/**
- * Checks if a valid session exists in localStorage.
- */
-export function checkMockSession(): User | null {
-  try {
-    const sessionData = localStorage.getItem(SESSION_KEY);
-    if (sessionData) {
-      const user = JSON.parse(sessionData) as User;
-      // Re-verify user exists
-      const users = getUsers();
-      const liveUser = users.find(u => u.id === user.id);
-      return liveUser ? user : null;
-    }
-    return null;
-  } catch (error) {
-    return null;
-  }
 }
