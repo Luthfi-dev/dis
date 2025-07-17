@@ -21,7 +21,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import type { Pegawai, PegawaiFormData } from '@/lib/pegawai-data';
 import Image from 'next/image';
 import { Separator } from './ui/separator';
-import { getKabupatens, getKecamatans, getDesas, Wilayah, getProvinces } from '@/lib/wilayah';
+import { getKabupatens, getKecamatans, getDesas, Wilayah } from '@/lib/wilayah';
 import { Combobox } from './ui/combobox';
 import { logActivity } from '@/lib/activity-log';
 
@@ -33,31 +33,31 @@ const steps = [
 
 const initialFormValues: PegawaiFormData = {
     pegawai_phaspoto: undefined,
-    pegawai_nama: 'BUDI SANTOSO',
-    pegawai_jenisKelamin: 'Laki-laki',
-    pegawai_tempatLahir: 'BANDUNG',
-    pegawai_tanggalLahir: new Date('1990-05-15'),
-    pegawai_nip: '199005152014021001',
-    pegawai_nuptk: '1234567890123456',
-    pegawai_nrg: '0987654321',
-    pegawai_statusPerkawinan: 'Kawin',
-    pegawai_tanggalPerkawinan: new Date('2015-01-20'),
-    pegawai_namaPasangan: 'SITI AMINAH',
-    pegawai_jumlahAnak: 2,
-    pegawai_jabatan: 'Guru Mata Pelajaran',
-    pegawai_bidangStudi: 'Matematika',
-    pegawai_tugasTambahan: 'Wakasek Bidang Kurikulum',
-    pegawai_terhitungMulaiTanggal: new Date('2014-02-01'),
-    pegawai_alamatDusun: 'CIBIRU',
-    pegawai_alamatDesa: '3273011001',
-    pegawai_alamatKecamatan: '327301',
-    pegawai_alamatKabupaten: '3273',
-    pegawai_pendidikanSD: { tamatTahun: '2002', ijazah: undefined },
-    pegawai_pendidikanSMP: { tamatTahun: '2005', ijazah: undefined },
-    pegawai_pendidikanSMA: { tamatTahun: '2008', ijazah: undefined },
+    pegawai_nama: '',
+    pegawai_jenisKelamin: undefined,
+    pegawai_tempatLahir: '',
+    pegawai_tanggalLahir: undefined,
+    pegawai_nip: '',
+    pegawai_nuptk: '',
+    pegawai_nrg: '',
+    pegawai_statusPerkawinan: undefined,
+    pegawai_tanggalPerkawinan: undefined,
+    pegawai_namaPasangan: '',
+    pegawai_jumlahAnak: undefined,
+    pegawai_jabatan: undefined,
+    pegawai_bidangStudi: '',
+    pegawai_tugasTambahan: undefined,
+    pegawai_terhitungMulaiTanggal: undefined,
+    pegawai_alamatDusun: '',
+    pegawai_alamatDesa: '',
+    pegawai_alamatKecamatan: '',
+    pegawai_alamatKabupaten: '',
+    pegawai_pendidikanSD: { tamatTahun: '', ijazah: undefined },
+    pegawai_pendidikanSMP: { tamatTahun: '', ijazah: undefined },
+    pegawai_pendidikanSMA: { tamatTahun: '', ijazah: undefined },
     pegawai_pendidikanDiploma: { tamatTahun: '', ijazah: undefined },
-    pegawai_pendidikanS1: { tamatTahun: '2012', ijazah: undefined },
-    pegawai_pendidikanS2: { tamatTahun: '2018', ijazah: undefined },
+    pegawai_pendidikanS1: { tamatTahun: '', ijazah: undefined },
+    pegawai_pendidikanS2: { tamatTahun: '', ijazah: undefined },
     pegawai_skPengangkatan: [],
     pegawai_skNipBaru: undefined,
     pegawai_skFungsional: [],
@@ -103,11 +103,17 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
 
   const methods = useForm<PegawaiFormData>({
     mode: 'onBlur', 
-    defaultValues: pegawaiData ? pegawaiData : initialFormValues,
+    defaultValues: initialFormValues,
   });
 
-  const { handleSubmit } = methods;
+  const { handleSubmit, reset } = methods;
   
+  useEffect(() => {
+    if (pegawaiData) {
+      reset(pegawaiData);
+    }
+  }, [pegawaiData, reset]);
+
   const handleNext = async () => {
     if (currentStep < steps.length) {
         setCurrentStep((prev) => prev + 1);
@@ -390,7 +396,7 @@ function DataIdentitasPegawaiForm() {
                         type="number" 
                         placeholder="0" 
                         {...field}
-                        onChange={(e) => field.onChange(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
+                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))}
                         value={field.value ?? ''}
                     />
                 </FormControl>

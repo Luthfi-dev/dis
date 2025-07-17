@@ -38,45 +38,45 @@ const steps = [
 ];
 
 const initialFormValues: StudentFormData = {
-  siswa_namaLengkap: 'ADI NUGROHO',
-  siswa_nis: '12345',
-  siswa_nisn: '0012345678',
-  siswa_jenisKelamin: 'Laki-laki',
-  siswa_tempatLahir: 'JAKARTA',
-  siswa_tanggalLahir: new Date('2010-01-15'),
-  siswa_agama: 'Islam',
-  siswa_kewarganegaraan: 'WNI',
-  siswa_jumlahSaudara: 2,
-  siswa_bahasa: 'Indonesia',
-  siswa_golonganDarah: 'A',
-  siswa_telepon: '081234567890',
-  siswa_alamatKkProvinsi: '32',
-  siswa_alamatKkKabupaten: '3273',
-  siswa_alamatKkKecamatan: '327301',
-  siswa_alamatKkDesa: '3273011001',
-  siswa_domisiliProvinsi: '32',
-  siswa_domisiliKabupaten: '3273',
-  siswa_domisiliKecamatan: '327301',
-  siswa_domisiliDesa: '3273011001',
-  siswa_namaAyah: 'BAMBANG',
-  siswa_namaIbu: 'SITI',
-  siswa_pendidikanAyah: 'S1',
-  siswa_pendidikanIbu: 'SMA',
-  siswa_pekerjaanAyah: 'WIRASWASTA',
-  siswa_pekerjaanIbu: 'IBU RUMAH TANGGA',
+  siswa_namaLengkap: '',
+  siswa_nis: '',
+  siswa_nisn: '',
+  siswa_jenisKelamin: undefined,
+  siswa_tempatLahir: '',
+  siswa_tanggalLahir: undefined,
+  siswa_agama: undefined,
+  siswa_kewarganegaraan: undefined,
+  siswa_jumlahSaudara: undefined,
+  siswa_bahasa: '',
+  siswa_golonganDarah: undefined,
+  siswa_telepon: '',
+  siswa_alamatKkProvinsi: '',
+  siswa_alamatKkKabupaten: '',
+  siswa_alamatKkKecamatan: '',
+  siswa_alamatKkDesa: '',
+  siswa_domisiliProvinsi: '',
+  siswa_domisiliKabupaten: '',
+  siswa_domisiliKecamatan: '',
+  siswa_domisiliDesa: '',
+  siswa_namaAyah: '',
+  siswa_namaIbu: '',
+  siswa_pendidikanAyah: '',
+  siswa_pendidikanIbu: '',
+  siswa_pekerjaanAyah: '',
+  siswa_pekerjaanIbu: '',
   siswa_namaWali: '',
   siswa_hubunganWali: '',
   siswa_pendidikanWali: '',
   siswa_pekerjaanWali: '',
-  siswa_alamatOrangTua: 'JL. MERDEKA NO. 10',
-  siswa_teleponOrangTua: '081234567891',
-  siswa_tinggiBadan: 160,
-  siswa_beratBadan: 50,
-  siswa_penyakit: 'Tidak Ada',
-  siswa_kelainanJasmani: 'Tidak Ada',
-  siswa_asalSekolah: 'SDN 01 PAGI',
-  siswa_nomorSttb: 'STTB/123/2022',
-  siswa_tanggalSttb: new Date('2022-06-10'),
+  siswa_alamatOrangTua: '',
+  siswa_teleponOrangTua: '',
+  siswa_tinggiBadan: undefined,
+  siswa_beratBadan: undefined,
+  siswa_penyakit: '',
+  siswa_kelainanJasmani: '',
+  siswa_asalSekolah: '',
+  siswa_nomorSttb: '',
+  siswa_tanggalSttb: undefined,
   siswa_pindahanAsalSekolah: '',
   siswa_pindahanDariTingkat: '',
   siswa_pindahanDiterimaTanggal: undefined,
@@ -134,15 +134,17 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
 
   const methods = useForm<StudentFormData>({
     mode: 'onBlur', 
-    defaultValues: studentData
-      ? {
-        ...studentData,
-      }
-      : initialFormValues,
+    defaultValues: initialFormValues,
   });
 
-  const { handleSubmit, trigger, getValues, formState: { errors } } = methods;
+  const { handleSubmit, trigger, getValues, formState: { errors }, reset } = methods;
   
+   useEffect(() => {
+    if (studentData) {
+      reset(studentData);
+    }
+  }, [studentData, reset]);
+
   const handleNext = async () => {
     if (currentStep < steps.length) {
         setCurrentStep((prev) => prev + 1);
