@@ -7,7 +7,6 @@ import { sanitizeAndFormatData } from './utils';
 import type { PegawaiFormData } from '@/lib/pegawai-data';
 import type { StudentFormData } from '@/lib/student-data-t';
 import pool from './db';
-import { logActivity } from './activity-log';
 
 // --- Public-facing Server Actions ---
 
@@ -74,14 +73,14 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
         
         if (studentId) {
             // --- UPDATE LOGIC ---
-            const fields = Object.keys(dataForDb).map(f => `${f} = ?`).join(', ');
-            const values = Object.values(dataForDb);
+            const { id, ...updateData } = dataForDb;
+            const fields = Object.keys(updateData).map(f => `${f} = ?`).join(', ');
+            const values = Object.values(updateData);
 
             const sql = `UPDATE siswa SET ${fields} WHERE id = ?`;
             await pool.query(sql, [...values, studentId]);
             
             const message = `Data siswa ${data.siswa_namaLengkap} berhasil diperbarui!`;
-            logActivity(message);
             return { success: true, message };
 
         } else {
@@ -94,7 +93,6 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
             
             await pool.query(sql, values);
             const message = `Data siswa ${data.siswa_namaLengkap} berhasil disimpan!`;
-            logActivity(message);
             return { success: true, message };
         }
     } catch (error: any) {
@@ -151,7 +149,6 @@ export async function deletePegawai(id: string): Promise<{ success: boolean; mes
         const [result]:any = await pool.query('DELETE FROM pegawai WHERE id = ?', [id]);
         if (result.affectedRows > 0) {
             const message = `Data pegawai berhasil dihapus.`;
-            logActivity(message);
             return { success: true, message };
         }
         return { success: false, message: 'Gagal menghapus data pegawai.' };
@@ -169,12 +166,12 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
         
         if (pegawaiId) {
              // --- UPDATE LOGIC ---
-            const fields = Object.keys(dataForDb).map(f => `${f} = ?`).join(', ');
-            const values = Object.values(dataForDb);
+            const { id, ...updateData } = dataForDb;
+            const fields = Object.keys(updateData).map(f => `${f} = ?`).join(', ');
+            const values = Object.values(updateData);
             const sql = `UPDATE pegawai SET ${fields} WHERE id = ?`;
             await pool.query(sql, [...values, pegawaiId]);
             const message = `Data pegawai ${data.pegawai_nama} berhasil diperbarui!`;
-            logActivity(message);
             return { success: true, message };
 
         } else {
@@ -185,7 +182,6 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
             const sql = `INSERT INTO pegawai (${fields.join(', ')}) VALUES (${placeholders})`;
             await pool.query(sql, values);
             const message = `Data pegawai ${data.pegawai_nama} berhasil disimpan!`;
-            logActivity(message);
             return { success: true, message };
         }
 

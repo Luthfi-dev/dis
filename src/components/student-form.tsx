@@ -25,6 +25,7 @@ import Image from 'next/image';
 import { getProvinces, getKabupatens, getKecamatans, getDesas, Wilayah } from '@/lib/wilayah';
 import { Combobox } from './ui/combobox';
 import { Separator } from './ui/separator';
+import { logActivity } from '@/lib/activity-log';
 
 const steps = [
   { id: 1, title: 'Data Siswa' },
@@ -158,15 +159,12 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
     startTransition(async () => {
         const result = await submitStudentData(data, studentData?.id);
 
-        if (result.success) {
+        if (result.success && result.message) {
             toast({
                 title: 'Sukses!',
                 description: result.message,
             });
-            if (result.message) {
-              // Activity log is client side only
-              // logActivity(result.message);
-            }
+            logActivity(result.message);
             router.push('/siswa');
             router.refresh();
         } else {

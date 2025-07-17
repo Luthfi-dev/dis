@@ -23,6 +23,7 @@ import Image from 'next/image';
 import { Separator } from './ui/separator';
 import { getKabupatens, getKecamatans, getDesas, Wilayah, getProvinces } from '@/lib/wilayah';
 import { Combobox } from './ui/combobox';
+import { logActivity } from '@/lib/activity-log';
 
 const steps = [
   { id: 1, title: 'Identitas Pegawai' },
@@ -123,11 +124,12 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
     startTransition(async () => {
         const result = await submitPegawaiData(data, pegawaiData?.id);
 
-        if (result.success) {
+        if (result.success && result.message) {
             toast({
                 title: 'Sukses!',
                 description: result.message,
             });
+            logActivity(result.message);
             router.push('/pegawai');
             router.refresh();
         } else {
