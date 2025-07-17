@@ -15,7 +15,8 @@ export async function getSiswa(): Promise<Siswa[]> {
     const [rows] = await pool.query('SELECT * FROM siswa');
     return (rows as Siswa[]).map(row => ({
         ...row,
-        documents: typeof row.documents === 'string' ? JSON.parse(row.documents) : row.documents
+        documents: typeof row.documents === 'string' ? JSON.parse(row.documents) : row.documents,
+        siswa_fotoProfil: typeof row.siswa_fotoProfil === 'string' ? JSON.parse(row.siswa_fotoProfil) : row.siswa_fotoProfil,
     }));
 }
 
@@ -24,6 +25,7 @@ export async function getSiswaById(id: string): Promise<Siswa | null> {
     const siswa = (rows as Siswa[])[0] || null;
     if (siswa) {
         siswa.documents = typeof siswa.documents === 'string' ? JSON.parse(siswa.documents) : siswa.documents;
+        siswa.siswa_fotoProfil = typeof siswa.siswa_fotoProfil === 'string' ? JSON.parse(siswa.siswa_fotoProfil) : siswa.siswa_fotoProfil;
     }
     return siswa;
 }
@@ -48,10 +50,13 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
             status,
         };
         
-        // Ensure all object/array fields are stringified
+        // Ensure all object/array fields are stringified and empty strings are converted to null
         for (const key in dataForDb) {
             if (typeof dataForDb[key] === 'object' && dataForDb[key] !== null) {
                 dataForDb[key] = JSON.stringify(dataForDb[key]);
+            }
+             if (dataForDb[key] === '') {
+                dataForDb[key] = null;
             }
         }
 
@@ -92,65 +97,38 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
 // PEGAWAI ACTIONS
 export async function getPegawai(): Promise<Pegawai[]> {
     const [rows] = await pool.query('SELECT * FROM pegawai');
-     return (rows as Pegawai[]).map(row => ({
-        ...row,
-        pegawai_phaspoto: typeof row.pegawai_phaspoto === 'string' ? JSON.parse(row.pegawai_phaspoto) : row.pegawai_phaspoto,
-        pegawai_pendidikanSD: typeof row.pegawai_pendidikanSD === 'string' ? JSON.parse(row.pegawai_pendidikanSD) : row.pegawai_pendidikanSD,
-        pegawai_pendidikanSMP: typeof row.pegawai_pendidikanSMP === 'string' ? JSON.parse(row.pegawai_pendidikanSMP) : row.pegawai_pendidikanSMP,
-        pegawai_pendidikanSMA: typeof row.pegawai_pendidikanSMA === 'string' ? JSON.parse(row.pegawai_pendidikanSMA) : row.pegawai_pendidikanSMA,
-        pegawai_pendidikanDiploma: typeof row.pegawai_pendidikanDiploma === 'string' ? JSON.parse(row.pegawai_pendidikanDiploma) : row.pegawai_pendidikanDiploma,
-        pegawai_pendidikanS1: typeof row.pegawai_pendidikanS1 === 'string' ? JSON.parse(row.pegawai_pendidikanS1) : row.pegawai_pendidikanS1,
-        pegawai_pendidikanS2: typeof row.pegawai_pendidikanS2 === 'string' ? JSON.parse(row.pegawai_pendidikanS2) : row.pegawai_pendidikanS2,
-        pegawai_skPengangkatan: typeof row.pegawai_skPengangkatan === 'string' ? JSON.parse(row.pegawai_skPengangkatan) : row.pegawai_skPengangkatan,
-        pegawai_skNipBaru: typeof row.pegawai_skNipBaru === 'string' ? JSON.parse(row.pegawai_skNipBaru) : row.pegawai_skNipBaru,
-        pegawai_skFungsional: typeof row.pegawai_skFungsional === 'string' ? JSON.parse(row.pegawai_skFungsional) : row.pegawai_skFungsional,
-        pegawai_beritaAcaraSumpah: typeof row.pegawai_beritaAcaraSumpah === 'string' ? JSON.parse(row.pegawai_beritaAcaraSumpah) : row.pegawai_beritaAcaraSumpah,
-        pegawai_sertifikatPendidik: typeof row.pegawai_sertifikatPendidik === 'string' ? JSON.parse(row.pegawai_sertifikatPendidik) : row.pegawai_sertifikatPendidik,
-        pegawai_sertifikatPelatihan: typeof row.pegawai_sertifikatPelatihan === 'string' ? JSON.parse(row.pegawai_sertifikatPelatihan) : row.pegawai_sertifikatPelatihan,
-        pegawai_skp: typeof row.pegawai_skp === 'string' ? JSON.parse(row.pegawai_skp) : row.pegawai_skp,
-        pegawai_karpeg: typeof row.pegawai_karpeg === 'string' ? JSON.parse(row.pegawai_karpeg) : row.pegawai_karpeg,
-        pegawai_karisKarsu: typeof row.pegawai_karisKarsu === 'string' ? JSON.parse(row.pegawai_karisKarsu) : row.pegawai_karisKarsu,
-        pegawai_bukuNikah: typeof row.pegawai_bukuNikah === 'string' ? JSON.parse(row.pegawai_bukuNikah) : row.pegawai_bukuNikah,
-        pegawai_kartuKeluarga: typeof row.pegawai_kartuKeluarga === 'string' ? JSON.parse(row.pegawai_kartuKeluarga) : row.pegawai_kartuKeluarga,
-        pegawai_ktp: typeof row.pegawai_ktp === 'string' ? JSON.parse(row.pegawai_ktp) : row.pegawai_ktp,
-        pegawai_akteKelahiran: typeof row.pegawai_akteKelahiran === 'string' ? JSON.parse(row.pegawai_akteKelahiran) : row.pegawai_akteKelahiran,
-        pegawai_kartuTaspen: typeof row.pegawai_kartuTaspen === 'string' ? JSON.parse(row.pegawai_kartuTaspen) : row.pegawai_kartuTaspen,
-        pegawai_npwp: typeof row.pegawai_npwp === 'string' ? JSON.parse(row.pegawai_npwp) : row.pegawai_npwp,
-        pegawai_kartuBpjs: typeof row.pegawai_kartuBpjs === 'string' ? JSON.parse(row.pegawai_kartuBpjs) : row.pegawai_kartuBpjs,
-        pegawai_bukuRekening: typeof row.pegawai_bukuRekening === 'string' ? JSON.parse(row.pegawai_bukuRekening) : row.pegawai_bukuRekening,
-    }));
+     return (rows as Pegawai[]).map(row => {
+        const parsedRow: any = { ...row };
+        for (const key in parsedRow) {
+            if (key.startsWith('pegawai_') && typeof parsedRow[key] === 'string') {
+                try {
+                    parsedRow[key] = JSON.parse(parsedRow[key]);
+                } catch (e) {
+                    // Not a JSON string, leave it as is
+                }
+            }
+        }
+        return parsedRow;
+    });
 }
 
 export async function getPegawaiById(id: string): Promise<Pegawai | null> {
     const [rows] = await pool.query('SELECT * FROM pegawai WHERE id = ?', [id]);
     const p = (rows as Pegawai[])[0] || null;
     if (p) {
-        p.pegawai_phaspoto = typeof p.pegawai_phaspoto === 'string' ? JSON.parse(p.pegawai_phaspoto) : p.pegawai_phaspoto;
-        p.pegawai_pendidikanSD = typeof p.pegawai_pendidikanSD === 'string' ? JSON.parse(p.pegawai_pendidikanSD) : p.pegawai_pendidikanSD;
-        p.pegawai_pendidikanSMP = typeof p.pegawai_pendidikanSMP === 'string' ? JSON.parse(p.pegawai_pendidikanSMP) : p.pegawai_pendidikanSMP;
-        p.pegawai_pendidikanSMA = typeof p.pegawai_pendidikanSMA === 'string' ? JSON.parse(p.pegawai_pendidikanSMA) : p.pegawai_pendidikanSMA;
-        p.pegawai_pendidikanDiploma = typeof p.pegawai_pendidikanDiploma === 'string' ? JSON.parse(p.pegawai_pendidikanDiploma) : p.pegawai_pendidikanDiploma;
-        p.pegawai_pendidikanS1 = typeof p.pegawai_pendidikanS1 === 'string' ? JSON.parse(p.pegawai_pendidikanS1) : p.pegawai_pendidikanS1;
-        p.pegawai_pendidikanS2 = typeof p.pegawai_pendidikanS2 === 'string' ? JSON.parse(p.pegawai_pendidikanS2) : p.pegawai_pendidikanS2;
-        p.pegawai_skPengangkatan = typeof p.pegawai_skPengangkatan === 'string' ? JSON.parse(p.pegawai_skPengangkatan) : p.pegawai_skPengangkatan;
-        p.pegawai_skNipBaru = typeof p.pegawai_skNipBaru === 'string' ? JSON.parse(p.pegawai_skNipBaru) : p.pegawai_skNipBaru;
-        p.pegawai_skFungsional = typeof p.pegawai_skFungsional === 'string' ? JSON.parse(p.pegawai_skFungsional) : p.pegawai_skFungsional;
-        p.pegawai_beritaAcaraSumpah = typeof p.pegawai_beritaAcaraSumpah === 'string' ? JSON.parse(p.pegawai_beritaAcaraSumpah) : p.pegawai_beritaAcaraSumpah;
-        p.pegawai_sertifikatPendidik = typeof p.pegawai_sertifikatPendidik === 'string' ? JSON.parse(p.pegawai_sertifikatPendidik) : p.pegawai_sertifikatPendidik;
-        p.pegawai_sertifikatPelatihan = typeof p.pegawai_sertifikatPelatihan === 'string' ? JSON.parse(p.pegawai_sertifikatPelatihan) : p.pegawai_sertifikatPelatihan;
-        p.pegawai_skp = typeof p.pegawai_skp === 'string' ? JSON.parse(p.pegawai_skp) : p.pegawai_skp;
-        p.pegawai_karpeg = typeof p.pegawai_karpeg === 'string' ? JSON.parse(p.pegawai_karpeg) : p.pegawai_karpeg;
-        p.pegawai_karisKarsu = typeof p.pegawai_karisKarsu === 'string' ? JSON.parse(p.pegawai_karisKarsu) : p.pegawai_karisKarsu;
-        p.pegawai_bukuNikah = typeof p.pegawai_bukuNikah === 'string' ? JSON.parse(p.pegawai_bukuNikah) : p.pegawai_bukuNikah;
-        p.pegawai_kartuKeluarga = typeof p.pegawai_kartuKeluarga === 'string' ? JSON.parse(p.pegawai_kartuKeluarga) : p.pegawai_kartuKeluarga;
-        p.pegawai_ktp = typeof p.pegawai_ktp === 'string' ? JSON.parse(p.pegawai_ktp) : p.pegawai_ktp;
-        p.pegawai_akteKelahiran = typeof p.pegawai_akteKelahiran === 'string' ? JSON.parse(p.pegawai_akteKelahiran) : p.pegawai_akteKelahiran;
-        p.pegawai_kartuTaspen = typeof p.pegawai_kartuTaspen === 'string' ? JSON.parse(p.pegawai_kartuTaspen) : p.pegawai_kartuTaspen;
-        p.pegawai_npwp = typeof p.pegawai_npwp === 'string' ? JSON.parse(p.pegawai_npwp) : p.pegawai_npwp;
-        p.pegawai_kartuBpjs = typeof p.pegawai_kartuBpjs === 'string' ? JSON.parse(p.pegawai_kartuBpjs) : p.pegawai_kartuBpjs;
-        p.pegawai_bukuRekening = typeof p.pegawai_bukuRekening === 'string' ? JSON.parse(p.pegawai_bukuRekening) : p.pegawai_bukuRekening;
+        const parsedP: any = { ...p };
+         for (const key in parsedP) {
+            if (key.startsWith('pegawai_') && typeof parsedP[key] === 'string') {
+                try {
+                    parsedP[key] = JSON.parse(parsedP[key]);
+                } catch (e) {
+                     // Not a JSON string, leave it as is
+                }
+            }
+        }
+        return parsedP;
     }
-    return p;
+    return null;
 }
 
 export async function deletePegawai(id: string): Promise<{ success: boolean; message: string }> {
@@ -172,10 +150,13 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
             status,
         };
 
-        // Explicitly stringify all object/array fields
+        // Explicitly stringify all object/array fields and handle empty strings
         for (const key in dataForDb) {
             if (typeof dataForDb[key] === 'object' && dataForDb[key] !== null) {
                 dataForDb[key] = JSON.stringify(dataForDb[key]);
+            }
+            if (dataForDb[key] === '') {
+                dataForDb[key] = null;
             }
         }
 

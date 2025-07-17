@@ -29,6 +29,7 @@ export function Toaster() {
   return (
     <ToastProvider>
       {toasts.map(function ({ id, title, description, action, variant, ...props }) {
+        // Updated logic: show copy button if variant is destructive and description is a long string.
         const isError = variant === 'destructive' && typeof description === 'string' && description.length > 50;
 
         return (
@@ -39,17 +40,19 @@ export function Toaster() {
                 <ToastDescription>{description}</ToastDescription>
               )}
             </div>
-            {action}
-            {isError && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8"
-                onClick={() => handleCopy(description)}
-              >
-                  <Copy className="h-4 w-4" />
-              </Button>
-            )}
+             <div className="flex items-center gap-2">
+              {action}
+              {isError && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 group-[.destructive]:hover:bg-destructive/50 group-[.destructive]:text-destructive-foreground"
+                  onClick={() => handleCopy(description)}
+                >
+                    <Copy className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
             <ToastClose />
           </Toast>
         )
