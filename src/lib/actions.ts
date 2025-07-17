@@ -74,7 +74,7 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
         
         if (studentId) {
             // --- UPDATE LOGIC ---
-            const { id, ...updateData } = dataForDb;
+            const { id, ...updateData } = dataForDb; // id is already in studentId
             
             const fields = Object.keys(updateData).map(f => `${f} = ?`).join(', ');
             const values = Object.values(updateData);
@@ -169,7 +169,7 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
         
         if (pegawaiId) {
              // --- UPDATE LOGIC ---
-            const { id, ...updateData } = dataForDb;
+            const { id, ...updateData } = dataForDb; // id is already in pegawaiId
             const fields = Object.keys(updateData).map(f => `${f} = ?`).join(', ');
             const values = Object.values(updateData);
             const sql = `UPDATE pegawai SET ${fields} WHERE id = ?`;
