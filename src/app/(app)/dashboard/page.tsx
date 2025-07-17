@@ -106,8 +106,8 @@ export default function DashboardPage() {
                     <CardDescription>Navigasi cepat ke menu utama.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4">
-                     <Link href="/siswa">
-                        <div className="group flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50">
+                     <Link href="/siswa" className="group block rounded-lg border p-4 transition-colors hover:bg-muted/50">
+                        <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 <div className="p-2 rounded-lg bg-primary/10">
                                     <BookCopy className="h-6 w-6 text-primary" />
@@ -120,8 +120,8 @@ export default function DashboardPage() {
                             <ArrowRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
                         </div>
                     </Link>
-                     <Link href="/pegawai">
-                        <div className="group flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50">
+                     <Link href="/pegawai" className="group block rounded-lg border p-4 transition-colors hover:bg-muted/50">
+                        <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                  <div className="p-2 rounded-lg bg-primary/10">
                                     <Briefcase className="h-6 w-6 text-primary" />

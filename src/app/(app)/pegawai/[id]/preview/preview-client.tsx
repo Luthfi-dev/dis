@@ -28,7 +28,7 @@ function InfoRow({ label, value, icon, className }: { label: string, value?: Rea
 
 function PendidikanRow({ level, data }: { level: string, data?: { tamatTahun?: string, ijazah?: { fileName?: string }}}) {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 p-4 bg-muted/50 rounded-lg">
+        <div className="grid grid-cols-1 gap-x-8 gap-y-3 p-4 bg-muted/50 rounded-lg">
             <InfoRow label="Tingkat" value={level} icon={GraduationCap} />
             <InfoRow label="Tamat Tahun" value={data?.tamatTahun} icon={Calendar} />
             <InfoRow label="Ijazah" value={data?.ijazah?.fileName || 'Tidak ada'} icon={FileText} />
@@ -143,7 +143,7 @@ export function PreviewPegawaiClient({ id }: { id: string }) {
             <div className="space-y-10">
                 <section>
                     <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">A. Identitas Pegawai</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                    <div className="space-y-3">
                         <InfoRow label="Nama Lengkap" value={pegawai.pegawai_nama} icon={User} />
                         <InfoRow label="Jenis Kelamin" value={pegawai.pegawai_jenisKelamin} icon={Users} />
                         <InfoRow label="Tempat, Tgl Lahir" value={`${pegawai.pegawai_tempatLahir}, ${formatDate(pegawai.pegawai_tanggalLahir)}`} icon={Calendar} />
@@ -159,7 +159,7 @@ export function PreviewPegawaiClient({ id }: { id: string }) {
 
                 <section>
                     <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">B. Status Keluarga</h3>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                     <div className="space-y-3">
                         <InfoRow label="Status Perkawinan" value={pegawai.pegawai_statusPerkawinan} icon={HeartHandshake} />
                         <InfoRow label="Tgl Perkawinan" value={formatDate(pegawai.pegawai_tanggalPerkawinan)} icon={Calendar} />
                         <InfoRow label="Nama Pasangan" value={pegawai.pegawai_namaPasangan} icon={User} />
@@ -169,7 +169,7 @@ export function PreviewPegawaiClient({ id }: { id: string }) {
                 
                 <section>
                     <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">C. Alamat Rumah</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                    <div className="space-y-3">
                          <InfoRow label="Kabupaten" value={alamat.kabupaten} icon={MapPin} />
                          <InfoRow label="Kecamatan" value={alamat.kecamatan} icon={MapPin} />
                          <InfoRow label="Desa" value={alamat.desa} icon={Home} />
@@ -191,7 +191,7 @@ export function PreviewPegawaiClient({ id }: { id: string }) {
 
                  <section>
                     <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">E. File Pegawai</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                    <div className="space-y-3">
                         <FileRow label="SK Pengangkatan" document={pegawai.pegawai_skPengangkatan} isMulti={true} />
                         <FileRow label="SK NIP Baru" document={pegawai.pegawai_skNipBaru} />
                         <FileRow label="SK Fungsional" document={pegawai.pegawai_skFungsional} isMulti={true} />

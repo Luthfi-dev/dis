@@ -125,7 +125,7 @@ export function PreviewSiswaClient({ id }: { id: string }) {
                 {/* Keterangan Pribadi */}
                 <section>
                     <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">A. Keterangan Pribadi Siswa</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                    <div className="space-y-3">
                         <InfoRow label="Nama Lengkap" value={student.siswa_namaLengkap} icon={User} />
                         <InfoRow label="NIS" value={student.siswa_nis} icon={User} />
                         <InfoRow label="NISN" value={student.siswa_nisn} icon={User} />
@@ -164,7 +164,7 @@ export function PreviewSiswaClient({ id }: { id: string }) {
                 {/* Keterangan Kesehatan */}
                 <section>
                     <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">C. Keterangan Kesehatan</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                    <div className="space-y-3">
                          <InfoRow label="Riwayat Penyakit" value={student.siswa_penyakit} icon={Stethoscope} />
                          <InfoRow label="Kelainan Jasmani" value={student.siswa_kelainanJasmani} />
                          <InfoRow label="Tinggi & Berat Badan" value={`${student.siswa_tinggiBadan || '-'} cm / ${student.siswa_beratBadan || '-'} kg`} />
@@ -175,12 +175,12 @@ export function PreviewSiswaClient({ id }: { id: string }) {
                  <section>
                     <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">D. Keterangan Orang Tua</h3>
                     <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 p-4 bg-muted/50 rounded-lg">
+                        <div className="grid grid-cols-1 gap-x-8 gap-y-3 p-4 bg-muted/50 rounded-lg">
                            <InfoRow label="Nama Ayah" value={student.siswa_namaAyah} icon={User} />
                            <InfoRow label="Pendidikan Ayah" value={student.siswa_pendidikanAyah} icon={GraduationCap} />
                            <InfoRow label="Pekerjaan Ayah" value={student.siswa_pekerjaanAyah} icon={Briefcase} />
                         </div>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 p-4 bg-muted/50 rounded-lg">
+                         <div className="grid grid-cols-1 gap-x-8 gap-y-3 p-4 bg-muted/50 rounded-lg">
                            <InfoRow label="Nama Ibu" value={student.siswa_namaIbu} icon={User} />
                            <InfoRow label="Pendidikan Ibu" value={student.siswa_pendidikanIbu} icon={GraduationCap} />
                            <InfoRow label="Pekerjaan Ibu" value={student.siswa_pekerjaanIbu} icon={Briefcase} />
@@ -193,7 +193,7 @@ export function PreviewSiswaClient({ id }: { id: string }) {
                  {/* Keterangan Wali */}
                  <section>
                     <h3 className="font-bold text-xl mb-4 border-b-2 border-primary pb-2 text-primary">E. Keterangan Wali</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                    <div className="space-y-3">
                        <InfoRow label="Nama Wali" value={student.siswa_namaWali} icon={HeartHandshake} />
                        <InfoRow label="Hubungan Keluarga" value={student.siswa_hubunganWali} icon={Users} />
                        <InfoRow label="Pendidikan Wali" value={student.siswa_pendidikanWali} icon={GraduationCap} />
