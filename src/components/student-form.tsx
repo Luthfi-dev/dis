@@ -182,10 +182,12 @@ function DataSiswaForm({ studentData }: { studentData?: Partial<Siswa> & { id: s
 
   
   const [provinces, setProvinces] = useState<Wilayah[]>([]);
+  
   // State for Alamat KK
   const [kkKabupatens, setKkKabupatens] = useState<Wilayah[]>([]);
   const [kkKecamatans, setKkKecamatans] = useState<Wilayah[]>([]);
   const [kkDesas, setKkDesas] = useState<Wilayah[]>([]);
+  
   // State for Domisili
   const [domisiliKabupatens, setDomisiliKabupatens] = useState<Wilayah[]>([]);
   const [domisiliKecamatans, setDomisiliKecamatans] = useState<Wilayah[]>([]);
@@ -201,31 +203,32 @@ function DataSiswaForm({ studentData }: { studentData?: Partial<Siswa> & { id: s
   const domisiliKabupaten = watch('siswa_domisiliKabupaten');
   const domisiliKecamatan = watch('siswa_domisiliKecamatan');
 
+  // Initial load for provinces and pre-filling dropdowns on edit
   useEffect(() => {
     getProvinces().then(setProvinces);
-    if(studentData){
-      if(studentData.siswa_alamatKkProvinsi) getKabupatens(studentData.siswa_alamatKkProvinsi).then(setKkKabupatens);
-      if(studentData.siswa_alamatKkKabupaten) getKecamatans(studentData.siswa_alamatKkKabupaten).then(setKkKecamatans);
-      if(studentData.siswa_alamatKkKecamatan) getDesas(studentData.siswa_alamatKkKecamatan).then(setKkDesas);
+    if (studentData) {
+      if (studentData.siswa_alamatKkProvinsi) getKabupatens(studentData.siswa_alamatKkProvinsi).then(setKkKabupatens);
+      if (studentData.siswa_alamatKkKabupaten) getKecamatans(studentData.siswa_alamatKkKabupaten).then(setKkKecamatans);
+      if (studentData.siswa_alamatKkKecamatan) getDesas(studentData.siswa_alamatKkKecamatan).then(setKkDesas);
 
-      if(studentData.siswa_domisiliProvinsi) getKabupatens(studentData.siswa_domisiliProvinsi).then(setDomisiliKabupatens);
-      if(studentData.siswa_domisiliKabupaten) getKecamatans(studentData.siswa_domisiliKabupaten).then(setDomisiliKecamatans);
-      if(studentData.siswa_domisiliKecamatan) getDesas(studentData.siswa_domisiliKecamatan).then(setDomisiliDesas);
+      if (studentData.siswa_domisiliProvinsi) getKabupatens(studentData.siswa_domisiliProvinsi).then(setDomisiliKabupatens);
+      if (studentData.siswa_domisiliKabupaten) getKecamatans(studentData.siswa_domisiliKabupaten).then(setDomisiliKecamatans);
+      if (studentData.siswa_domisiliKecamatan) getDesas(studentData.siswa_domisiliKecamatan).then(setDomisiliDesas);
     }
   }, [studentData]);
 
-  // --- LOGIC FOR ALAMAT KK ---
+  // --- ISOLATED LOGIC FOR ALAMAT KK ---
   useEffect(() => {
     const fetchKab = async () => {
         if (alamatKkProvinsi) {
             setKkKabupatens(await getKabupatens(alamatKkProvinsi));
-            if(isDirty) {
+            if (isDirty) {
                 setValue('siswa_alamatKkKabupaten', '');
                 setValue('siswa_alamatKkKecamatan', '');
                 setValue('siswa_alamatKkDesa', '');
             }
         }
-    }
+    };
     fetchKab();
   }, [alamatKkProvinsi, setValue, isDirty]);
 
@@ -233,12 +236,12 @@ function DataSiswaForm({ studentData }: { studentData?: Partial<Siswa> & { id: s
     const fetchKec = async () => {
         if (alamatKkKabupaten) {
             setKkKecamatans(await getKecamatans(alamatKkKabupaten));
-            if(isDirty) {
+            if (isDirty) {
                 setValue('siswa_alamatKkKecamatan', '');
                 setValue('siswa_alamatKkDesa', '');
             }
         }
-    }
+    };
     fetchKec();
   }, [alamatKkKabupaten, setValue, isDirty]);
 
@@ -246,26 +249,26 @@ function DataSiswaForm({ studentData }: { studentData?: Partial<Siswa> & { id: s
     const fetchDesa = async () => {
         if (alamatKkKecamatan) {
             setKkDesas(await getDesas(alamatKkKecamatan));
-            if(isDirty) {
+            if (isDirty) {
                 setValue('siswa_alamatKkDesa', '');
             }
         }
-    }
+    };
     fetchDesa();
   }, [alamatKkKecamatan, setValue, isDirty]);
 
-   // --- LOGIC FOR DOMISILI ---
+   // --- ISOLATED LOGIC FOR DOMISILI ---
    useEffect(() => {
     const fetchKab = async () => {
         if (domisiliProvinsi) {
             setDomisiliKabupatens(await getKabupatens(domisiliProvinsi));
-            if(isDirty) {
+            if (isDirty) {
                 setValue('siswa_domisiliKabupaten', '');
                 setValue('siswa_domisiliKecamatan', '');
                 setValue('siswa_domisiliDesa', '');
             }
         }
-    }
+    };
     fetchKab();
   }, [domisiliProvinsi, setValue, isDirty]);
 
@@ -273,12 +276,12 @@ function DataSiswaForm({ studentData }: { studentData?: Partial<Siswa> & { id: s
     const fetchKec = async () => {
         if (domisiliKabupaten) {
             setDomisiliKecamatans(await getKecamatans(domisiliKabupaten));
-            if(isDirty) {
+            if (isDirty) {
                 setValue('siswa_domisiliKecamatan', '');
                 setValue('siswa_domisiliDesa', '');
             }
         }
-    }
+    };
     fetchKec();
   }, [domisiliKabupaten, setValue, isDirty]);
   
@@ -286,14 +289,13 @@ function DataSiswaForm({ studentData }: { studentData?: Partial<Siswa> & { id: s
     const fetchDesa = async () => {
         if (domisiliKecamatan) {
             setDomisiliDesas(await getDesas(domisiliKecamatan));
-            if(isDirty) {
+            if (isDirty) {
                 setValue('siswa_domisiliDesa', '');
             }
         }
-    }
+    };
     fetchDesa();
   }, [domisiliKecamatan, setValue, isDirty]);
-
 
   const wilayahToOptions = (wilayah: Wilayah[]) => wilayah.map(w => ({ value: w.id, label: w.name }));
 
@@ -889,3 +891,4 @@ function DataValidasiForm() {
     </div>
   )
 }
+
