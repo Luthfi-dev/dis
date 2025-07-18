@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, Upload, Download, FilePen, Eye, FileSearch, Trash2, Search } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Upload, Download, FilePen, Eye, FileSearch, Trash2, Search, Loader2 } from 'lucide-react';
 import { Siswa } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -20,6 +20,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog"
 import React, { useState, useEffect, useMemo, useTransition } from 'react';
 import { Input } from '@/components/ui/input';
 import { getSiswa, deleteSiswa } from '@/lib/actions';
@@ -88,6 +97,59 @@ function ActionMenu({ student, onDelete }: { student: Siswa, onDelete: (id: stri
   );
 }
 
+function ImportDialog() {
+  const [file, setFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const { toast } = useToast();
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      setFile(event.target.files[0]);
+    }
+  };
+
+  const handleImport = async () => {
+    if (!file) {
+      toast({ title: "File tidak ditemukan", description: "Silakan pilih file Excel untuk diimpor.", variant: "destructive" });
+      return;
+    }
+    setIsImporting(true);
+    // TODO: Implement actual import logic here
+    await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate import process
+    setIsImporting(false);
+    toast({ title: "Import Berhasil!", description: `File ${file.name} telah berhasil diimpor.` });
+    setFile(null); // Reset after import
+  };
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline">
+          <Upload className="mr-2 h-4 w-4" />
+          Import
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Impor Data Siswa</DialogTitle>
+          <DialogDescription>
+            Pilih file Excel (.xlsx) yang sesuai dengan template untuk mengimpor data siswa secara massal.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <Input type="file" accept=".xlsx" onChange={handleFileChange} />
+          {file && <p className="text-sm text-muted-foreground">File dipilih: {file.name}</p>}
+        </div>
+        <DialogFooter>
+          <Button onClick={handleImport} disabled={isImporting || !file}>
+            {isImporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Impor
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function SiswaPage() {
   const [students, setStudents] = useState<Siswa[]>([]);
@@ -135,14 +197,13 @@ export default function SiswaPage() {
           <p className="text-muted-foreground">Kelola data induk siswa di sini.</p>
         </div>
         <div className="flex gap-2 flex-wrap justify-start sm:justify-end">
-          <Button variant="outline">
-            <Download className="mr-2 h-4 w-4" />
-            Template
+          <Button variant="outline" asChild>
+            <a href="/template_siswa.xlsx" download>
+              <Download className="mr-2 h-4 w-4" />
+              Template
+            </a>
           </Button>
-          <Button variant="outline">
-            <Upload className="mr-2 h-4 w-4" />
-            Import
-          </Button>
+          <ImportDialog />
           <Button asChild>
             <Link href="/siswa/tambah">
               <PlusCircle className="mr-2 h-4 w-4" />

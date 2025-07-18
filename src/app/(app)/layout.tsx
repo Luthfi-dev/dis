@@ -27,9 +27,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <div className="print:hidden">
+        <AppSidebar />
+      </div>
       <SidebarInset className="bg-background flex flex-col">
-        <AppHeader />
+        <div className="print:hidden">
+          <AppHeader />
+        </div>
         <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
           {children}
         </main>

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, Eye, FilePen, Trash2, Search, FileSearch, Upload, Download } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Eye, FilePen, Trash2, Search, FileSearch, Upload, Download, Loader2 } from 'lucide-react';
 import { Pegawai } from '@/lib/pegawai-data';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -20,6 +20,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog"
 import React, { useState, useEffect, useMemo, useTransition } from 'react';
 import { Input } from '@/components/ui/input';
 import { getPegawai, deletePegawai } from '@/lib/actions';
@@ -89,6 +98,60 @@ function ActionMenu({ pegawai, onDelete }: { pegawai: Pegawai, onDelete: (id: st
   );
 }
 
+function ImportDialog() {
+  const [file, setFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const { toast } = useToast();
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      setFile(event.target.files[0]);
+    }
+  };
+
+  const handleImport = async () => {
+    if (!file) {
+      toast({ title: "File tidak ditemukan", description: "Silakan pilih file Excel untuk diimpor.", variant: "destructive" });
+      return;
+    }
+    setIsImporting(true);
+    // TODO: Implement actual import logic here
+    await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate import process
+    setIsImporting(false);
+    toast({ title: "Import Berhasil!", description: `File ${file.name} telah berhasil diimpor.` });
+    setFile(null); // Reset after import
+  };
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline">
+          <Upload className="mr-2 h-4 w-4" />
+          Import
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Impor Data Pegawai</DialogTitle>
+          <DialogDescription>
+            Pilih file Excel (.xlsx) yang sesuai dengan template untuk mengimpor data pegawai secara massal.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <Input type="file" accept=".xlsx" onChange={handleFileChange} />
+          {file && <p className="text-sm text-muted-foreground">File dipilih: {file.name}</p>}
+        </div>
+        <DialogFooter>
+          <Button onClick={handleImport} disabled={isImporting || !file}>
+            {isImporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Impor
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 export default function PegawaiPage() {
   const [pegawaiList, setPegawaiList] = useState<Pegawai[]>([]);
@@ -124,7 +187,7 @@ export default function PegawaiPage() {
     if (!searchTerm) return pegawaiList;
     return pegawaiList.filter(p => 
       p.pegawai_nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.pegawai_nip?.includes(searchTerm)
+      (p.pegawai_nip && p.pegawai_nip.includes(searchTerm))
     );
   }, [pegawaiList, searchTerm]);
 
@@ -137,14 +200,13 @@ export default function PegawaiPage() {
           <p className="text-muted-foreground">Kelola data induk pegawai di sini.</p>
         </div>
         <div className="flex gap-2 flex-wrap justify-start sm:justify-end">
-           <Button variant="outline">
-            <Download className="mr-2 h-4 w-4" />
-            Template
+           <Button variant="outline" asChild>
+            <a href="/template_pegawai.xlsx" download>
+              <Download className="mr-2 h-4 w-4" />
+              Template
+            </a>
           </Button>
-          <Button variant="outline">
-            <Upload className="mr-2 h-4 w-4" />
-            Import
-          </Button>
+          <ImportDialog />
           <Button asChild>
             <Link href="/pegawai/tambah">
               <PlusCircle className="mr-2 h-4 w-4" />
