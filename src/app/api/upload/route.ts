@@ -1,8 +1,11 @@
 
 import { writeFile, mkdir } from 'fs/promises';
 import { NextRequest, NextResponse } from 'next/server';
-import { join, extname } from 'path';
+import { join, extname, dirname } from 'path';
 import sharp from 'sharp';
+
+// Determine the correct base path for uploads. In Vercel/production, this will be outside the build directory.
+const UPLOADS_DIR = join(process.cwd(), '..', 'uploads');
 
 export async function POST(request: NextRequest) {
   const data = await request.formData();
@@ -15,17 +18,14 @@ export async function POST(request: NextRequest) {
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
-  // Define the path for the uploads directory
-  const uploadsDir = join(process.cwd(), 'public/uploads');
-  
   // Generate a unique filename using timestamp and extension
   const fileExtension = extname(file.name);
   const filename = `${Date.now()}${fileExtension}`;
-  const path = join(uploadsDir, filename);
+  const path = join(UPLOADS_DIR, filename);
 
   try {
     // Ensure the uploads directory exists, create it if it doesn't
-    await mkdir(uploadsDir, { recursive: true });
+    await mkdir(UPLOADS_DIR, { recursive: true });
 
     // Check if the file is an image
     const isImage = file.type.startsWith('image/');
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     await writeFile(path, fileBufferToSave);
     console.log(`File uploaded to ${path}`);
     
-    // Return the public URL
+    // Return the public-facing URL. This URL will be handled by Next.js rewrites.
     const url = `/uploads/${filename}`;
     return NextResponse.json({ success: true, url: url });
   } catch (error: any) {
