@@ -201,7 +201,7 @@ export default function PegawaiPage() {
         </div>
         <div className="flex gap-2 flex-wrap justify-start sm:justify-end">
            <Button variant="outline" asChild>
-            <a href="/template_pegawai.xlsx" download>
+            <a href="/api/template/pegawai" download="template_pegawai.xlsx">
               <Download className="mr-2 h-4 w-4" />
               Template
             </a>

@@ -198,7 +198,7 @@ export default function SiswaPage() {
         </div>
         <div className="flex gap-2 flex-wrap justify-start sm:justify-end">
           <Button variant="outline" asChild>
-            <a href="/template_siswa.xlsx" download>
+            <a href="/api/template/siswa" download="template_siswa.xlsx">
               <Download className="mr-2 h-4 w-4" />
               Template
             </a>
