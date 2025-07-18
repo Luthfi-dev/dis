@@ -14,6 +14,7 @@ import { Copy } from "lucide-react"
 import { Button } from "./button"
 import { ScrollArea } from "./scroll-area"
 import { cn } from "@/lib/utils"
+import { Input } from "./input"
 
 export function Toaster() {
   const { toasts, toast } = useToast()
@@ -39,11 +40,21 @@ export function Toaster() {
               {title && <ToastTitle>{title}</ToastTitle>}
               {description && (
                 isError ? (
-                  <ScrollArea className="h-20 w-full rounded-md border bg-destructive-foreground/10 p-2">
-                    <pre className="text-xs text-destructive-foreground whitespace-pre-wrap break-all select-text">
-                      {description as string}
-                    </pre>
-                  </ScrollArea>
+                  <div className="relative">
+                    <Input
+                      readOnly
+                      value={description as string}
+                      className="pr-10 text-xs h-20 text-destructive-foreground bg-transparent border-none select-text whitespace-pre-wrap break-all"
+                    />
+                     <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 group-[.destructive]:hover:bg-white/20 group-[.destructive]:text-destructive-foreground"
+                      onClick={() => handleCopy(description)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
                 ) : (
                    <ToastDescription>{description}</ToastDescription>
                 )
@@ -51,17 +62,7 @@ export function Toaster() {
             </div>
              <div className="flex flex-col items-center gap-2 self-start">
               {action}
-              {isError && (
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 group-[.destructive]:hover:bg-destructive/50 group-[.destructive]:text-destructive-foreground"
-                  onClick={() => handleCopy(description)}
-                >
-                    <Copy className="h-4 w-4" />
-                </Button>
-              )}
-               <ToastClose className="static transform-none" />
+               <ToastClose className={cn("static transform-none", isError && "mt-auto mb-2" )} />
             </div>
           </Toast>
         )
