@@ -38,7 +38,6 @@ const bukuIndukPegawaiMenuItems = [
 
 const adminMenuItems = [
     { href: '/admin/users', label: 'Kelola Pengguna', icon: Users },
-    { href: '/admin/settings', label: 'Pengaturan Aplikasi', icon: Settings },
 ];
 
 export function AppSidebar() {
@@ -183,6 +182,48 @@ export function AppSidebar() {
           </CollapsibleContent>
         </Collapsible>
 
+         {user?.role === 'superadmin' && (
+            <Collapsible open={isAdminOpen} onOpenChange={setIsAdminOpen} className="w-full">
+            <CollapsibleTrigger asChild>
+                <SidebarMenuButton
+                className="w-full justify-between"
+                isActive={pathname.startsWith('/admin')}
+                tooltip={{
+                    children: 'Administrasi',
+                    className: 'group-data-[collapsible=icon]:flex hidden',
+                }}
+                >
+                <div className="flex items-center gap-2">
+                    <ShieldCheck />
+                    <span>Administrasi</span>
+                </div>
+                <ChevronsUpDown className="h-4 w-4 shrink-0 group-data-[collapsible=icon]:hidden" />
+                </SidebarMenuButton>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="group-data-[collapsible=icon]:hidden">
+                <SidebarMenu className="ml-4 mt-1 space-y-1 border-l border-sidebar-border py-1 pl-4">
+                {adminMenuItems.map((item, index) => (
+                    <SidebarMenuItem key={index}>
+                    <Link href={item.href} className="w-full" onClick={handleLinkClick}>
+                        <SidebarMenuButton
+                        variant="ghost"
+                        size="sm"
+                        isActive={pathname === item.href}
+                        className={cn(
+                            'w-full justify-start',
+                            pathname === item.href && 'bg-sidebar-accent text-sidebar-accent-foreground'
+                        )}
+                        >
+                        <item.icon className="mr-2 h-4 w-4" />
+                        {item.label}
+                        </SidebarMenuButton>
+                    </Link>
+                    </SidebarMenuItem>
+                ))}
+                </SidebarMenu>
+            </CollapsibleContent>
+            </Collapsible>
+        )}
       </SidebarContent>
       <SidebarFooter className="p-2">
         <SidebarMenu>
