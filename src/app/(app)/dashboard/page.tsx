@@ -12,9 +12,11 @@ import { getSiswa, getPegawai } from '@/lib/actions';
 import { getActivities, Activity } from '@/lib/activity-log';
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { useAppSettings } from '@/hooks/use-app-settings';
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { settings } = useAppSettings();
   const [siswaCount, setSiswaCount] = useState(0);
   const [pegawaiCount, setPegawaiCount] = useState(0);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -44,7 +46,7 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Selamat Datang, {user?.name}!</h1>
-        <p className="text-muted-foreground">Berikut adalah ringkasan dari aplikasi EduArchive Anda.</p>
+        <p className="text-muted-foreground">Berikut adalah ringkasan dari aplikasi {settings?.app_title || "EduArchive"} Anda.</p>
       </div>
 
       {/* Stats Cards */}
@@ -166,3 +168,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

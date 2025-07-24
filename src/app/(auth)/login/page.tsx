@@ -12,6 +12,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import { Loader2, GraduationCap } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAppSettings } from '@/hooks/use-app-settings';
+import Image from 'next/image';
 
 const loginSchema = z.object({
   email: z.string().email('Email tidak valid.'),
@@ -57,6 +59,7 @@ function Illustration() {
 export default function LoginPage() {
   const [isPending, startTransition] = useTransition();
   const { login } = useAuth();
+  const { settings } = useAppSettings();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -89,12 +92,16 @@ export default function LoginPage() {
       <div className="flex items-center justify-center py-12">
         <Card className="mx-auto w-[380px] max-w-sm shadow-2xl">
           <CardHeader className="text-center">
-             <div className="mx-auto mb-4 h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
-                <GraduationCap className="h-8 w-8 text-primary" />
+             <div className="mx-auto mb-4 h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 relative">
+                {settings?.app_logo_url ? (
+                    <Image src={settings.app_logo_url} alt="Logo Aplikasi" layout="fill" objectFit="contain" className="p-2" />
+                ) : (
+                    <GraduationCap className="h-8 w-8 text-primary" />
+                )}
             </div>
             <CardTitle className="text-2xl font-bold">Selamat Datang</CardTitle>
             <CardDescription>
-              Masuk ke akun EduArchive Anda untuk melanjutkan.
+              Masuk ke akun {settings?.app_title || "EduArchive"} Anda untuk melanjutkan.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -139,3 +146,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
