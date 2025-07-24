@@ -36,6 +36,7 @@ const bukuIndukPegawaiMenuItems = [
 
 const adminMenuItems = [
     { href: '/admin/users', label: 'Kelola Pengguna', icon: Users },
+    { href: '/admin/settings', label: 'Pengaturan Aplikasi', icon: Settings },
 ]
 
 export function AppSidebar() {
@@ -174,7 +175,7 @@ export function AppSidebar() {
           </CollapsibleContent>
         </Collapsible>
 
-        {user?.role === 'superadmin' ? (
+        {user?.role === 'superadmin' && (
           <Collapsible open={isAdminOpen} onOpenChange={setIsAdminOpen} className="w-full">
             <CollapsibleTrigger asChild>
               <SidebarMenuButton
@@ -215,7 +216,7 @@ export function AppSidebar() {
               </SidebarMenu>
             </CollapsibleContent>
           </Collapsible>
-        ) : null}
+        )}
 
       </SidebarContent>
       <SidebarFooter className="p-2">
