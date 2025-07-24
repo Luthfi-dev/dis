@@ -6,6 +6,12 @@ const fileSchema = z.object({
   fileURL: z.string().url(),
 }).optional();
 
+// Create a non-optional version for use in arrays
+const requiredFileSchema = z.object({
+  fileName: z.string(),
+  fileURL: z.string().url(),
+});
+
 // This is the shape of the data from the form
 export const pegawaiFormDataSchema = z.object({
   pegawai_nama: z.string().min(1, "Nama wajib diisi."),
@@ -38,13 +44,13 @@ export const pegawaiFormDataSchema = z.object({
   pegawai_pendidikanS1: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
   pegawai_pendidikanS2: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
 
-  pegawai_skPengangkatan: z.array(fileSchema.required()).optional(),
+  pegawai_skPengangkatan: z.array(requiredFileSchema).optional(),
   pegawai_skNipBaru: fileSchema,
-  pegawai_skFungsional: z.array(fileSchema.required()).optional(),
+  pegawai_skFungsional: z.array(requiredFileSchema).optional(),
   pegawai_beritaAcaraSumpah: fileSchema,
   pegawai_sertifikatPendidik: fileSchema,
-  pegawai_sertifikatPelatihan: z.array(fileSchema.required()).optional(),
-  pegawai_skp: z.array(fileSchema.required()).optional(),
+  pegawai_sertifikatPelatihan: z.array(requiredFileSchema).optional(),
+  pegawai_skp: z.array(requiredFileSchema).optional(),
   pegawai_karpeg: fileSchema,
   pegawai_karisKarsu: fileSchema,
   pegawai_bukuNikah: fileSchema,
