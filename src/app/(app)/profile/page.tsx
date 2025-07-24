@@ -10,16 +10,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, User } from 'lucide-react';
+import { Loader2, User, UploadCloud } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useTransition } from 'react';
+import { useEffect, useTransition, useState } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 const profileSchema = z.object({
     name: z.string().min(3, 'Nama minimal 3 karakter.'),
     email: z.string().email('Email tidak valid.'),
     password: z.string().optional(),
-    confirmPassword: z.string().optional()
+    confirmPassword: z.string().optional(),
+    avatar: z.string().optional(),
 }).refine(data => data.password === data.confirmPassword, {
     message: "Password tidak cocok.",
     path: ["confirmPassword"],
@@ -27,21 +28,40 @@ const profileSchema = z.object({
 
 type ProfileFormData = z.infer<typeof profileSchema>;
 
+async function uploadFile(file: File, directory: string) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('directory', directory);
+    const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+    });
+    if (!response.ok) {
+        throw new Error('Upload failed');
+    }
+    const { url } = await response.json();
+    return url;
+}
+
 export default function ProfilePage() {
     const { user, updateUser, loading } = useAuth();
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
     const { toast } = useToast();
+    const [isUploading, setIsUploading] = useState(false);
 
-    const { register, handleSubmit, formState: { errors }, reset } = useForm<ProfileFormData>({
+    const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = useForm<ProfileFormData>({
         resolver: zodResolver(profileSchema),
     });
     
+    const avatarUrl = watch('avatar');
+
     useEffect(() => {
         if (user) {
             reset({
                 name: user.name,
                 email: user.email,
+                avatar: user.avatar,
             });
         }
     }, [user, reset]);
@@ -54,9 +74,30 @@ export default function ProfilePage() {
         );
     }
     
+    const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        try {
+            const url = await uploadFile(file, 'users');
+            setValue('avatar', url, { shouldDirty: true });
+            toast({ title: 'Sukses!', description: 'Foto profil berhasil diunggah. Klik "Simpan Perubahan" untuk menerapkan.' });
+        } catch (error) {
+            toast({ title: 'Gagal', description: 'Gagal mengunggah foto profil.', variant: 'destructive' });
+        } finally {
+            setIsUploading(false);
+        }
+    }
+
     const onSubmit = (data: ProfileFormData) => {
         startTransition(async () => {
-            const payload: any = { id: user.id, name: data.name, email: data.email };
+            const payload: any = { 
+                id: user.id, 
+                name: data.name, 
+                email: data.email,
+                avatar: data.avatar,
+            };
             if (data.password) {
                 payload.password = data.password;
             }
@@ -88,12 +129,21 @@ export default function ProfilePage() {
             <form onSubmit={handleSubmit(onSubmit)}>
                 <Card>
                     <CardHeader className='items-center text-center'>
-                         <Avatar className="h-24 w-24 mb-4">
-                            <AvatarImage src={user.avatar || "https://placehold.co/100x100.png"} alt={user.name} data-ai-hint="person" />
-                            <AvatarFallback>
-                                <User className="h-12 w-12"/>
-                            </AvatarFallback>
-                        </Avatar>
+                         <div className="relative">
+                            <Avatar className="h-24 w-24 mb-4">
+                                <AvatarImage src={avatarUrl || user.avatar} alt={user.name} data-ai-hint="person" />
+                                <AvatarFallback>
+                                    <User className="h-12 w-12"/>
+                                </AvatarFallback>
+                            </Avatar>
+                            <Button asChild size="sm" variant="outline" className="absolute bottom-4 right-0 rounded-full h-8 w-8 p-0">
+                                <label htmlFor="avatar-upload" className="cursor-pointer">
+                                    {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />}
+                                    <span className="sr-only">Unggah Foto</span>
+                                    <input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} disabled={isUploading} />
+                                </label>
+                            </Button>
+                         </div>
                         <CardTitle>{user.name}</CardTitle>
                         <CardDescription>{user.email} ({user.role})</CardDescription>
                     </CardHeader>
@@ -118,10 +168,11 @@ export default function ProfilePage() {
                             <Input id="confirmPassword" type="password" {...register('confirmPassword')} placeholder="Ulangi password baru" />
                             {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
                         </div>
+                         <input type="hidden" {...register('avatar')} />
                     </CardContent>
                     <CardFooter className='border-t px-6 py-4'>
-                        <Button type="submit" disabled={isPending}>
-                            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Button type="submit" disabled={isPending || isUploading}>
+                            {(isPending || isUploading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Simpan Perubahan
                         </Button>
                     </CardFooter>

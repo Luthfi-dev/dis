@@ -10,6 +10,7 @@ const UPLOADS_DIR = join(process.cwd(), '..', 'uploads');
 export async function POST(request: NextRequest) {
   const data = await request.formData();
   const file: File | null = data.get('file') as unknown as File;
+  const directory = data.get('directory') as string || '';
 
   if (!file) {
     return NextResponse.json({ success: false, error: 'No file provided' }, { status: 400 });
@@ -17,15 +18,17 @@ export async function POST(request: NextRequest) {
 
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
+  
+  const targetDir = join(UPLOADS_DIR, directory);
 
   // Generate a unique filename using timestamp and extension
   const fileExtension = extname(file.name);
   const filename = `${Date.now()}${fileExtension}`;
-  const path = join(UPLOADS_DIR, filename);
+  const path = join(targetDir, filename);
 
   try {
-    // Ensure the uploads directory exists, create it if it doesn't
-    await mkdir(UPLOADS_DIR, { recursive: true });
+    // Ensure the target directory exists, create it if it doesn't
+    await mkdir(targetDir, { recursive: true });
 
     // Check if the file is an image
     const isImage = file.type.startsWith('image/');
@@ -46,7 +49,7 @@ export async function POST(request: NextRequest) {
     console.log(`File uploaded to ${path}`);
     
     // Return the public-facing URL. This URL will be handled by Next.js rewrites.
-    const url = `/uploads/${filename}`;
+    const url = `/uploads/${directory ? `${directory}/` : ''}${filename}`;
     return NextResponse.json({ success: true, url: url });
   } catch (error: any) {
     console.error('Error writing file:', error);
