@@ -1,9 +1,8 @@
 
 'use client';
 
-import { useState, useTransition, useEffect, useMemo } from 'react';
-import { useForm, FormProvider, useFormContext, useFieldArray, FieldPath } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useState, useTransition, useEffect } from 'react';
+import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { FormStepper } from './form-stepper';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -20,7 +19,6 @@ import { cn } from '@/lib/utils';
 import { submitPegawaiData } from '@/lib/actions';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { Pegawai, PegawaiFormData } from '@/lib/pegawai-data';
-import { pegawaiFormDataSchema } from '@/lib/pegawai-data';
 import Image from 'next/image';
 import { Separator } from './ui/separator';
 import { getKabupatens, getKecamatans, getDesas, Wilayah } from '@/lib/wilayah';
@@ -28,7 +26,7 @@ import { Combobox } from './ui/combobox';
 import { logActivity } from '@/lib/activity-log';
 
 const steps = [
-  { id: 1, title: 'Identitas Pegawai', fields: ['pegawai_nama', 'pegawai_jenisKelamin', 'pegawai_tempatLahir', 'pegawai_tanggalLahir', 'pegawai_statusPerkawinan', 'pegawai_jabatan', 'pegawai_terhitungMulaiTanggal'] },
+  { id: 1, title: 'Identitas Pegawai' },
   { id: 2, title: 'File Pegawai' },
   { id: 3, title: 'Validasi' },
 ];
@@ -39,7 +37,7 @@ const initialFormValues: PegawaiFormData = {
     pegawai_tempatLahir: '',
     pegawai_tanggalLahir: undefined,
     pegawai_statusPerkawinan: undefined,
-    pegawai_jabatan: undefined,
+    pegawai_jabatan: '',
     pegawai_terhitungMulaiTanggal: undefined,
     pegawai_phaspoto: undefined,
     pegawai_nip: '',
@@ -49,7 +47,7 @@ const initialFormValues: PegawaiFormData = {
     pegawai_namaPasangan: '',
     pegawai_jumlahAnak: undefined,
     pegawai_bidangStudi: '',
-    pegawai_tugasTambahan: undefined,
+    pegawai_tugasTambahan: '',
     pegawai_alamatKabupaten: '',
     pegawai_alamatKecamatan: '',
     pegawai_alamatDesa: '',
@@ -104,38 +102,25 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
   const router = useRouter();
 
   const methods = useForm<PegawaiFormData>({
-    resolver: zodResolver(pegawaiFormDataSchema),
     mode: 'onBlur', 
     defaultValues: pegawaiData || initialFormValues,
   });
 
-  const { handleSubmit, reset, trigger } = methods;
+  const { handleSubmit, reset } = methods;
   
   useEffect(() => {
     if (pegawaiData) {
-      const dataToReset = {
-        ...pegawaiData,
-        pegawai_tanggalLahir: pegawaiData.pegawai_tanggalLahir ? new Date(pegawaiData.pegawai_tanggalLahir) : undefined,
-        pegawai_terhitungMulaiTanggal: pegawaiData.pegawai_terhitungMulaiTanggal ? new Date(pegawaiData.pegawai_terhitungMulaiTanggal) : undefined,
-        pegawai_tanggalPerkawinan: pegawaiData.pegawai_tanggalPerkawinan ? new Date(pegawaiData.pegawai_tanggalPerkawinan) : undefined,
-      };
+      const dataToReset: any = { ...pegawaiData };
+      for (const key in dataToReset) {
+        if (key.startsWith('pegawai_tanggal') && dataToReset[key]) {
+          dataToReset[key] = new Date(dataToReset[key]);
+        }
+      }
       reset(dataToReset);
     }
   }, [pegawaiData, reset]);
 
   const handleNext = async () => {
-    const currentStepFields = steps[currentStep - 1].fields;
-    const isValid = await trigger(currentStepFields as FieldPath<PegawaiFormData>[]);
-
-    if (!isValid) {
-        toast({
-            title: 'Form Belum Lengkap',
-            description: 'Silakan isi semua kolom yang wajib diisi (bertanda *) sebelum melanjutkan.',
-            variant: 'destructive',
-        });
-        return;
-    }
-
     if (currentStep < steps.length) {
         setCurrentStep((prev) => prev + 1);
     }
@@ -179,7 +164,7 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>{steps[currentStep - 1].title}</CardTitle>
-            <CardDescription>Sesi {currentStep} dari {steps.length}. Kolom dengan tanda * wajib diisi.</CardDescription>
+            <CardDescription>Sesi {currentStep} dari {steps.length}.</CardDescription>
           </CardHeader>
           <CardContent>
             {currentStep === 1 && <DataIdentitasPegawaiForm pegawaiData={pegawaiData} />}
@@ -212,10 +197,6 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
 
 function Grid({ children, className }: { children: React.ReactNode, className?: string }) {
   return <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4", className)}>{children}</div>;
-}
-
-function FormLabelRequired({ children }: { children: React.ReactNode }) {
-    return <FormLabel>{children} <span className="text-destructive">*</span></FormLabel>
 }
 
 function DataIdentitasPegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & { id: string } }) {
@@ -366,10 +347,10 @@ function DataIdentitasPegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegaw
       />
       <Grid>
         <FormField control={control} name="pegawai_nama" render={({ field }) => (
-            <FormItem><FormLabelRequired>Nama</FormLabelRequired><FormControl><Input placeholder="Nama lengkap pegawai" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Nama</FormLabel><FormControl><Input placeholder="Nama lengkap pegawai" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="pegawai_jenisKelamin" render={({ field }) => (
-            <FormItem><FormLabelRequired>Jenis Kelamin</FormLabelRequired><FormControl>
+            <FormItem><FormLabel>Jenis Kelamin</FormLabel><FormControl>
             <RadioGroup onValueChange={field.onChange} value={field.value} className="flex items-center space-x-4 pt-2">
                 <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Laki-laki" /></FormControl><FormLabel className="font-normal">Laki-laki</FormLabel></FormItem>
                 <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Perempuan" /></FormControl><FormLabel className="font-normal">Perempuan</FormLabel></FormItem>
@@ -377,10 +358,10 @@ function DataIdentitasPegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegaw
             </FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="pegawai_tempatLahir" render={({ field }) => (
-            <FormItem><FormLabelRequired>Tempat Lahir</FormLabelRequired><FormControl><Input placeholder="Contoh: Jakarta" {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Tempat Lahir</FormLabel><FormControl><Input placeholder="Contoh: Jakarta" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="pegawai_tanggalLahir" render={({ field }) => (
-            <FormItem className="flex flex-col"><FormLabelRequired>Tanggal Lahir</FormLabelRequired><Popover>
+            <FormItem className="flex flex-col"><FormLabel>Tanggal Lahir</FormLabel><Popover>
             <PopoverTrigger asChild><FormControl>
                 <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
                 {field.value ? format(new Date(field.value), "PPP") : <span>Pilih tanggal</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
@@ -401,7 +382,7 @@ function DataIdentitasPegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegaw
             <FormItem><FormLabel>NRG</FormLabel><FormControl><Input placeholder="Nomor Registrasi Guru" {...field} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="pegawai_statusPerkawinan" render={({ field }) => (
-            <FormItem><FormLabelRequired>Status Perkawinan</FormLabelRequired><Select onValueChange={field.onChange} value={field.value}>
+            <FormItem><FormLabel>Status Perkawinan</FormLabel><Select onValueChange={field.onChange} value={field.value}>
             <FormControl><SelectTrigger><SelectValue placeholder="Pilih Status" /></SelectTrigger></FormControl>
             <SelectContent>
                 <SelectItem value="Belum Kawin">Belum Kawin</SelectItem>
@@ -442,7 +423,7 @@ function DataIdentitasPegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegaw
             </FormItem>
         )} />
         <FormField control={control} name="pegawai_jabatan" render={({ field }) => (
-            <FormItem><FormLabelRequired>Jabatan</FormLabelRequired>
+            <FormItem><FormLabel>Jabatan</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Pilih Jabatan" /></SelectTrigger></FormControl>
                     <SelectContent>
@@ -476,7 +457,7 @@ function DataIdentitasPegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegaw
             </Select><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="pegawai_terhitungMulaiTanggal" render={({ field }) => (
-            <FormItem className="flex flex-col"><FormLabelRequired>Terhitung Mulai Tanggal</FormLabelRequired><Popover>
+            <FormItem className="flex flex-col"><FormLabel>Terhitung Mulai Tanggal</FormLabel><Popover>
             <PopoverTrigger asChild><FormControl>
                 <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
                 {field.value ? format(new Date(field.value), "PPP") : <span>Pilih tanggal</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />

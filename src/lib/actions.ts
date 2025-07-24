@@ -72,9 +72,20 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
     try {
         // --- DUPLICATE CHECK ---
         if (data.siswa_nis || data.siswa_nisn) {
+             const conditions = [];
+             const params = [];
+             if(data.siswa_nis) {
+                conditions.push('siswa_nis = ?');
+                params.push(data.siswa_nis);
+             }
+             if(data.siswa_nisn) {
+                conditions.push('siswa_nisn = ?');
+                params.push(data.siswa_nisn);
+             }
+
             const [existing]: any = await db.query(
-                'SELECT id FROM siswa WHERE (siswa_nis = ? OR siswa_nisn = ?) AND id != ?',
-                [data.siswa_nis, data.siswa_nisn, studentId || '']
+                `SELECT id FROM siswa WHERE (${conditions.join(' OR ')}) AND id != ?`,
+                [...params, studentId || '']
             );
             if (existing.length > 0) {
                 return { success: false, message: 'NIS atau NISN sudah terdaftar untuk siswa lain.' };
@@ -97,8 +108,6 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
             await db.query(sql, [...values, studentId]);
         } else {
             // --- CREATE LOGIC ---
-            // Remove id from dataForDb as it's auto-incremented
-            delete (dataForDb as any).id; 
             const fields = Object.keys(dataForDb);
             const values = Object.values(dataForDb);
             const placeholders = fields.map(() => '?').join(', ');
@@ -187,10 +196,10 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
                 await db.rollback();
                 return { success: false, message: 'Pegawai tidak ditemukan.' };
             }
-
+            
+            // This will hold only fields that have actually changed.
             const changedData: { [key: string]: any } = {};
             for (const key in dataForDb) {
-                // Use a simple string comparison for non-object fields, and deep for potential JSON
                  if (!isEqual(dataForDb[key], currentRow[key])) {
                      changedData[key] = dataForDb[key];
                  }
@@ -204,7 +213,6 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
             }
         } else {
              // --- CREATE LOGIC ---
-             delete (dataForDb as any).id;
             const fields = Object.keys(dataForDb);
             const values = Object.values(dataForDb);
             const placeholders = fields.map(() => '?').join(', ');

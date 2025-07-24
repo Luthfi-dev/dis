@@ -13,58 +13,56 @@ const requiredFileSchema = z.object({
 });
 
 // This is the shape of the data from the form
-export const pegawaiFormDataSchema = z.object({
-  pegawai_nama: z.string().min(1, "Nama wajib diisi."),
-  pegawai_jenisKelamin: z.enum(['Laki-laki', 'Perempuan'], { required_error: "Jenis kelamin wajib dipilih." }),
-  pegawai_tempatLahir: z.string().min(1, "Tempat lahir wajib diisi."),
-  pegawai_tanggalLahir: z.date({ required_error: "Tanggal lahir wajib diisi." }),
-  pegawai_statusPerkawinan: z.enum(['Belum Kawin', 'Kawin', 'Cerai Hidup', 'Cerai Mati'], { required_error: "Status perkawinan wajib dipilih." }),
-  pegawai_jabatan: z.string().min(1, "Jabatan wajib dipilih."),
-  pegawai_terhitungMulaiTanggal: z.date({ required_error: "TMT wajib diisi." }),
-
-  pegawai_phaspoto: fileSchema,
-  pegawai_nip: z.string().optional(),
-  pegawai_nuptk: z.string().optional(),
-  pegawai_nrg: z.string().optional(),
-  pegawai_tanggalPerkawinan: z.date().optional().nullable(),
-  pegawai_namaPasangan: z.string().optional(),
-  pegawai_jumlahAnak: z.number().optional().nullable(),
-  pegawai_bidangStudi: z.string().optional(),
-  pegawai_tugasTambahan: z.string().optional(),
-  
-  pegawai_alamatKabupaten: z.string().optional(),
-  pegawai_alamatKecamatan: z.string().optional(),
-  pegawai_alamatDesa: z.string().optional(),
-  pegawai_alamatDusun: z.string().optional(),
-  
-  pegawai_pendidikanSD: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
-  pegawai_pendidikanSMP: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
-  pegawai_pendidikanSMA: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
-  pegawai_pendidikanDiploma: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
-  pegawai_pendidikanS1: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
-  pegawai_pendidikanS2: z.object({ tamatTahun: z.string().optional(), ijazah: fileSchema }).optional(),
-
-  pegawai_skPengangkatan: z.array(requiredFileSchema).optional(),
-  pegawai_skNipBaru: fileSchema,
-  pegawai_skFungsional: z.array(requiredFileSchema).optional(),
-  pegawai_beritaAcaraSumpah: fileSchema,
-  pegawai_sertifikatPendidik: fileSchema,
-  pegawai_sertifikatPelatihan: z.array(requiredFileSchema).optional(),
-  pegawai_skp: z.array(requiredFileSchema).optional(),
-  pegawai_karpeg: fileSchema,
-  pegawai_karisKarsu: fileSchema,
-  pegawai_bukuNikah: fileSchema,
-  pegawai_kartuKeluarga: fileSchema,
-  pegawai_ktp: fileSchema,
-  pegawai_akteKelahiran: fileSchema,
-  pegawai_kartuTaspen: fileSchema,
-  pegawai_npwp: fileSchema,
-  pegawai_kartuBpjs: fileSchema,
-  pegawai_bukuRekening: fileSchema,
-});
+export const pegawaiFormDataSchema = z.object({}).passthrough();
 
 
-export type PegawaiFormData = z.infer<typeof pegawaiFormDataSchema>;
+export type PegawaiFormData = {
+  pegawai_nama?: string;
+  pegawai_jenisKelamin?: 'Laki-laki' | 'Perempuan';
+  pegawai_tempatLahir?: string;
+  pegawai_tanggalLahir?: Date;
+  pegawai_statusPerkawinan?: 'Belum Kawin' | 'Kawin' | 'Cerai Hidup' | 'Cerai Mati';
+  pegawai_jabatan?: string;
+  pegawai_terhitungMulaiTanggal?: Date;
+  pegawai_phaspoto?: { fileName: string; fileURL: string; };
+  pegawai_nip?: string;
+  pegawai_nuptk?: string;
+  pegawai_nrg?: string;
+  pegawai_tanggalPerkawinan?: Date | null;
+  pegawai_namaPasangan?: string;
+  pegawai_jumlahAnak?: number | null;
+  pegawai_bidangStudi?: string;
+  pegawai_tugasTambahan?: string;
+  pegawai_alamatKabupaten?: string;
+  pegawai_alamatKecamatan?: string;
+  pegawai_alamatDesa?: string;
+  pegawai_alamatDusun?: string;
+  pegawai_pendidikanSD?: { tamatTahun?: string; ijazah?: { fileName: string; fileURL: string; } };
+  pegawai_pendidikanSMP?: { tamatTahun?: string; ijazah?: { fileName: string; fileURL: string; } };
+  pegawai_pendidikanSMA?: { tamatTahun?: string; ijazah?: { fileName: string; fileURL: string; } };
+  pegawai_pendidikanDiploma?: { tamatTahun?: string; ijazah?: { fileName: string; fileURL: string; } };
+  pegawai_pendidikanS1?: { tamatTahun?: string; ijazah?: { fileName: string; fileURL: string; } };
+  pegawai_pendidikanS2?: { tamatTahun?: string; ijazah?: { fileName: string; fileURL: string; } };
+  pegawai_skPengangkatan?: { fileName: string; fileURL: string; }[];
+  pegawai_skNipBaru?: { fileName: string; fileURL: string; };
+  pegawai_skFungsional?: { fileName: string; fileURL: string; }[];
+  pegawai_beritaAcaraSumpah?: { fileName: string; fileURL: string; };
+  pegawai_sertifikatPendidik?: { fileName: string; fileURL: string; };
+  pegawai_sertifikatPelatihan?: { fileName: string; fileURL: string; }[];
+  pegawai_skp?: { fileName: string; fileURL: string; }[];
+  pegawai_karpeg?: { fileName: string; fileURL: string; };
+  pegawai_karisKarsu?: { fileName: string; fileURL: string; };
+  pegawai_bukuNikah?: { fileName: string; fileURL: string; };
+  pegawai_kartuKeluarga?: { fileName: string; fileURL: string; };
+  pegawai_ktp?: { fileName: string; fileURL: string; };
+  pegawai_akteKelahiran?: { fileName: string; fileURL: string; };
+  pegawai_kartuTaspen?: { fileName: string; fileURL: string; };
+  pegawai_npwp?: { fileName: string; fileURL: string; };
+  pegawai_kartuBpjs?: { fileName: string; fileURL: string; };
+  pegawai_bukuRekening?: { fileName: string; fileURL: string; };
+  [key: string]: any;
+}
+
 
 // This is the final shape of the data in the "database"
 export type Pegawai = PegawaiFormData & {

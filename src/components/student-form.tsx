@@ -1,14 +1,13 @@
 
 'use client';
 
-import { useState, useTransition, useCallback, useEffect, useMemo } from 'react';
-import { useForm, FormProvider, useFormContext, get, FieldPath, FieldErrors } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useState, useTransition, useEffect } from 'react';
+import { useForm, FormProvider, useFormContext, get } from 'react-hook-form';
 import { FormStepper } from './form-stepper';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, ArrowRight, CalendarIcon, UploadCloud, FileCheck2, FileX2, User, ShieldCheck } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, CalendarIcon, UploadCloud, FileCheck2, User, ShieldCheck } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,7 +21,6 @@ import { Textarea } from './ui/textarea';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { Siswa } from '@/lib/data';
 import type { StudentFormData } from '@/lib/student-data-t';
-import { studentFormDataSchema } from '@/lib/student-data-t';
 import Image from 'next/image';
 import { getProvinces, getKabupatens, getKecamatans, getDesas, Wilayah } from '@/lib/wilayah';
 import { Combobox } from './ui/combobox';
@@ -30,13 +28,13 @@ import { Separator } from './ui/separator';
 import { logActivity } from '@/lib/activity-log';
 
 const steps = [
-  { id: 1, title: 'Data Siswa', fields: ['siswa_namaLengkap', 'siswa_nis', 'siswa_nisn', 'siswa_jenisKelamin', 'siswa_tempatLahir', 'siswa_tanggalLahir', 'siswa_agama', 'siswa_kewarganegaraan'] },
-  { id: 2, title: 'Dokumen Utama', fields: [] },
-  { id: 3, title: 'Data Orang Tua', fields: [] },
-  { id: 4, title: 'Perkembangan Siswa', fields: [] },
-  { id: 5, title: 'Meninggalkan Sekolah', fields: [] },
-  { id: 6, title: 'Laporan Belajar', fields: [] },
-  { id: 7, title: 'Validasi', fields: [] },
+  { id: 1, title: 'Data Siswa' },
+  { id: 2, title: 'Dokumen Utama' },
+  { id: 3, title: 'Data Orang Tua' },
+  { id: 4, title: 'Perkembangan Siswa' },
+  { id: 5, title: 'Meninggalkan Sekolah' },
+  { id: 6, title: 'Laporan Belajar' },
+  { id: 7, title: 'Validasi' },
 ];
 
 const initialFormValues: StudentFormData = {
@@ -75,39 +73,25 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
   const router = useRouter();
 
   const methods = useForm<StudentFormData>({
-    resolver: zodResolver(studentFormDataSchema),
     mode: 'onBlur', 
     defaultValues: studentData || initialFormValues,
   });
 
-  const { handleSubmit, trigger, getValues, formState: { errors }, reset } = methods;
+  const { handleSubmit, reset } = methods;
   
    useEffect(() => {
     if (studentData) {
-        const dataToReset = {
-            ...studentData,
-            siswa_tanggalLahir: studentData.siswa_tanggalLahir ? new Date(studentData.siswa_tanggalLahir) : undefined,
-            siswa_tanggalSttb: studentData.siswa_tanggalSttb ? new Date(studentData.siswa_tanggalSttb) : undefined,
-            siswa_pindahanDiterimaTanggal: studentData.siswa_pindahanDiterimaTanggal ? new Date(studentData.siswa_pindahanDiterimaTanggal) : undefined,
-            siswa_keluarTanggal: studentData.siswa_keluarTanggal ? new Date(studentData.siswa_keluarTanggal) : undefined,
-        };
+        const dataToReset: any = { ...studentData };
+        for (const key in dataToReset) {
+            if (key.includes('tanggal') && dataToReset[key]) {
+                 dataToReset[key] = new Date(dataToReset[key]);
+            }
+        }
       reset(dataToReset);
     }
   }, [studentData, reset]);
 
   const handleNext = async () => {
-    const currentStepFields = steps[currentStep - 1].fields;
-    const isValid = await trigger(currentStepFields as FieldPath<StudentFormData>[]);
-    
-    if (!isValid) {
-        toast({
-            title: 'Form Belum Lengkap',
-            description: 'Silakan isi semua kolom yang wajib diisi (bertanda *) sebelum melanjutkan.',
-            variant: 'destructive',
-        });
-        return;
-    }
-
     if (currentStep < steps.length) {
         setCurrentStep((prev) => prev + 1);
     }
@@ -150,7 +134,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>{steps[currentStep - 1].title}</CardTitle>
-            <CardDescription>Sesi {currentStep} dari {steps.length}. Kolom dengan tanda * wajib diisi.</CardDescription>
+            <CardDescription>Sesi {currentStep} dari {steps.length}.</CardDescription>
           </CardHeader>
           <CardContent>
             {currentStep === 1 && <DataSiswaForm studentData={studentData} />}
@@ -187,10 +171,6 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
 
 function Grid({ children, className }: { children: React.ReactNode, className?: string }) {
   return <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4", className)}>{children}</div>;
-}
-
-function FormLabelRequired({ children }: { children: React.ReactNode }) {
-    return <FormLabel>{children} <span className="text-destructive">*</span></FormLabel>
 }
 
 function DataSiswaForm({ studentData }: { studentData?: Partial<Siswa> & { id: string } }) {
@@ -374,16 +354,16 @@ function DataSiswaForm({ studentData }: { studentData?: Partial<Siswa> & { id: s
       />
       <Grid>
         <FormField control={control} name="siswa_namaLengkap" render={({ field }) => (
-            <FormItem><FormLabelRequired>Nama</FormLabelRequired><FormControl><Input placeholder="Nama lengkap siswa" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Nama</FormLabel><FormControl><Input placeholder="Nama lengkap siswa" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="siswa_nis" render={({ field }) => (
-            <FormItem><FormLabelRequired>Nomor Induk Sekolah</FormLabelRequired><FormControl><Input placeholder="NIS" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Nomor Induk Sekolah</FormLabel><FormControl><Input placeholder="NIS" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="siswa_nisn" render={({ field }) => (
-            <FormItem><FormLabelRequired>Nomor Induk Nasional Siswa</FormLabelRequired><FormControl><Input placeholder="10 digit NISN" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Nomor Induk Nasional Siswa</FormLabel><FormControl><Input placeholder="10 digit NISN" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="siswa_jenisKelamin" render={({ field }) => (
-            <FormItem><FormLabelRequired>Jenis Kelamin</FormLabelRequired><FormControl>
+            <FormItem><FormLabel>Jenis Kelamin</FormLabel><FormControl>
             <RadioGroup onValueChange={field.onChange} value={field.value} className="flex items-center space-x-4 pt-2">
                 <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Laki-laki" /></FormControl><FormLabel className="font-normal">Laki-laki</FormLabel></FormItem>
                 <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Perempuan" /></FormControl><FormLabel className="font-normal">Perempuan</FormLabel></FormItem>
@@ -391,7 +371,7 @@ function DataSiswaForm({ studentData }: { studentData?: Partial<Siswa> & { id: s
             </FormControl><FormMessage /></FormItem>
         )} />
         <div className="md:col-span-2 space-y-2">
-            <h3 className="text-sm font-medium"><FormLabelRequired>Kelahiran Siswa</FormLabelRequired></h3>
+            <h3 className="text-sm font-medium"><FormLabel>Kelahiran Siswa</FormLabel></h3>
             <Grid>
                 <FormField control={control} name="siswa_tempatLahir" render={({ field }) => (
                     <FormItem><FormLabel>Tempat Lahir</FormLabel><FormControl><Input placeholder="Contoh: Jakarta" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
@@ -411,7 +391,7 @@ function DataSiswaForm({ studentData }: { studentData?: Partial<Siswa> & { id: s
             </Grid>
         </div>
         <FormField control={control} name="siswa_agama" render={({ field }) => (
-            <FormItem><FormLabelRequired>Agama</FormLabelRequired><Select onValueChange={field.onChange} value={field.value}>
+            <FormItem><FormLabel>Agama</FormLabel><Select onValueChange={field.onChange} value={field.value}>
             <FormControl><SelectTrigger><SelectValue placeholder="Pilih Agama" /></SelectTrigger></FormControl>
             <SelectContent>
                 <SelectItem value="Islam">Islam</SelectItem><SelectItem value="Kristen">Kristen</SelectItem>
@@ -420,7 +400,7 @@ function DataSiswaForm({ studentData }: { studentData?: Partial<Siswa> & { id: s
             </Select><FormMessage /></FormItem>
         )} />
         <FormField control={control} name="siswa_kewarganegaraan" render={({ field }) => (
-            <FormItem><FormLabelRequired>Kewarganegaraan</FormLabelRequired><Select onValueChange={field.onChange} value={field.value}>
+            <FormItem><FormLabel>Kewarganegaraan</FormLabel><Select onValueChange={field.onChange} value={field.value}>
             <FormControl><SelectTrigger><SelectValue placeholder="Pilih Kewarganegaraan" /></SelectTrigger></FormControl>
             <SelectContent>
                 <SelectItem value="WNI">WNI</SelectItem><SelectItem value="WNA">WNA</SelectItem>
@@ -922,5 +902,3 @@ function DataValidasiForm() {
     </div>
   )
 }
-
-

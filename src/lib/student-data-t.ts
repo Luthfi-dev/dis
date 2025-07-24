@@ -8,93 +8,77 @@ const fileSchema = z.object({
   fileURL: z.string().url(),
 }).optional().nullable();
 
-export const studentFormDataSchema = z.object({
-  // Step 1: Data Siswa (Required Fields)
-  siswa_namaLengkap: z.string().min(1, "Nama lengkap wajib diisi."),
-  siswa_nis: z.string().min(1, "NIS wajib diisi."),
-  siswa_nisn: z.string().min(1, "NISN wajib diisi."),
-  siswa_jenisKelamin: z.enum(['Laki-laki', 'Perempuan'], { required_error: "Jenis kelamin wajib dipilih." }),
-  siswa_tempatLahir: z.string().min(1, "Tempat lahir wajib diisi."),
-  siswa_tanggalLahir: z.date({ required_error: "Tanggal lahir wajib diisi." }),
-  siswa_agama: z.string().min(1, "Agama wajib dipilih."),
-  siswa_kewarganegaraan: z.string().min(1, "Kewarganegaraan wajib dipilih."),
-  
-  // Optional Fields
-  siswa_fotoProfil: fileSchema,
-  siswa_jumlahSaudara: z.number().optional().nullable(),
-  siswa_bahasa: z.string().optional(),
-  siswa_golonganDarah: z.string().optional(),
-  siswa_telepon: z.string().optional(),
-  
-  // Alamat KK
-  siswa_alamatKkProvinsi: z.string().optional(),
-  siswa_alamatKkKabupaten: z.string().optional(),
-  siswa_alamatKkKecamatan: z.string().optional(),
-  siswa_alamatKkDesa: z.string().optional(),
-  
-  // Domisili
-  siswa_domisiliProvinsi: z.string().optional(),
-  siswa_domisiliKabupaten: z.string().optional(),
-  siswa_domisiliKecamatan: z.string().optional(),
-  siswa_domisiliDesa: z.string().optional(),
+export const studentFormDataSchema = z.object({}).passthrough();
 
-  // Kesehatan
-  siswa_tinggiBadan: z.number().optional().nullable(),
-  siswa_beratBadan: z.number().optional().nullable(),
-  siswa_penyakit: z.string().optional(),
-  siswa_kelainanJasmani: z.string().optional(),
-
-  // Step 2: Dokumen
-  documents: z.object({
-    kartuKeluarga: fileSchema,
-    ktpAyah: fileSchema,
-    ktpIbu: fileSchema,
-    kartuIndonesiaPintar: fileSchema,
-    ijazah: fileSchema,
-    aktaKelahiran: fileSchema,
-    akteKematianAyah: fileSchema,
-    akteKematianIbu: fileSchema,
-    raporSmt1: fileSchema,
-    raporSmt2: fileSchema,
-    raporSmt3: fileSchema,
-    raporSmt4: fileSchema,
-    raporSmt5: fileSchema,
-    raporSmt6: fileSchema,
-    ijazahSmp: fileSchema,
-    transkripSmp: fileSchema,
-  }).optional(),
-
-  // Step 3: Orang Tua
-  siswa_namaAyah: z.string().optional(),
-  siswa_namaIbu: z.string().optional(),
-  siswa_pendidikanAyah: z.string().optional(),
-  siswa_pendidikanIbu: z.string().optional(),
-  siswa_pekerjaanAyah: z.string().optional(),
-  siswa_pekerjaanIbu: z.string().optional(),
-  siswa_namaWali: z.string().optional(),
-  siswa_hubunganWali: z.string().optional(),
-  siswa_pendidikanWali: z.string().optional(),
-  siswa_pekerjaanWali: z.string().optional(),
-  siswa_alamatOrangTua: z.string().optional(),
-  siswa_teleponOrangTua: z.string().optional(),
-  
-  // Step 4: Perkembangan
-  siswa_asalSekolah: z.string().optional(),
-  siswa_nomorSttb: z.string().optional(),
-  siswa_tanggalSttb: z.date().optional().nullable(),
-  siswa_pindahanAsalSekolah: z.string().optional(),
-  siswa_pindahanDariTingkat: z.string().optional(),
-  siswa_pindahanDiterimaTanggal: z.date().optional().nullable(),
-
-  // Step 5: Meninggalkan Sekolah
-  siswa_lulusTahun: z.string().optional(),
-  siswa_lulusNomorIjazah: z.string().optional(),
-  siswa_lulusMelanjutkanKe: z.string().optional(),
-  siswa_pindahKeSekolah: z.string().optional(),
-  siswa_pindahTingkatKelas: z.string().optional(),
-  siswa_pindahKeTingkat: z.string().optional(),
-  siswa_keluarAlasan: z.string().optional(),
-  siswa_keluarTanggal: z.date().optional().nullable(),
-});
-
-export type StudentFormData = z.infer<typeof studentFormDataSchema>;
+export type StudentFormData = {
+  siswa_namaLengkap?: string;
+  siswa_nis?: string;
+  siswa_nisn?: string;
+  siswa_jenisKelamin?: 'Laki-laki' | 'Perempuan';
+  siswa_tempatLahir?: string;
+  siswa_tanggalLahir?: Date;
+  siswa_agama?: string;
+  siswa_kewarganegaraan?: string;
+  siswa_fotoProfil?: { fileName: string; fileURL: string; } | null;
+  siswa_jumlahSaudara?: number | null;
+  siswa_bahasa?: string;
+  siswa_golonganDarah?: string;
+  siswa_telepon?: string;
+  siswa_alamatKkProvinsi?: string;
+  siswa_alamatKkKabupaten?: string;
+  siswa_alamatKkKecamatan?: string;
+  siswa_alamatKkDesa?: string;
+  siswa_domisiliProvinsi?: string;
+  siswa_domisiliKabupaten?: string;
+  siswa_domisiliKecamatan?: string;
+  siswa_domisiliDesa?: string;
+  siswa_tinggiBadan?: number | null;
+  siswa_beratBadan?: number | null;
+  siswa_penyakit?: string;
+  siswa_kelainanJasmani?: string;
+  documents?: {
+    kartuKeluarga?: { fileName: string; fileURL: string; } | null;
+    ktpAyah?: { fileName: string; fileURL: string; } | null;
+    ktpIbu?: { fileName: string; fileURL: string; } | null;
+    kartuIndonesiaPintar?: { fileName: string; fileURL: string; } | null;
+    ijazah?: { fileName: string; fileURL: string; } | null;
+    aktaKelahiran?: { fileName: string; fileURL: string; } | null;
+    akteKematianAyah?: { fileName: string; fileURL: string; } | null;
+    akteKematianIbu?: { fileName: string; fileURL: string; } | null;
+    raporSmt1?: { fileName: string; fileURL: string; } | null;
+    raporSmt2?: { fileName: string; fileURL: string; } | null;
+    raporSmt3?: { fileName: string; fileURL: string; } | null;
+    raporSmt4?: { fileName: string; fileURL: string; } | null;
+    raporSmt5?: { fileName: string; fileURL: string; } | null;
+    raporSmt6?: { fileName: string; fileURL: string; } | null;
+    ijazahSmp?: { fileName: string; fileURL: string; } | null;
+    transkripSmp?: { fileName: string; fileURL: string; } | null;
+  };
+  siswa_namaAyah?: string;
+  siswa_namaIbu?: string;
+  siswa_pendidikanAyah?: string;
+  siswa_pendidikanIbu?: string;
+  siswa_pekerjaanAyah?: string;
+  siswa_pekerjaanIbu?: string;
+  siswa_namaWali?: string;
+  siswa_hubunganWali?: string;
+  siswa_pendidikanWali?: string;
+  siswa_pekerjaanWali?: string;
+  siswa_alamatOrangTua?: string;
+  siswa_teleponOrangTua?: string;
+  siswa_asalSekolah?: string;
+  siswa_nomorSttb?: string;
+  siswa_tanggalSttb?: Date | null;
+  siswa_pindahanAsalSekolah?: string;
+  siswa_pindahanDariTingkat?: string;
+  siswa_pindahanDiterimaTanggal?: Date | null;
+  siswa_lulusTahun?: string;
+  siswa_lulusNomorIjazah?: string;
+  siswa_lulusMelanjutkanKe?: string;
+  siswa_pindahKeSekolah?: string;
+  siswa_pindahTingkatKelas?: string;
+  siswa_pindahKeTingkat?: string;
+  siswa_keluarAlasan?: string;
+  siswa_keluarTanggal?: Date | null;
+  [key: string]: any;
+};
