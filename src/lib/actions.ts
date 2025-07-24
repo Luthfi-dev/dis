@@ -80,6 +80,17 @@ export async function deleteSiswa(id: string): Promise<{ success: boolean; messa
 export async function submitStudentData(data: StudentFormData, studentId?: string) {
     const db = await pool.getConnection();
     try {
+        // --- DUPLICATE CHECK ---
+        if (data.siswa_nis || data.siswa_nisn) {
+            const [existing]: any = await db.query(
+                'SELECT id FROM siswa WHERE (siswa_nis = ? OR siswa_nisn = ?) AND id != ?',
+                [data.siswa_nis, data.siswa_nisn, studentId || '']
+            );
+            if (existing.length > 0) {
+                return { success: false, message: 'NIS atau NISN sudah terdaftar untuk siswa lain.' };
+            }
+        }
+        
         await db.beginTransaction();
         const dataForDb = sanitizeAndFormatData(data);
         
@@ -191,6 +202,17 @@ export async function deletePegawai(id: string): Promise<{ success: boolean; mes
 export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: string) {
     const db = await pool.getConnection();
     try {
+        // --- DUPLICATE CHECK ---
+        if (data.pegawai_nip) {
+            const [existing]: any = await db.query(
+                'SELECT id FROM pegawai WHERE pegawai_nip = ? AND id != ?',
+                [data.pegawai_nip, pegawaiId || '']
+            );
+            if (existing.length > 0) {
+                return { success: false, message: 'NIP sudah terdaftar untuk pegawai lain.' };
+            }
+        }
+
         await db.beginTransaction();
         const dataForDb = sanitizeAndFormatData(data);
         
