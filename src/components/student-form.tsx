@@ -3,6 +3,7 @@
 
 import { useState, useTransition, useCallback, useEffect, useMemo } from 'react';
 import { useForm, FormProvider, useFormContext, get, FieldPath, FieldErrors } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { FormStepper } from './form-stepper';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -21,6 +22,7 @@ import { Textarea } from './ui/textarea';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { Siswa } from '@/lib/data';
 import type { StudentFormData } from '@/lib/student-data-t';
+import { studentFormDataSchema } from '@/lib/student-data-t';
 import Image from 'next/image';
 import { getProvinces, getKabupatens, getKecamatans, getDesas, Wilayah } from '@/lib/wilayah';
 import { Combobox } from './ui/combobox';
@@ -28,16 +30,25 @@ import { Separator } from './ui/separator';
 import { logActivity } from '@/lib/activity-log';
 
 const steps = [
-  { id: 1, title: 'Data Siswa' },
-  { id: 2, title: 'Dokumen Utama' },
-  { id: 3, title: 'Data Orang Tua' },
-  { id: 4, title: 'Perkembangan Siswa' },
-  { id: 5, title: 'Meninggalkan Sekolah' },
-  { id: 6, title: 'Laporan Belajar' },
-  { id: 7, title: 'Validasi' },
+  { id: 1, title: 'Data Siswa', fields: ['siswa_namaLengkap', 'siswa_nis', 'siswa_nisn', 'siswa_jenisKelamin', 'siswa_tempatLahir', 'siswa_tanggalLahir', 'siswa_agama', 'siswa_kewarganegaraan'] },
+  { id: 2, title: 'Dokumen Utama', fields: [] },
+  { id: 3, title: 'Data Orang Tua', fields: [] },
+  { id: 4, title: 'Perkembangan Siswa', fields: [] },
+  { id: 5, title: 'Meninggalkan Sekolah', fields: [] },
+  { id: 6, title: 'Laporan Belajar', fields: [] },
+  { id: 7, title: 'Validasi', fields: [] },
 ];
 
-const initialFormValues: StudentFormData = {};
+const initialFormValues: StudentFormData = {
+  siswa_namaLengkap: '',
+  siswa_nis: '',
+  siswa_nisn: '',
+  siswa_jenisKelamin: undefined,
+  siswa_tempatLahir: '',
+  siswa_tanggalLahir: undefined,
+  siswa_agama: undefined,
+  siswa_kewarganegaraan: undefined,
+};
 
 async function uploadFile(file: File) {
     const formData = new FormData();
@@ -64,6 +75,7 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
   const router = useRouter();
 
   const methods = useForm<StudentFormData>({
+    resolver: zodResolver(studentFormDataSchema),
     mode: 'onBlur', 
     defaultValues: studentData || initialFormValues,
   });
@@ -72,11 +84,30 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
   
    useEffect(() => {
     if (studentData) {
-      reset(studentData);
+        const dataToReset = {
+            ...studentData,
+            siswa_tanggalLahir: studentData.siswa_tanggalLahir ? new Date(studentData.siswa_tanggalLahir) : undefined,
+            siswa_tanggalSttb: studentData.siswa_tanggalSttb ? new Date(studentData.siswa_tanggalSttb) : undefined,
+            siswa_pindahanDiterimaTanggal: studentData.siswa_pindahanDiterimaTanggal ? new Date(studentData.siswa_pindahanDiterimaTanggal) : undefined,
+            siswa_keluarTanggal: studentData.siswa_keluarTanggal ? new Date(studentData.siswa_keluarTanggal) : undefined,
+        };
+      reset(dataToReset);
     }
   }, [studentData, reset]);
 
   const handleNext = async () => {
+    const currentStepFields = steps[currentStep - 1].fields;
+    const isValid = await trigger(currentStepFields as FieldPath<StudentFormData>[]);
+    
+    if (!isValid) {
+        toast({
+            title: 'Form Belum Lengkap',
+            description: 'Silakan isi semua kolom yang wajib diisi (bertanda *) sebelum melanjutkan.',
+            variant: 'destructive',
+        });
+        return;
+    }
+
     if (currentStep < steps.length) {
         setCurrentStep((prev) => prev + 1);
     }
@@ -891,4 +922,5 @@ function DataValidasiForm() {
     </div>
   )
 }
+
 
