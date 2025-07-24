@@ -37,8 +37,7 @@ const bukuIndukPegawaiMenuItems = [
 
 const adminMenuItems = [
     { href: '/admin/users', label: 'Kelola Pengguna', icon: Users },
-    { href: '/admin/settings', label: 'Pengaturan Aplikasi', icon: Settings },
-]
+];
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -223,12 +222,6 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="p-2">
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Settings">
-              <Settings />
-              <span>Settings</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton tooltip="Logout" onClick={handleLogout}>
               <LogOut />

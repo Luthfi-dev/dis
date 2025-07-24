@@ -92,9 +92,9 @@ export default function LoginPage() {
       <div className="flex items-center justify-center py-12">
         <Card className="mx-auto w-[380px] max-w-sm shadow-2xl">
           <CardHeader className="text-center">
-             <div className="mx-auto mb-4 h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 relative">
+             <div className="mx-auto mb-4 h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 relative overflow-hidden">
                 {settings?.app_logo_url ? (
-                    <Image src={settings.app_logo_url} alt="Logo Aplikasi" layout="fill" objectFit="contain" className="p-2" />
+                    <Image src={settings.app_logo_url} alt="Logo Aplikasi" layout="fill" objectFit="cover" className="rounded-full" />
                 ) : (
                     <GraduationCap className="h-8 w-8 text-primary" />
                 )}
