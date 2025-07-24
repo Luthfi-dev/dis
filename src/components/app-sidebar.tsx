@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { BookCopy, GraduationCap, Plus, Users, Settings, LogOut, ChevronsUpDown, Database, ShieldCheck, Briefcase, LayoutDashboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
+import { useAppSettings } from '@/hooks/use-app-settings';
 
 
 const bukuIndukMenuItems = [
@@ -42,6 +43,7 @@ const adminMenuItems = [
 export function AppSidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { settings } = useAppSettings();
   const router = useRouter();
   const [isBukuIndukOpen, setIsBukuIndukOpen] = useState(pathname.startsWith('/siswa'));
   const [isBukuIndukPegawaiOpen, setIsBukuIndukPegawaiOpen] = useState(pathname.startsWith('/pegawai'));
@@ -71,7 +73,7 @@ export function AppSidebar() {
             <GraduationCap className="h-6 w-6" />
           </Button>
           <span className="text-lg font-semibold group-data-[collapsible=icon]:hidden">
-            EduArchive
+            {settings?.app_title || 'EduArchive'}
           </span>
         </Link>
       </SidebarHeader>

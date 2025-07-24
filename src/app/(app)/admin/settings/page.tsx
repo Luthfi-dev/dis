@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/hooks/use-auth';
@@ -12,10 +12,10 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, UploadCloud, Image as ImageIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useTransition, useState } from 'react';
+import { useEffect, useTransition } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
-import { getAppSettings, saveAppSettings } from '@/lib/actions';
+import { useAppSettings } from '@/hooks/use-app-settings';
 import type { AppSettings } from '@/lib/actions';
 
 const settingsSchema = z.object({
@@ -43,13 +43,12 @@ async function uploadFile(file: File, directory: string) {
 
 export default function AdminSettingsPage() {
     const { user, loading: authLoading } = useAuth();
+    const { settings, setSettings, loading: settingsLoading } = useAppSettings();
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
-    const [isUploading, setIsUploading] = useState(false);
-    const [initialLoading, setInitialLoading] = useState(true);
 
-    const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = useForm<SettingsFormData>({
+    const { register, handleSubmit, formState: { errors }, reset, setValue, watch, formState: {isSubmitting} } = useForm<SettingsFormData>({
         resolver: zodResolver(settingsSchema),
     });
     
@@ -59,52 +58,42 @@ export default function AdminSettingsPage() {
         if (!authLoading) {
             if (user?.role !== 'superadmin') {
                 router.replace('/dashboard');
-            } else {
-                 const fetchSettings = async () => {
-                    const settings = await getAppSettings();
-                    reset(settings);
-                    setInitialLoading(false);
-                 }
-                 fetchSettings();
             }
         }
-    }, [user, authLoading, router, reset]);
+    }, [user, authLoading, router]);
+
+    useEffect(() => {
+        if (settings) {
+            reset(settings);
+        }
+    }, [settings, reset]);
 
     const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        setIsUploading(true);
-        try {
-            const url = await uploadFile(file, 'app');
-            setValue('app_logo_url', url, { shouldDirty: true });
-            toast({ title: 'Sukses!', description: 'Logo aplikasi berhasil diunggah.' });
-        } catch (error) {
-            toast({ title: 'Gagal', description: 'Gagal mengunggah logo.', variant: 'destructive' });
-        } finally {
-            setIsUploading(false);
-        }
+        startTransition(async () => {
+            try {
+                const url = await uploadFile(file, 'app');
+                setValue('app_logo_url', url, { shouldDirty: true });
+                toast({ title: 'Sukses!', description: 'Logo aplikasi berhasil diunggah. Klik simpan untuk menerapkan.' });
+            } catch (error) {
+                toast({ title: 'Gagal', description: 'Gagal mengunggah logo.', variant: 'destructive' });
+            }
+        });
     }
 
     const onSubmit = (data: SettingsFormData) => {
         startTransition(async () => {
-            const result = await saveAppSettings(data);
-            if (result.success) {
-                toast({
-                    title: 'Sukses!',
-                    description: 'Pengaturan aplikasi berhasil diperbarui.',
-                });
-            } else {
-                toast({
-                    title: 'Gagal',
-                    description: result.message || 'Terjadi kesalahan saat menyimpan.',
-                    variant: 'destructive',
-                });
-            }
+           await setSettings(data);
+           toast({
+                title: 'Sukses!',
+                description: 'Pengaturan aplikasi berhasil diperbarui.',
+            });
         });
     };
     
-    if (authLoading || initialLoading) {
+    if (authLoading || settingsLoading) {
         return (
              <div className="flex h-screen items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -145,9 +134,9 @@ export default function AdminSettingsPage() {
                                 </div>
                                 <Button asChild size="sm" variant="outline">
                                     <label htmlFor="logo-upload" className="cursor-pointer">
-                                        {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
+                                        {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UploadCloud className="mr-2 h-4 w-4" />}
                                         Unggah Logo
-                                        <input id="logo-upload" type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={isUploading} />
+                                        <input id="logo-upload" type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={isPending} />
                                     </label>
                                 </Button>
                             </div>
@@ -165,8 +154,8 @@ export default function AdminSettingsPage() {
                          <input type="hidden" {...register('app_logo_url')} />
                     </CardContent>
                     <CardFooter className='border-t px-6 py-4'>
-                        <Button type="submit" disabled={isPending || isUploading}>
-                            {(isPending || isUploading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Button type="submit" disabled={isPending}>
+                            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Simpan Pengaturan
                         </Button>
                     </CardFooter>

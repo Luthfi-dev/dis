@@ -1,13 +1,9 @@
-import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/hooks/use-auth';
 import { ThemeProvider } from '@/components/theme-provider';
-
-export const metadata: Metadata = {
-  title: 'EduArchive',
-  description: 'Aplikasi Buku Induk Siswa Digital',
-};
+import { AppSettingsProvider } from '@/hooks/use-app-settings';
+import { AppMetadata } from './metadata';
 
 export default function RootLayout({
   children,
@@ -32,8 +28,11 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <AuthProvider>
-              {children}
-              <Toaster />
+              <AppSettingsProvider>
+                <AppMetadata />
+                {children}
+                <Toaster />
+              </AppSettingsProvider>
             </AuthProvider>
         </ThemeProvider>
       </body>
