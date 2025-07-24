@@ -23,6 +23,7 @@ import { BookCopy, GraduationCap, Plus, Users, Settings, LogOut, ChevronsUpDown,
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { useAppSettings } from '@/hooks/use-app-settings';
+import Image from 'next/image';
 
 
 const bukuIndukMenuItems = [
@@ -37,6 +38,7 @@ const bukuIndukPegawaiMenuItems = [
 
 const adminMenuItems = [
     { href: '/admin/users', label: 'Kelola Pengguna', icon: Users },
+    { href: '/admin/settings', label: 'Pengaturan Aplikasi', icon: Settings },
 ];
 
 export function AppSidebar() {
@@ -64,13 +66,18 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" variant="sidebar">
       <SidebarHeader>
         <Link href="/dashboard" className="flex items-center gap-2.5" onClick={handleLinkClick}>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-10 w-10 shrink-0 rounded-full group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8 text-primary"
+          <div
+            className={cn(
+                "h-10 w-10 shrink-0 rounded-full group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8",
+                "flex items-center justify-center bg-primary/10 border border-primary/20 relative overflow-hidden"
+            )}
           >
-            <GraduationCap className="h-6 w-6" />
-          </Button>
+            {settings?.app_logo_url ? (
+                <Image src={settings.app_logo_url} alt="Logo Aplikasi" fill objectFit="cover" />
+            ) : (
+                <GraduationCap className="h-6 w-6 text-primary" />
+            )}
+          </div>
           <span className="text-lg font-semibold group-data-[collapsible=icon]:hidden">
             {settings?.app_title || 'EduArchive'}
           </span>

@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 import path from 'path';
 
@@ -10,7 +11,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    unoptimized: true,
+    unoptimized: false,
     remotePatterns: [
       {
         protocol: 'https',
