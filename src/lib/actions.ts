@@ -7,6 +7,26 @@ import { sanitizeAndFormatData } from './utils';
 import type { PegawaiFormData } from '@/lib/pegawai-data';
 import type { StudentFormData } from '@/lib/student-data-t';
 import pool from './db';
+import { isEqual } from 'lodash';
+
+// Helper function to parse JSON fields safely
+function parseJsonFields(row: any) {
+    if (!row) return null;
+    const parsedRow = { ...row };
+    for (const key in parsedRow) {
+        if (typeof parsedRow[key] === 'string') {
+            try {
+                if (parsedRow[key].startsWith('{') || parsedRow[key].startsWith('[')) {
+                    parsedRow[key] = JSON.parse(parsedRow[key]);
+                }
+            } catch (e) {
+                // Not a JSON string, leave it as is
+            }
+        }
+    }
+    return parsedRow;
+}
+
 
 // --- Public-facing Server Actions ---
 
@@ -15,21 +35,7 @@ export async function getSiswa(): Promise<Siswa[]> {
     const db = await pool.getConnection();
     try {
         const [rows] = await db.query('SELECT * FROM siswa');
-        return (rows as Siswa[]).map(row => {
-            const parsedRow: any = { ...row };
-            for (const key in parsedRow) {
-                if (typeof parsedRow[key] === 'string') {
-                    try {
-                        if (parsedRow[key].startsWith('{') || parsedRow[key].startsWith('[')) {
-                            parsedRow[key] = JSON.parse(parsedRow[key]);
-                        }
-                    } catch (e) {
-                        // Not a JSON string, leave it as is
-                    }
-                }
-            }
-            return parsedRow;
-        });
+        return (rows as Siswa[]).map(parseJsonFields);
     } finally {
         db.release();
     }
@@ -39,23 +45,7 @@ export async function getSiswaById(id: string): Promise<Siswa | null> {
     const db = await pool.getConnection();
     try {
         const [rows] = await db.query('SELECT * FROM siswa WHERE id = ?', [id]);
-        const siswa = (rows as Siswa[])[0] || null;
-        if (siswa) {
-            const parsedSiswa: any = { ...siswa };
-             for (const key in parsedSiswa) {
-                if (typeof parsedSiswa[key] === 'string') {
-                    try {
-                         if (parsedSiswa[key].startsWith('{') || parsedSiswa[key].startsWith('[')) {
-                            parsedSiswa[key] = JSON.parse(parsedSiswa[key]);
-                        }
-                    } catch (e) {
-                         // Not a JSON string, leave it as is
-                    }
-                }
-            }
-            return parsedSiswa;
-        }
-        return null;
+        return parseJsonFields((rows as Siswa[])[0] || null);
     } finally {
         db.release();
     }
@@ -108,7 +98,7 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
         } else {
             // --- CREATE LOGIC ---
             // Remove id from dataForDb as it's auto-incremented
-            delete dataForDb.id; 
+            delete (dataForDb as any).id; 
             const fields = Object.keys(dataForDb);
             const values = Object.values(dataForDb);
             const placeholders = fields.map(() => '?').join(', ');
@@ -136,22 +126,7 @@ export async function getPegawai(): Promise<Pegawai[]> {
     const db = await pool.getConnection();
     try {
         const [rows] = await db.query('SELECT * FROM pegawai');
-         return (rows as Pegawai[]).map(row => {
-            const parsedRow: any = { ...row };
-            for (const key in parsedRow) {
-                if (typeof parsedRow[key] === 'string') {
-                    try {
-                        // Only parse if it looks like a JSON object or array
-                        if (parsedRow[key].startsWith('{') || parsedRow[key].startsWith('[')) {
-                            parsedRow[key] = JSON.parse(parsedRow[key]);
-                        }
-                    } catch (e) {
-                        // Not a JSON string, leave it as is
-                    }
-                }
-            }
-            return parsedRow;
-        });
+         return (rows as Pegawai[]).map(parseJsonFields);
     } finally {
         db.release();
     }
@@ -161,23 +136,7 @@ export async function getPegawaiById(id: string): Promise<Pegawai | null> {
     const db = await pool.getConnection();
     try {
         const [rows] = await db.query('SELECT * FROM pegawai WHERE id = ?', [id]);
-        const p = (rows as Pegawai[])[0] || null;
-        if (p) {
-            const parsedP: any = { ...p };
-             for (const key in parsedP) {
-                if (typeof parsedP[key] === 'string') {
-                    try {
-                         if (parsedP[key].startsWith('{') || parsedP[key].startsWith('[')) {
-                            parsedP[key] = JSON.parse(parsedP[key]);
-                        }
-                    } catch (e) {
-                         // Not a JSON string, leave it as is
-                    }
-                }
-            }
-            return parsedP;
-        }
-        return null;
+        return parseJsonFields((rows as Pegawai[])[0] || null);
     } finally {
         db.release();
     }
@@ -220,15 +179,32 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
         dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
         
         if (pegawaiId) {
-             // --- UPDATE LOGIC ---
-            const { id, ...updateData } = dataForDb;
-            const fields = Object.keys(updateData).map(f => `${f} = ?`).join(', ');
-            const values = Object.values(updateData);
-            const sql = `UPDATE pegawai SET ${fields} WHERE id = ?`;
-            await db.query(sql, [...values, pegawaiId]);
+             // --- OPTIMIZED UPDATE LOGIC ---
+            const [currentRows]: any = await db.query('SELECT * FROM pegawai WHERE id = ?', [pegawaiId]);
+            const currentRow = currentRows[0];
+
+            if (!currentRow) {
+                await db.rollback();
+                return { success: false, message: 'Pegawai tidak ditemukan.' };
+            }
+
+            const changedData: { [key: string]: any } = {};
+            for (const key in dataForDb) {
+                // Use a simple string comparison for non-object fields, and deep for potential JSON
+                 if (!isEqual(dataForDb[key], currentRow[key])) {
+                     changedData[key] = dataForDb[key];
+                 }
+            }
+
+            if (Object.keys(changedData).length > 0) {
+                const fields = Object.keys(changedData).map(f => `${f} = ?`).join(', ');
+                const values = Object.values(changedData);
+                const sql = `UPDATE pegawai SET ${fields} WHERE id = ?`;
+                await db.query(sql, [...values, pegawaiId]);
+            }
         } else {
              // --- CREATE LOGIC ---
-             delete dataForDb.id;
+             delete (dataForDb as any).id;
             const fields = Object.keys(dataForDb);
             const values = Object.values(dataForDb);
             const placeholders = fields.map(() => '?').join(', ');
