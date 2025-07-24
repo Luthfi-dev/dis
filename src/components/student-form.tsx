@@ -51,6 +51,7 @@ const initialFormValues: StudentFormData = {
 async function uploadFile(file: File) {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('directory', 'siswa');
     const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
@@ -74,21 +75,20 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
 
   const methods = useForm<StudentFormData>({
     mode: 'onBlur', 
-    defaultValues: studentData || initialFormValues,
   });
 
   const { handleSubmit, reset } = methods;
   
    useEffect(() => {
-    if (studentData) {
-        const dataToReset: any = { ...studentData };
-        for (const key in dataToReset) {
-            if (key.includes('tanggal') && dataToReset[key]) {
-                 dataToReset[key] = new Date(dataToReset[key]);
-            }
-        }
-      reset(dataToReset);
+    let dataToReset: any = studentData ? { ...studentData } : { ...initialFormValues };
+    
+    // Ensure all date fields are Date objects if they exist
+    for (const key in dataToReset) {
+      if (key.includes('tanggal') && dataToReset[key] && typeof dataToReset[key] === 'string') {
+        dataToReset[key] = new Date(dataToReset[key]);
+      }
     }
+    reset(dataToReset);
   }, [studentData, reset]);
 
   const handleNext = async () => {
@@ -354,7 +354,10 @@ function DataSiswaForm({ studentData }: { studentData?: Partial<Siswa> & { id: s
       />
       <Grid>
         <FormField control={control} name="siswa_namaLengkap" render={({ field }) => (
-            <FormItem><FormLabel>Nama</FormLabel><FormControl><Input placeholder="Nama lengkap siswa" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+            <FormItem>
+              <FormLabel className="flex items-center">Nama <span className="text-destructive ml-1">*</span></FormLabel>
+              <FormControl><Input placeholder="Nama lengkap siswa" {...field} value={field.value ?? ''} /></FormControl><FormMessage />
+            </FormItem>
         )} />
         <FormField control={control} name="siswa_nis" render={({ field }) => (
             <FormItem><FormLabel>Nomor Induk Sekolah</FormLabel><FormControl><Input placeholder="NIS" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
@@ -414,7 +417,7 @@ function DataSiswaForm({ studentData }: { studentData?: Partial<Siswa> & { id: s
                     <Input 
                         type="number"
                         placeholder="0"
-                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))}
+                        onChange={(e) => field.onChange(e.target.value === '' ? null : parseInt(e.target.value, 10))}
                         value={field.value ?? ''}
                     />
                 </FormControl>
@@ -544,10 +547,10 @@ function DataSiswaForm({ studentData }: { studentData?: Partial<Siswa> & { id: s
             <h3 className="text-sm font-medium mb-2"><FormLabel>Kesehatan Siswa</FormLabel></h3>
             <Grid>
                  <FormField control={control} name="siswa_tinggiBadan" render={({ field }) => (
-                    <FormItem><FormLabel>Tinggi Badan (cm)</FormLabel><FormControl><Input type="number" placeholder="160" {...field} onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Tinggi Badan (cm)</FormLabel><FormControl><Input type="number" placeholder="160" {...field} onChange={(e) => field.onChange(e.target.value === '' ? null : parseInt(e.target.value, 10))} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
                  <FormField control={control} name="siswa_beratBadan" render={({ field }) => (
-                    <FormItem><FormLabel>Berat Badan (kg)</FormLabel><FormControl><Input type="number" placeholder="50" {...field} onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Berat Badan (kg)</FormLabel><FormControl><Input type="number" placeholder="50" {...field} onChange={(e) => field.onChange(e.target.value === '' ? null : parseInt(e.target.value, 10))} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
                  <FormField control={control} name="siswa_penyakit" render={({ field }) => (
                     <FormItem><FormLabel>Riwayat Penyakit</FormLabel><FormControl><Input placeholder="Contoh: Asma" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
