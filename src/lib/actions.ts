@@ -93,11 +93,26 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
         await db.beginTransaction();
         const dataForDb = sanitizeAndFormatData(data);
         
-        const isComplete = dataForDb.siswa_namaLengkap && dataForDb.siswa_nis && dataForDb.siswa_nisn;
+        const requiredFields = [
+            'siswa_namaLengkap', 'siswa_nis', 'siswa_nisn', 'siswa_jenisKelamin',
+            'siswa_tempatLahir', 'siswa_tanggalLahir', 'siswa_agama', 'siswa_kewarganegaraan',
+            'siswa_alamatKkProvinsi', 'siswa_alamatKkKabupaten', 'siswa_alamatKkKecamatan', 'siswa_alamatKkDesa',
+            'siswa_domisiliProvinsi', 'siswa_domisiliKabupaten', 'siswa_domisiliKecamatan', 'siswa_domisiliDesa'
+        ];
+        
+        const isComplete = requiredFields.every(field => {
+            const value = dataForDb[field];
+            return value !== null && value !== undefined && value !== '';
+        });
+
         dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
 
         if (studentId) {
             const updateData = omit(dataForDb, ['id', 'created_at', 'updated_at']);
+             if (Object.keys(updateData).length === 0) {
+                await db.commit();
+                return { success: true, message: 'Tidak ada perubahan untuk disimpan.' };
+            }
             const fields = Object.keys(updateData).map(f => `${f} = ?`).join(', ');
             const values = Object.values(updateData);
             if (fields.length > 0) {
@@ -184,6 +199,10 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
         
         if (pegawaiId) {
             const updateData = omit(dataForDb, ['id', 'created_at', 'updated_at']);
+            if (Object.keys(updateData).length === 0) {
+                await db.commit();
+                return { success: true, message: 'Tidak ada perubahan untuk disimpan.' };
+            }
             const fields = Object.keys(updateData).map(f => `${f} = ?`).join(', ');
             const values = Object.values(updateData);
             if (fields.length > 0) {
@@ -283,17 +302,18 @@ export async function importData(type: 'siswa' | 'pegawai', fileBase64: string):
 
     const headerRow = worksheet.getRow(1);
     
-    // Create a map from header text to column key
-    const headerMap: {[key: string]: string} = {};
-    if (type === 'siswa') {
-        headerMap['Nama Lengkap (Wajib)'] = 'siswa_namaLengkap';
-        headerMap['NIS (Wajib)'] = 'siswa_nis';
-        headerMap['NISN (Wajib)'] = 'siswa_nisn';
-    } else {
-        headerMap['Nama Lengkap (Wajib)'] = 'pegawai_nama';
-        headerMap['NIP (Wajib)'] = 'pegawai_nip';
-    }
-
+    // Map header names to column keys
+    const headerToKeyMap: { [key: string]: string } = {};
+    headerRow.eachCell((cell, colNumber) => {
+        const headerText = cell.text;
+        // This relies on the header config having a 'header' property that matches the Excel file
+        // and a 'key' property that matches the database column name.
+        const headerConfigs = type === 'siswa' ? siswaHeaders : pegawaiHeaders;
+        const foundHeader = headerConfigs.find(h => h.header === headerText);
+        if (foundHeader) {
+            headerToKeyMap[headerText] = foundHeader.key;
+        }
+    });
 
     for (let i = 2; i <= worksheet.rowCount; i++) {
         const row = worksheet.getRow(i);
@@ -301,8 +321,14 @@ export async function importData(type: 'siswa' | 'pegawai', fileBase64: string):
         
         row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
             const headerText = headerRow.getCell(colNumber).text;
-            if (headerMap[headerText]) {
-                 rowData[headerMap[headerText]] = cell.value;
+            const key = headerToKeyMap[headerText];
+            if (key) {
+                // ExcelJS can return objects for dates, links, etc. We just want the value.
+                if (cell.value && typeof cell.value === 'object' && 'result' in cell.value) {
+                     rowData[key] = (cell.value as any).result;
+                } else {
+                     rowData[key] = cell.value;
+                }
             }
         });
 
@@ -351,3 +377,33 @@ export async function importData(type: 'siswa' | 'pegawai', fileBase64: string):
 
     return results;
 }
+
+const siswaHeaders = [
+    { header: 'Nama Lengkap (Wajib)', key: 'siswa_namaLengkap' },
+    { header: 'NIS (Wajib)', key: 'siswa_nis' },
+    { header: 'NISN (Wajib)', key: 'siswa_nisn' },
+    { header: 'Jenis Kelamin', key: 'siswa_jenisKelamin' },
+    { header: 'Tempat Lahir', key: 'siswa_tempatLahir' },
+    { header: 'Tanggal Lahir (YYYY-MM-DD)', key: 'siswa_tanggalLahir' },
+    { header: 'Agama', key: 'siswa_agama' },
+    { header: 'Kewarganegaraan', key: 'siswa_kewarganegaraan' },
+    { header: 'Nomor HP/WA', key: 'siswa_telepon' },
+    { header: 'Nama Ayah', key: 'siswa_namaAyah' },
+    { header: 'Nama Ibu', key: 'siswa_namaIbu' },
+    { header: 'Pekerjaan Ayah', key: 'siswa_pekerjaanAyah' },
+    { header: 'Pekerjaan Ibu', key: 'siswa_pekerjaanIbu' },
+];
+
+const pegawaiHeaders = [
+    { header: 'Nama Lengkap (Wajib)', key: 'pegawai_nama' },
+    { header: 'NIP (Wajib)', key: 'pegawai_nip' },
+    { header: 'Jenis Kelamin', key: 'pegawai_jenisKelamin' },
+    { header: 'Tempat Lahir', key: 'pegawai_tempatLahir' },
+    { header: 'Tanggal Lahir (YYYY-MM-DD)', key: 'pegawai_tanggalLahir' },
+    { header: 'Jabatan', key: 'pegawai_jabatan' },
+    { header: 'Status Perkawinan', key: 'pegawai_statusPerkawinan' },
+    { header: 'NUPTK', key: 'pegawai_nuptk' },
+    { header: 'NRG', key: 'pegawai_nrg' },
+    { header: 'Bidang Studi', key: 'pegawai_bidangStudi' },
+];
+
