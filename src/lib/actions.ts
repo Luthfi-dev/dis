@@ -7,7 +7,7 @@ import { sanitizeAndFormatData } from './utils';
 import type { PegawaiFormData } from '@/lib/pegawai-data';
 import type { StudentFormData } from '@/lib/student-data-t';
 import pool from './db';
-import { isEqual, omit } from 'lodash';
+import { omit } from 'lodash';
 import Excel from 'exceljs';
 
 // Helper function to parse JSON fields safely
@@ -113,16 +113,16 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
                 await db.commit();
                 return { success: true, message: 'Tidak ada perubahan untuk disimpan.' };
             }
-            const fields = Object.keys(updateData).map(f => `${f} = ?`).join(', ');
-            const values = Object.values(updateData);
+            const fields = Object.keys(updateData).filter(key => updateData[key] !== undefined).map(f => `${f} = ?`).join(', ');
+            const values = Object.values(updateData).filter(v => v !== undefined);
             if (fields.length > 0) {
                  const sql = `UPDATE siswa SET ${fields} WHERE id = ?`;
                  await db.query(sql, [...values, studentId]);
             }
         } else {
              const insertData = omit(dataForDb, ['id', 'created_at', 'updated_at']);
-             const fields = Object.keys(insertData);
-             const values = Object.values(insertData);
+             const fields = Object.keys(insertData).filter(key => insertData[key] !== undefined);
+             const values = fields.map(key => insertData[key]);
              const placeholders = fields.map(() => '?').join(', ');
              if (fields.length > 0) {
                 const sql = `INSERT INTO siswa (${fields.join(', ')}) VALUES (${placeholders})`;
@@ -194,7 +194,19 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
         await db.beginTransaction();
         const dataForDb = sanitizeAndFormatData(data);
         
-        const isComplete = dataForDb.pegawai_nama && dataForDb.pegawai_nip;
+        const requiredFields = [
+            'pegawai_nama', 'pegawai_jenisKelamin', 'pegawai_tempatLahir', 'pegawai_tanggalLahir',
+            'pegawai_statusPerkawinan', 'pegawai_jabatan', 'pegawai_terhitungMulaiTanggal',
+            'pegawai_nip', 'pegawai_nuptk', 'pegawai_nrg',
+            'pegawai_bidangStudi',
+            'pegawai_alamatKabupaten', 'pegawai_alamatKecamatan', 'pegawai_alamatDesa', 'pegawai_alamatDusun'
+        ];
+
+        const isComplete = requiredFields.every(field => {
+            const value = dataForDb[field];
+            return value !== null && value !== undefined && value !== '';
+        });
+        
         dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
         
         if (pegawaiId) {
@@ -203,16 +215,16 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
                 await db.commit();
                 return { success: true, message: 'Tidak ada perubahan untuk disimpan.' };
             }
-            const fields = Object.keys(updateData).map(f => `${f} = ?`).join(', ');
-            const values = Object.values(updateData);
+            const fields = Object.keys(updateData).filter(key => updateData[key] !== undefined).map(f => `${f} = ?`).join(', ');
+            const values = Object.values(updateData).filter(v => v !== undefined);
             if (fields.length > 0) {
                  const sql = `UPDATE pegawai SET ${fields} WHERE id = ?`;
                  await db.query(sql, [...values, pegawaiId]);
             }
         } else {
              const insertData = omit(dataForDb, ['id', 'created_at', 'updated_at']);
-             const fields = Object.keys(insertData);
-             const values = Object.values(insertData);
+             const fields = Object.keys(insertData).filter(key => insertData[key] !== undefined);
+             const values = fields.map(key => insertData[key]);
              const placeholders = fields.map(() => '?').join(', ');
             
              if (fields.length > 0) {
