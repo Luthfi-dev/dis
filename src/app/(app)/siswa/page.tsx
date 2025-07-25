@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, Upload, Download, FilePen, Eye, FileSearch, Trash2, Search, Loader2, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Upload, Download, FilePen, Eye, FileSearch, Trash2, Search, Loader2, ChevronLeft, ChevronRight, AlertCircle, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Siswa } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -33,6 +33,7 @@ import React, { useState, useEffect, useMemo, useTransition } from 'react';
 import { Input } from '@/components/ui/input';
 import { getSiswa, deleteSiswa, importData, ImportResult } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 function ActionMenu({ student, onDelete }: { student: Siswa, onDelete: (id: string) => void }) {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
@@ -268,18 +269,49 @@ export default function SiswaPage() {
       return filteredStudents.slice(startIndex, endIndex);
   }, [filteredStudents, currentPage]);
 
-  const handleNextPage = () => {
-      if(currentPage < totalPages) {
-          setCurrentPage(currentPage + 1);
+  const handlePageChange = (page: number) => {
+      if(page >= 1 && page <= totalPages) {
+          setCurrentPage(page);
       }
   }
 
-  const handlePrevPage = () => {
-      if(currentPage > 1) {
-          setCurrentPage(currentPage - 1);
-      }
+  const generatePagination = () => {
+    if (totalPages <= 1) return [];
+
+    const pages = [];
+    const visiblePages = 2; // number of pages to show around current page
+
+    // Always show first page
+    pages.push(1);
+
+    // Ellipsis after first page
+    if (currentPage > visiblePages + 2) {
+        pages.push('...');
+    }
+
+    // Pages around current page
+    let startPage = Math.max(2, currentPage - visiblePages);
+    let endPage = Math.min(totalPages - 1, currentPage + visiblePages);
+
+    for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+    }
+    
+    // Ellipsis before last page
+    if (currentPage < totalPages - visiblePages - 1) {
+        pages.push('...');
+    }
+
+    // Always show last page
+    if (totalPages > 1) {
+       pages.push(totalPages);
+    }
+    
+    // Remove duplicates that might occur if totalPages is small
+    return [...new Set(pages)];
   }
 
+  const paginationItems = generatePagination();
 
   return (
     <div className="flex flex-col gap-6">
@@ -381,16 +413,30 @@ export default function SiswaPage() {
                 <span className="text-sm text-muted-foreground">
                     Halaman {currentPage} dari {totalPages}
                 </span>
-                <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={handlePrevPage} disabled={currentPage === 1}>
-                        <ChevronLeft className="h-4 w-4" />
-                        Sebelumnya
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={handleNextPage} disabled={currentPage === totalPages}>
-                        Berikutnya
-                        <ChevronRight className="h-4 w-4" />
-                    </Button>
-                </div>
+                <nav className="flex items-center gap-1">
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handlePageChange(1)} disabled={currentPage === 1}><ChevronsLeft className="h-4 w-4" /></Button>
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}><ChevronLeft className="h-4 w-4" /></Button>
+                    
+                    {paginationItems.map((page, index) => (
+                        <React.Fragment key={index}>
+                            {typeof page === 'number' ? (
+                                <Button 
+                                    variant={page === currentPage ? "default" : "outline"} 
+                                    size="icon" 
+                                    className="h-8 w-8"
+                                    onClick={() => handlePageChange(page)}
+                                >
+                                    {page}
+                                </Button>
+                            ) : (
+                                <span className="px-2">...</span>
+                            )}
+                        </React.Fragment>
+                    ))}
+
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}><ChevronRight className="h-4 w-4" /></Button>
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages}><ChevronsRight className="h-4 w-4" /></Button>
+                </nav>
             </CardFooter>
         )}
       </Card>
