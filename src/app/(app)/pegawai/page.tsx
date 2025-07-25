@@ -160,14 +160,21 @@ function ImportDialog({ onImportComplete }: { onImportComplete: (result: ImportR
     }
   };
 
+  const toBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve((reader.result as string).split(',')[1]);
+    reader.onerror = error => reject(error);
+  });
+
   const handleImport = async () => {
     if (!file) {
       toast({ title: "File tidak ditemukan", description: "Silakan pilih file Excel untuk diimpor.", variant: "destructive" });
       return;
     }
     startImportTransition(async () => {
-        const buffer = await file.arrayBuffer();
-        const result = await importData('pegawai', Buffer.from(buffer));
+        const fileBase64 = await toBase64(file);
+        const result = await importData('pegawai', fileBase64);
         onImportComplete(result);
         setFile(null);
         setIsOpen(false);

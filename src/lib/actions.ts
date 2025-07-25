@@ -71,8 +71,7 @@ export async function deleteSiswa(id: string): Promise<{ success: boolean; messa
 export async function submitStudentData(data: StudentFormData, studentId?: string) {
     const db = await pool.getConnection();
     try {
-        // --- DUPLICATE CHECK ---
-        if (data.siswa_nis || data.siswa_nisn) {
+        if (!studentId && (data.siswa_nis || data.siswa_nisn)) {
              const conditions = [];
              const params = [];
              if(data.siswa_nis) {
@@ -83,12 +82,8 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
                 conditions.push('siswa_nisn = ?');
                 params.push(data.siswa_nisn);
              }
-
-            if (conditions.length > 0) {
-                const [existing]: any = await db.query(
-                    `SELECT id FROM siswa WHERE (${conditions.join(' OR ')}) AND id != ?`,
-                    [...params, studentId || '']
-                );
+             if (conditions.length > 0) {
+                const [existing]: any = await db.query(`SELECT id FROM siswa WHERE ${conditions.join(' OR ')}`, params);
                 if (existing.length > 0) {
                     return { success: false, message: 'NIS atau NISN sudah terdaftar untuk siswa lain.' };
                 }
@@ -101,23 +96,19 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
         const isComplete = dataForDb.siswa_namaLengkap && dataForDb.siswa_nis && dataForDb.siswa_nisn;
         dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
 
-        const insertData = omit(dataForDb, ['id', 'created_at', 'updated_at']);
-
         if (studentId) {
-            // --- UPDATE LOGIC ---
-            const fields = Object.keys(insertData).map(f => `${f} = ?`).join(', ');
-            const values = Object.values(insertData);
-
+            const updateData = omit(dataForDb, ['id', 'created_at', 'updated_at']);
+            const fields = Object.keys(updateData).map(f => `${f} = ?`).join(', ');
+            const values = Object.values(updateData);
             if (fields.length > 0) {
                  const sql = `UPDATE siswa SET ${fields} WHERE id = ?`;
                  await db.query(sql, [...values, studentId]);
             }
         } else {
-            // --- CREATE LOGIC ---
+             const insertData = omit(dataForDb, ['id', 'created_at', 'updated_at']);
              const fields = Object.keys(insertData);
              const values = Object.values(insertData);
              const placeholders = fields.map(() => '?').join(', ');
-            
              if (fields.length > 0) {
                 const sql = `INSERT INTO siswa (${fields.join(', ')}) VALUES (${placeholders})`;
                 await db.query(sql, values);
@@ -178,12 +169,8 @@ export async function deletePegawai(id: string): Promise<{ success: boolean; mes
 export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: string) {
     const db = await pool.getConnection();
     try {
-        // --- DUPLICATE CHECK ---
-        if (data.pegawai_nip) {
-            const [existing]: any = await db.query(
-                'SELECT id FROM pegawai WHERE pegawai_nip = ? AND id != ?',
-                [data.pegawai_nip, pegawaiId || '']
-            );
+        if (!pegawaiId && data.pegawai_nip) {
+            const [existing]: any = await db.query('SELECT id FROM pegawai WHERE pegawai_nip = ?', [data.pegawai_nip]);
             if (existing.length > 0) {
                 return { success: false, message: 'NIP sudah terdaftar untuk pegawai lain.' };
             }
@@ -195,18 +182,16 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
         const isComplete = dataForDb.pegawai_nama && dataForDb.pegawai_nip;
         dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
         
-        const insertData = omit(dataForDb, ['id', 'created_at', 'updated_at']);
-
         if (pegawaiId) {
-            // --- UPDATE LOGIC ---
-             const fields = Object.keys(insertData).map(f => `${f} = ?`).join(', ');
-             const values = Object.values(insertData);
-             if (fields.length > 0) {
+            const updateData = omit(dataForDb, ['id', 'created_at', 'updated_at']);
+            const fields = Object.keys(updateData).map(f => `${f} = ?`).join(', ');
+            const values = Object.values(updateData);
+            if (fields.length > 0) {
                  const sql = `UPDATE pegawai SET ${fields} WHERE id = ?`;
                  await db.query(sql, [...values, pegawaiId]);
-             }
+            }
         } else {
-             // --- CREATE LOGIC ---
+             const insertData = omit(dataForDb, ['id', 'created_at', 'updated_at']);
              const fields = Object.keys(insertData);
              const values = Object.values(insertData);
              const placeholders = fields.map(() => '?').join(', ');
@@ -280,9 +265,10 @@ export type ImportResult = {
     errors: { row: number, reason: string }[];
 };
 
-export async function importData(type: 'siswa' | 'pegawai', fileBuffer: Buffer): Promise<ImportResult> {
+export async function importData(type: 'siswa' | 'pegawai', fileBase64: string): Promise<ImportResult> {
     const db = await pool.getConnection();
     const workbook = new Excel.Workbook();
+    const fileBuffer = Buffer.from(fileBase64, 'base64');
     await workbook.xlsx.load(fileBuffer);
     const worksheet = workbook.worksheets[0];
 
@@ -296,17 +282,28 @@ export async function importData(type: 'siswa' | 'pegawai', fileBuffer: Buffer):
     };
 
     const headerRow = worksheet.getRow(1);
-    const headers = headerRow.values as string[];
+    
+    // Create a map from header text to column key
+    const headerMap: {[key: string]: string} = {};
+    if (type === 'siswa') {
+        headerMap['Nama Lengkap (Wajib)'] = 'siswa_namaLengkap';
+        headerMap['NIS (Wajib)'] = 'siswa_nis';
+        headerMap['NISN (Wajib)'] = 'siswa_nisn';
+    } else {
+        headerMap['Nama Lengkap (Wajib)'] = 'pegawai_nama';
+        headerMap['NIP (Wajib)'] = 'pegawai_nip';
+    }
+
 
     for (let i = 2; i <= worksheet.rowCount; i++) {
         const row = worksheet.getRow(i);
         const rowData: any = {};
         
         row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-            const headerCell = headerRow.getCell(colNumber);
-            const key = headerCell.text.split(' ')[0].toLowerCase(); // Simplified key extraction
-             const dbKey = `${type}_${key.replace('lengkap', 'namaLengkap').replace('nisn(wajib)', 'nisn').replace('nis(wajib)', 'nis').replace('nip(wajib)', 'nip')}`;
-            rowData[dbKey] = cell.value;
+            const headerText = headerRow.getCell(colNumber).text;
+            if (headerMap[headerText]) {
+                 rowData[headerMap[headerText]] = cell.value;
+            }
         });
 
         try {
