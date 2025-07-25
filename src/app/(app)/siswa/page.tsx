@@ -3,10 +3,10 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, PlusCircle, Upload, Download, FilePen, Eye, FileSearch, Trash2, Search, Loader2 } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Upload, Download, FilePen, Eye, FileSearch, Trash2, Search, Loader2, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 import { Siswa } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -18,7 +18,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import {
   Dialog,
@@ -28,10 +27,11 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog"
 import React, { useState, useEffect, useMemo, useTransition } from 'react';
 import { Input } from '@/components/ui/input';
-import { getSiswa, deleteSiswa } from '@/lib/actions';
+import { getSiswa, deleteSiswa, importData, ImportResult } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 
 function ActionMenu({ student, onDelete }: { student: Siswa, onDelete: (id: string) => void }) {
@@ -73,12 +73,10 @@ function ActionMenu({ student, onDelete }: { student: Siswa, onDelete: (id: stri
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <AlertDialogTrigger asChild>
-             <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onSelect={(e) => e.preventDefault()}>
+          <DropdownMenuItem onSelect={() => setIsAlertOpen(true)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
               <Trash2 className="mr-2 h-4 w-4" />
               <span>Hapus</span>
-            </DropdownMenuItem>
-          </AlertDialogTrigger>
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
       <AlertDialogContent>
@@ -97,9 +95,62 @@ function ActionMenu({ student, onDelete }: { student: Siswa, onDelete: (id: stri
   );
 }
 
-function ImportDialog() {
+function ImportResultDialog({ result, open, onOpenChange }: { result: ImportResult | null, open: boolean, onOpenChange: (open: boolean) => void }) {
+    if (!result) return null;
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Hasil Impor Data Siswa</DialogTitle>
+                    <DialogDescription>{result.message}</DialogDescription>
+                </DialogHeader>
+                <div className="mt-4 space-y-4">
+                    <div className="flex justify-around text-center">
+                        <div>
+                            <p className="text-sm text-muted-foreground">Total Baris</p>
+                            <p className="text-2xl font-bold">{result.totalRows}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-muted-foreground">Berhasil</p>
+                            <p className="text-2xl font-bold text-green-600">{result.successCount}</p>
+                        </div>
+                         <div>
+                            <p className="text-sm text-muted-foreground">Gagal</p>
+                            <p className="text-2xl font-bold text-red-600">{result.failureCount}</p>
+                        </div>
+                    </div>
+
+                    {result.errors.length > 0 && (
+                        <div className="space-y-2">
+                            <h3 className="text-sm font-semibold">Detail Kegagalan:</h3>
+                            <div className="max-h-48 overflow-y-auto rounded-md border p-2 bg-muted/50 text-sm">
+                                <ul className="space-y-1">
+                                    {result.errors.map((err, i) => (
+                                        <li key={i} className="flex items-start gap-2">
+                                            <AlertCircle className="w-4 h-4 mt-0.5 text-red-500 shrink-0" />
+                                            <span>Baris {err.row}: {err.reason}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    )}
+                </div>
+                 <DialogFooter>
+                    <DialogClose asChild>
+                        <Button type="button">Tutup</Button>
+                    </DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+function ImportDialog({ onImportComplete }: { onImportComplete: (result: ImportResult) => void }) {
   const [file, setFile] = useState<File | null>(null);
-  const [isImporting, setIsImporting] = useState(false);
+  const [isImporting, startImportTransition] = useTransition();
+  const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,16 +164,17 @@ function ImportDialog() {
       toast({ title: "File tidak ditemukan", description: "Silakan pilih file Excel untuk diimpor.", variant: "destructive" });
       return;
     }
-    setIsImporting(true);
-    // TODO: Implement actual import logic here
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate import process
-    setIsImporting(false);
-    toast({ title: "Import Berhasil!", description: `File ${file.name} telah berhasil diimpor.` });
-    setFile(null); // Reset after import
+    startImportTransition(async () => {
+        const buffer = await file.arrayBuffer();
+        const result = await importData('siswa', Buffer.from(buffer));
+        onImportComplete(result);
+        setFile(null);
+        setIsOpen(false);
+    });
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="outline">
           <Upload className="mr-2 h-4 w-4" />
@@ -137,19 +189,22 @@ function ImportDialog() {
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <Input type="file" accept=".xlsx" onChange={handleFileChange} />
+          <Input type="file" accept=".xlsx, .xls" onChange={handleFileChange} />
           {file && <p className="text-sm text-muted-foreground">File dipilih: {file.name}</p>}
         </div>
         <DialogFooter>
-          <Button onClick={handleImport} disabled={isImporting || !file}>
-            {isImporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Impor
-          </Button>
+            <DialogClose asChild><Button variant="outline">Batal</Button></DialogClose>
+            <Button onClick={handleImport} disabled={isImporting || !file}>
+                {isImporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Impor
+            </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
+const ITEMS_PER_PAGE = 20;
 
 export default function SiswaPage() {
   const [students, setStudents] = useState<Siswa[]>([]);
@@ -157,16 +212,26 @@ export default function SiswaPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDeleting, startDeleteTransition] = useTransition();
   const { toast } = useToast();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [isResultOpen, setIsResultOpen] = useState(false);
+
+  const fetchStudents = async () => {
+    setLoading(true);
+    const data = await getSiswa();
+    setStudents(data);
+    setLoading(false);
+  }
 
   useEffect(() => {
-    const fetchStudents = async () => {
-      setLoading(true);
-      const data = await getSiswa();
-      setStudents(data);
-      setLoading(false);
-    }
     fetchStudents();
   }, []);
+
+  const handleImportComplete = (result: ImportResult) => {
+    setImportResult(result);
+    setIsResultOpen(true);
+    fetchStudents(); // Refresh list after import
+  }
 
   const handleDeleteStudent = (id: string) => {
     startDeleteTransition(async () => {
@@ -188,9 +253,30 @@ export default function SiswaPage() {
     );
   }, [students, searchTerm]);
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredStudents.length / ITEMS_PER_PAGE);
+  const paginatedData = useMemo(() => {
+      const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+      const endIndex = startIndex + ITEMS_PER_PAGE;
+      return filteredStudents.slice(startIndex, endIndex);
+  }, [filteredStudents, currentPage]);
+
+  const handleNextPage = () => {
+      if(currentPage < totalPages) {
+          setCurrentPage(currentPage + 1);
+      }
+  }
+
+  const handlePrevPage = () => {
+      if(currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+      }
+  }
+
 
   return (
     <div className="flex flex-col gap-6">
+      <ImportResultDialog result={importResult} open={isResultOpen} onOpenChange={setIsResultOpen} />
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Daftar Siswa</h1>
@@ -203,7 +289,7 @@ export default function SiswaPage() {
               Template
             </a>
           </Button>
-          <ImportDialog />
+          <ImportDialog onImportComplete={handleImportComplete} />
           <Button asChild>
             <Link href="/siswa/tambah">
               <PlusCircle className="mr-2 h-4 w-4" />
@@ -225,7 +311,10 @@ export default function SiswaPage() {
                 placeholder="Cari nama atau NISN..."
                 className="pl-9"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1); // Reset to first page on search
+                }}
               />
             </div>
           </div>
@@ -249,8 +338,8 @@ export default function SiswaPage() {
                       <TableCell colSpan={5} className="py-4"><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
                     </TableRow>
                   ))
-                ) : filteredStudents.length > 0 ? (
-                  filteredStudents.map((student) => (
+                ) : paginatedData.length > 0 ? (
+                  paginatedData.map((student) => (
                     <TableRow key={student.id} className={isDeleting ? 'opacity-50' : ''}>
                       <TableCell className="font-medium whitespace-nowrap">{student.siswa_namaLengkap}</TableCell>
                       <TableCell className="whitespace-nowrap">{student.siswa_nisn}</TableCell>
@@ -280,6 +369,23 @@ export default function SiswaPage() {
             </Table>
           </div>
         </CardContent>
+        {totalPages > 1 && (
+            <CardFooter className="flex items-center justify-between border-t pt-4">
+                <span className="text-sm text-muted-foreground">
+                    Halaman {currentPage} dari {totalPages}
+                </span>
+                <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={handlePrevPage} disabled={currentPage === 1}>
+                        <ChevronLeft className="h-4 w-4" />
+                        Sebelumnya
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={handleNextPage} disabled={currentPage === totalPages}>
+                        Berikutnya
+                        <ChevronRight className="h-4 w-4" />
+                    </Button>
+                </div>
+            </CardFooter>
+        )}
       </Card>
     </div>
   );

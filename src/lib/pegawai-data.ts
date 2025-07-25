@@ -17,7 +17,7 @@ export const pegawaiFormDataSchema = z.object({}).passthrough();
 
 
 export type PegawaiFormData = {
-  pegawai_nama?: string;
+  pegawai_nama: string;
   pegawai_jenisKelamin?: 'Laki-laki' | 'Perempuan';
   pegawai_tempatLahir?: string;
   pegawai_tanggalLahir?: Date;
@@ -25,7 +25,7 @@ export type PegawaiFormData = {
   pegawai_jabatan?: string;
   pegawai_terhitungMulaiTanggal?: Date;
   pegawai_phaspoto?: { fileName: string; fileURL: string; };
-  pegawai_nip?: string;
+  pegawai_nip: string;
   pegawai_nuptk?: string;
   pegawai_nrg?: string;
   pegawai_tanggalPerkawinan?: Date | null;

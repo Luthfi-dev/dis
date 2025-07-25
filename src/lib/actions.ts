@@ -7,7 +7,8 @@ import { sanitizeAndFormatData } from './utils';
 import type { PegawaiFormData } from '@/lib/pegawai-data';
 import type { StudentFormData } from '@/lib/student-data-t';
 import pool from './db';
-import { isEqual } from 'lodash';
+import { isEqual, omit } from 'lodash';
+import Excel from 'exceljs';
 
 // Helper function to parse JSON fields safely
 function parseJsonFields(row: any) {
@@ -34,7 +35,7 @@ function parseJsonFields(row: any) {
 export async function getSiswa(): Promise<Siswa[]> {
     const db = await pool.getConnection();
     try {
-        const [rows] = await db.query('SELECT * FROM siswa');
+        const [rows] = await db.query('SELECT * FROM siswa ORDER BY siswa_namaLengkap ASC');
         return (rows as Siswa[]).map(parseJsonFields);
     } finally {
         db.release();
@@ -83,12 +84,14 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
                 params.push(data.siswa_nisn);
              }
 
-            const [existing]: any = await db.query(
-                `SELECT id FROM siswa WHERE (${conditions.join(' OR ')}) AND id != ?`,
-                [...params, studentId || '']
-            );
-            if (existing.length > 0) {
-                return { success: false, message: 'NIS atau NISN sudah terdaftar untuk siswa lain.' };
+            if (conditions.length > 0) {
+                const [existing]: any = await db.query(
+                    `SELECT id FROM siswa WHERE (${conditions.join(' OR ')}) AND id != ?`,
+                    [...params, studentId || '']
+                );
+                if (existing.length > 0) {
+                    return { success: false, message: 'NIS atau NISN sudah terdaftar untuk siswa lain.' };
+                }
             }
         }
         
@@ -97,23 +100,28 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
         
         const isComplete = dataForDb.siswa_namaLengkap && dataForDb.siswa_nis && dataForDb.siswa_nisn;
         dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
-        
+
+        const insertData = omit(dataForDb, ['id', 'created_at', 'updated_at']);
+
         if (studentId) {
             // --- UPDATE LOGIC ---
-            const { id, ...updateData } = dataForDb;
-            const fields = Object.keys(updateData).map(f => `${f} = ?`).join(', ');
-            const values = Object.values(updateData);
+            const fields = Object.keys(insertData).map(f => `${f} = ?`).join(', ');
+            const values = Object.values(insertData);
 
-            const sql = `UPDATE siswa SET ${fields} WHERE id = ?`;
-            await db.query(sql, [...values, studentId]);
+            if (fields.length > 0) {
+                 const sql = `UPDATE siswa SET ${fields} WHERE id = ?`;
+                 await db.query(sql, [...values, studentId]);
+            }
         } else {
             // --- CREATE LOGIC ---
-            const fields = Object.keys(dataForDb);
-            const values = Object.values(dataForDb);
-            const placeholders = fields.map(() => '?').join(', ');
-
-            const sql = `INSERT INTO siswa (${fields.join(', ')}) VALUES (${placeholders})`;
-            await db.query(sql, values);
+             const fields = Object.keys(insertData);
+             const values = Object.values(insertData);
+             const placeholders = fields.map(() => '?').join(', ');
+            
+             if (fields.length > 0) {
+                const sql = `INSERT INTO siswa (${fields.join(', ')}) VALUES (${placeholders})`;
+                await db.query(sql, values);
+             }
         }
         
         await db.commit();
@@ -134,7 +142,7 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
 export async function getPegawai(): Promise<Pegawai[]> {
     const db = await pool.getConnection();
     try {
-        const [rows] = await db.query('SELECT * FROM pegawai');
+        const [rows] = await db.query('SELECT * FROM pegawai ORDER BY pegawai_nama ASC');
          return (rows as Pegawai[]).map(parseJsonFields);
     } finally {
         db.release();
@@ -187,37 +195,26 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
         const isComplete = dataForDb.pegawai_nama && dataForDb.pegawai_nip;
         dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
         
+        const insertData = omit(dataForDb, ['id', 'created_at', 'updated_at']);
+
         if (pegawaiId) {
-             // --- OPTIMIZED UPDATE LOGIC ---
-            const [currentRows]: any = await db.query('SELECT * FROM pegawai WHERE id = ?', [pegawaiId]);
-            const currentRow = currentRows[0];
-
-            if (!currentRow) {
-                await db.rollback();
-                return { success: false, message: 'Pegawai tidak ditemukan.' };
-            }
-            
-            // This will hold only fields that have actually changed.
-            const changedData: { [key: string]: any } = {};
-            for (const key in dataForDb) {
-                 if (!isEqual(dataForDb[key], currentRow[key])) {
-                     changedData[key] = dataForDb[key];
-                 }
-            }
-
-            if (Object.keys(changedData).length > 0) {
-                const fields = Object.keys(changedData).map(f => `${f} = ?`).join(', ');
-                const values = Object.values(changedData);
-                const sql = `UPDATE pegawai SET ${fields} WHERE id = ?`;
-                await db.query(sql, [...values, pegawaiId]);
-            }
+            // --- UPDATE LOGIC ---
+             const fields = Object.keys(insertData).map(f => `${f} = ?`).join(', ');
+             const values = Object.values(insertData);
+             if (fields.length > 0) {
+                 const sql = `UPDATE pegawai SET ${fields} WHERE id = ?`;
+                 await db.query(sql, [...values, pegawaiId]);
+             }
         } else {
              // --- CREATE LOGIC ---
-            const fields = Object.keys(dataForDb);
-            const values = Object.values(dataForDb);
-            const placeholders = fields.map(() => '?').join(', ');
-            const sql = `INSERT INTO pegawai (${fields.join(', ')}) VALUES (${placeholders})`;
-            await db.query(sql, values);
+             const fields = Object.keys(insertData);
+             const values = Object.values(insertData);
+             const placeholders = fields.map(() => '?').join(', ');
+            
+             if (fields.length > 0) {
+                const sql = `INSERT INTO pegawai (${fields.join(', ')}) VALUES (${placeholders})`;
+                await db.query(sql, values);
+             }
         }
         
         await db.commit();
@@ -271,4 +268,89 @@ export async function saveAppSettings(data: AppSettings): Promise<{ success: boo
     } finally {
         db.release();
     }
+}
+
+// --- IMPORT ACTIONS ---
+export type ImportResult = {
+    success: boolean;
+    message: string;
+    totalRows: number;
+    successCount: number;
+    failureCount: number;
+    errors: { row: number, reason: string }[];
+};
+
+export async function importData(type: 'siswa' | 'pegawai', fileBuffer: Buffer): Promise<ImportResult> {
+    const db = await pool.getConnection();
+    const workbook = new Excel.Workbook();
+    await workbook.xlsx.load(fileBuffer);
+    const worksheet = workbook.worksheets[0];
+
+    const results: ImportResult = {
+        success: true,
+        message: 'Impor selesai.',
+        totalRows: worksheet.rowCount - 1,
+        successCount: 0,
+        failureCount: 0,
+        errors: [],
+    };
+
+    const headerRow = worksheet.getRow(1);
+    const headers = headerRow.values as string[];
+
+    for (let i = 2; i <= worksheet.rowCount; i++) {
+        const row = worksheet.getRow(i);
+        const rowData: any = {};
+        
+        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+            const headerCell = headerRow.getCell(colNumber);
+            const key = headerCell.text.split(' ')[0].toLowerCase(); // Simplified key extraction
+             const dbKey = `${type}_${key.replace('lengkap', 'namaLengkap').replace('nisn(wajib)', 'nisn').replace('nis(wajib)', 'nis').replace('nip(wajib)', 'nip')}`;
+            rowData[dbKey] = cell.value;
+        });
+
+        try {
+            if (type === 'siswa') {
+                 if (!rowData.siswa_namaLengkap) throw new Error('Nama Lengkap wajib diisi.');
+                 if (!rowData.siswa_nis) throw new Error('NIS wajib diisi.');
+                 if (!rowData.siswa_nisn) throw new Error('NISN wajib diisi.');
+
+                const [existing]: any = await db.query(
+                    'SELECT id FROM siswa WHERE siswa_nis = ? OR siswa_nisn = ?',
+                    [rowData.siswa_nis, rowData.siswa_nisn]
+                );
+                if (existing.length > 0) {
+                    throw new Error(`NIS (${rowData.siswa_nis}) atau NISN (${rowData.siswa_nisn}) sudah ada.`);
+                }
+                await submitStudentData(rowData);
+            } else if (type === 'pegawai') {
+                 if (!rowData.pegawai_nama) throw new Error('Nama Lengkap wajib diisi.');
+                 if (!rowData.pegawai_nip) throw new Error('NIP wajib diisi.');
+                
+                const [existing]: any = await db.query(
+                    'SELECT id FROM pegawai WHERE pegawai_nip = ?',
+                    [rowData.pegawai_nip]
+                );
+                if (existing.length > 0) {
+                    throw new Error(`NIP ${rowData.pegawai_nip} sudah ada.`);
+                }
+                await submitPegawaiData(rowData);
+            }
+            results.successCount++;
+        } catch (e: any) {
+            results.failureCount++;
+            results.errors.push({ row: i, reason: e.message || 'Error tidak diketahui' });
+        }
+    }
+    
+    db.release();
+
+    if(results.failureCount > 0) {
+        results.success = false;
+        results.message = `Impor selesai dengan ${results.failureCount} error.`
+    } else {
+        results.message = `Berhasil mengimpor ${results.successCount} data.`
+    }
+
+    return results;
 }

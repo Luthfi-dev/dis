@@ -1,4 +1,3 @@
-
 // This file defines the shape of the student form data.
 // It is used for TypeScript type safety and Zod for validation.
 import { z } from 'zod';
@@ -11,9 +10,9 @@ const fileSchema = z.object({
 export const studentFormDataSchema = z.object({}).passthrough();
 
 export type StudentFormData = {
-  siswa_namaLengkap?: string;
-  siswa_nis?: string;
-  siswa_nisn?: string;
+  siswa_namaLengkap: string;
+  siswa_nis: string;
+  siswa_nisn: string;
   siswa_jenisKelamin?: 'Laki-laki' | 'Perempuan';
   siswa_tempatLahir?: string;
   siswa_tanggalLahir?: Date;
