@@ -85,13 +85,19 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
             }
 
             if (conditions.length > 0) {
-                const checkQuery = `SELECT id FROM siswa WHERE ${conditions.join(' OR ')}`;
-                const [existing]: any = await db.query(checkQuery, params);
+                let checkQuery = `SELECT id FROM siswa WHERE ${conditions.join(' OR ')}`;
+                const checkParams = [...params];
+
+                // If editing, exclude the current student's ID from the check
+                if (studentId) {
+                    checkQuery += ' AND id != ?';
+                    checkParams.push(studentId);
+                }
+                
+                const [existing]: any = await db.query(checkQuery, checkParams);
+
                 if (existing.length > 0) {
-                    const isSameRecord = studentId && existing.some((record: {id: any}) => record.id.toString() === studentId.toString());
-                    if (!isSameRecord) {
-                         return { success: false, message: 'NIS atau NISN sudah terdaftar untuk siswa lain.' };
-                    }
+                    return { success: false, message: 'NIS atau NISN sudah terdaftar untuk siswa lain.' };
                 }
             }
         }
@@ -114,7 +120,7 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
         dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
         
         const finalData = Object.fromEntries(
-            Object.entries(dataForDb).filter(([_, v]) => v !== null && v !== undefined && v !== '')
+            Object.entries(dataForDb).filter(([_, v]) => v !== null && v !== undefined)
         );
 
         if (studentId) {
@@ -199,12 +205,18 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
     const db = await pool.getConnection();
     try {
         if (data.pegawai_nip) {
-            const [existing]: any = await db.query('SELECT id FROM pegawai WHERE pegawai_nip = ?', [data.pegawai_nip]);
+            let checkQuery = 'SELECT id FROM pegawai WHERE pegawai_nip = ?';
+            const params = [data.pegawai_nip];
+
+            // If we are editing, we must exclude the current pegawai's ID from the check.
+            if (pegawaiId) {
+                checkQuery += ' AND id != ?';
+                params.push(pegawaiId);
+            }
+
+            const [existing]: any = await db.query(checkQuery, params);
             if (existing.length > 0) {
-                // This checks if the found record is NOT the same as the one being edited.
-                if (!pegawaiId || existing[0].id.toString() !== pegawaiId.toString()) {
-                    return { success: false, message: 'NIP sudah terdaftar untuk pegawai lain.' };
-                }
+                return { success: false, message: 'NIP sudah terdaftar untuk pegawai lain.' };
             }
         }
 
@@ -227,7 +239,7 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
         dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
         
         const finalData = Object.fromEntries(
-            Object.entries(dataForDb).filter(([_, v]) => v !== null && v !== undefined && v !== '')
+            Object.entries(dataForDb).filter(([_, v]) => v !== null && v !== undefined)
         );
 
         if (pegawaiId) {
