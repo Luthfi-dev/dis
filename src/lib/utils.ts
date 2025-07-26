@@ -1,10 +1,41 @@
 
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import CryptoJS from 'crypto-js';
+
+const SECRET_KEY = process.env.ENCRYPTION_SECRET_KEY || 'default-secret-key-that-is-long-enough';
+
+if (process.env.NODE_ENV === 'production' && (!process.env.ENCRYPTION_SECRET_KEY || process.env.ENCRYPTION_SECRET_KEY === 'default-secret-key-that-is-long-enough')) {
+    console.warn('Warning: ENCRYPTION_SECRET_KEY is not set in production. Using default key.');
+}
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
+
+export function encryptId(id: string): string {
+  const encrypted = CryptoJS.AES.encrypt(id.toString(), SECRET_KEY).toString();
+  // URL-safe encoding
+  return encodeURIComponent(encrypted);
+}
+
+export function decryptId(encryptedId: string): string {
+    try {
+        // URL-safe decoding
+        const decodedId = decodeURIComponent(encryptedId);
+        const bytes = CryptoJS.AES.decrypt(decodedId, SECRET_KEY);
+        const originalId = bytes.toString(CryptoJS.enc.Utf8);
+        if (!originalId) {
+           throw new Error("Decryption failed to produce a valid string.");
+        }
+        return originalId;
+    } catch (error) {
+        console.error("Decryption failed for ID:", encryptedId, error);
+        // Returning a value that is unlikely to exist in the DB
+        return 'invalid_id'; 
+    }
+}
+
 
 /**
  * A simple deep merge function.

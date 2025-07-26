@@ -33,10 +33,11 @@ import React, { useState, useEffect, useMemo, useTransition } from 'react';
 import { Input } from '@/components/ui/input';
 import { getSiswa, deleteSiswa, importData, ImportResult } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+import { cn, encryptId } from '@/lib/utils';
 
 function ActionMenu({ student, onDelete }: { student: Siswa, onDelete: (id: string) => void }) {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const encryptedId = encryptId(student.id);
   
   const handleDelete = () => {
     onDelete(student.id);
@@ -56,19 +57,19 @@ function ActionMenu({ student, onDelete }: { student: Siswa, onDelete: (id: stri
           <DropdownMenuLabel>Aksi</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
-            <Link href={`/siswa/${student.id}/lihat`}>
+            <Link href={`/siswa/${encryptedId}/lihat`}>
               <Eye className="mr-2 h-4 w-4" />
               <span>Lihat</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href={`/siswa/${student.id}/edit`}>
+            <Link href={`/siswa/${encryptedId}/edit`}>
               <FilePen className="mr-2 h-4 w-4" />
               <span>Edit</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href={`/siswa/${student.id}/preview`}>
+            <Link href={`/siswa/${encryptedId}/preview`}>
               <FileSearch className="mr-2 h-4 w-4" />
               <span>Preview</span>
             </Link>

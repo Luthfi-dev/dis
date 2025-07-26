@@ -89,7 +89,7 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
                 const [existing]: any = await db.query(checkQuery, params);
 
                 if (existing.length > 0) {
-                    if (!studentId || existing.some((s: {id: any}) => s.id.toString() !== studentId)) {
+                     if (!studentId || existing.some((s: {id: any}) => s.id.toString() !== studentId.toString())) {
                         return { success: false, message: 'NIS atau NISN sudah terdaftar untuk siswa lain.' };
                     }
                 }
@@ -114,7 +114,7 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
         dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
         
         const finalData = Object.fromEntries(
-            Object.entries(dataForDb).filter(([_, v]) => v !== null && v !== undefined)
+            Object.entries(dataForDb).filter(([_, v]) => v !== null && v !== undefined && v !== '')
         );
 
         if (studentId) {
@@ -204,9 +204,7 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
 
             const [existing]: any = await db.query(checkQuery, params);
             if (existing.length > 0) {
-                // If we are editing (pegawaiId is provided), check if the found NIP belongs to a DIFFERENT pegawai.
-                // If we are adding (pegawaiId is null), any existing NIP is a duplicate.
-                if (!pegawaiId || existing[0].id.toString() !== pegawaiId) {
+                if (!pegawaiId || existing[0].id.toString() !== pegawaiId.toString()) {
                     return { success: false, message: 'NIP sudah terdaftar untuk pegawai lain.' };
                 }
             }
@@ -458,4 +456,3 @@ const pegawaiHeaders = [
     
 
     
-

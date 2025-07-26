@@ -34,10 +34,11 @@ import { Input } from '@/components/ui/input';
 import { getPegawai, deletePegawai, importData, ImportResult } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
+import { cn, encryptId } from '@/lib/utils';
 
 function ActionMenu({ pegawai, onDelete }: { pegawai: Pegawai, onDelete: (id: string) => void }) {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const encryptedId = encryptId(pegawai.id);
   
   const handleDelete = () => {
     onDelete(pegawai.id);
@@ -57,19 +58,19 @@ function ActionMenu({ pegawai, onDelete }: { pegawai: Pegawai, onDelete: (id: st
           <DropdownMenuLabel>Aksi</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
-            <Link href={`/pegawai/${pegawai.id}/lihat`}>
+            <Link href={`/pegawai/${encryptedId}/lihat`}>
               <Eye className="mr-2 h-4 w-4" />
               <span>Lihat</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href={`/pegawai/${pegawai.id}/edit`}>
+            <Link href={`/pegawai/${encryptedId}/edit`}>
               <FilePen className="mr-2 h-4 w-4" />
               <span>Edit</span>
             </Link>
           </DropdownMenuItem>
            <DropdownMenuItem asChild>
-            <Link href={`/pegawai/${pegawai.id}/preview`}>
+            <Link href={`/pegawai/${encryptedId}/preview`}>
               <FileSearch className="mr-2 h-4 w-4" />
               <span>Preview</span>
             </Link>
