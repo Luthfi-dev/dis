@@ -85,19 +85,13 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
             }
 
             if (conditions.length > 0) {
-                let checkQuery = `SELECT id FROM siswa WHERE ${conditions.join(' OR ')}`;
-                const checkParams = [...params];
-
-                // If editing, exclude the current student's ID from the check
-                if (studentId) {
-                    checkQuery += ' AND id != ?';
-                    checkParams.push(studentId);
-                }
-                
-                const [existing]: any = await db.query(checkQuery, checkParams);
+                const checkQuery = `SELECT id FROM siswa WHERE (${conditions.join(' OR ')})`;
+                const [existing]: any = await db.query(checkQuery, params);
 
                 if (existing.length > 0) {
-                    return { success: false, message: 'NIS atau NISN sudah terdaftar untuk siswa lain.' };
+                    if (!studentId || existing.some((s: {id: any}) => s.id.toString() !== studentId)) {
+                        return { success: false, message: 'NIS atau NISN sudah terdaftar untuk siswa lain.' };
+                    }
                 }
             }
         }
@@ -205,18 +199,16 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
     const db = await pool.getConnection();
     try {
         if (data.pegawai_nip) {
-            let checkQuery = 'SELECT id FROM pegawai WHERE pegawai_nip = ?';
+            const checkQuery = 'SELECT id FROM pegawai WHERE pegawai_nip = ?';
             const params = [data.pegawai_nip];
-
-            // If we are editing, we must exclude the current pegawai's ID from the check.
-            if (pegawaiId) {
-                checkQuery += ' AND id != ?';
-                params.push(pegawaiId);
-            }
 
             const [existing]: any = await db.query(checkQuery, params);
             if (existing.length > 0) {
-                return { success: false, message: 'NIP sudah terdaftar untuk pegawai lain.' };
+                // If we are editing (pegawaiId is provided), check if the found NIP belongs to a DIFFERENT pegawai.
+                // If we are adding (pegawaiId is null), any existing NIP is a duplicate.
+                if (!pegawaiId || existing[0].id.toString() !== pegawaiId) {
+                    return { success: false, message: 'NIP sudah terdaftar untuk pegawai lain.' };
+                }
             }
         }
 
@@ -226,9 +218,8 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
         const requiredFields = [
             'pegawai_nama', 'pegawai_jenisKelamin', 'pegawai_tempatLahir', 'pegawai_tanggalLahir',
             'pegawai_statusPerkawinan', 'pegawai_jabatan', 'pegawai_terhitungMulaiTanggal',
-            'pegawai_nip', 'pegawai_nuptk', 'pegawai_nrg',
-            'pegawai_bidangStudi',
-            'pegawai_alamatKabupaten', 'pegawai_alamatKecamatan', 'pegawai_alamatDesa', 'pegawai_alamatDusun'
+            'pegawai_nip',
+            'pegawai_alamatKabupaten', 'pegawai_alamatKecamatan', 'pegawai_alamatDesa',
         ];
 
         const isComplete = requiredFields.every(field => {
@@ -239,7 +230,7 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
         dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
         
         const finalData = Object.fromEntries(
-            Object.entries(dataForDb).filter(([_, v]) => v !== null && v !== undefined)
+            Object.entries(dataForDb).filter(([_, v]) => v !== null && v !== undefined && v !== '')
         );
 
         if (pegawaiId) {
@@ -353,33 +344,39 @@ export async function importData(type: 'siswa' | 'pegawai', fileBase64: string):
     
     // Map header names to column keys
     const headerToKeyMap: { [key: string]: string } = {};
+    const headerConfigs = type === 'siswa' ? siswaHeaders : pegawaiHeaders;
+    
     headerRow.eachCell((cell, colNumber) => {
         const headerText = cell.text;
-        // This relies on the header config having a 'header' property that matches the Excel file
-        // and a 'key' property that matches the database column name.
-        const headerConfigs = type === 'siswa' ? siswaHeaders : pegawaiHeaders;
         const foundHeader = headerConfigs.find(h => h.header === headerText);
         if (foundHeader) {
-            headerToKeyMap[headerText] = foundHeader.key;
+            headerToKeyMap[colNumber] = foundHeader.key;
         }
     });
 
     for (let i = 2; i <= worksheet.rowCount; i++) {
         const row = worksheet.getRow(i);
         const rowData: any = {};
+        let hasData = false;
         
         row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-            const headerText = headerRow.getCell(colNumber).text;
-            const key = headerToKeyMap[headerText];
+            const key = headerToKeyMap[colNumber];
             if (key) {
-                // ExcelJS can return objects for dates, links, etc. We just want the value.
-                if (cell.value && typeof cell.value === 'object' && 'result' in cell.value) {
-                     rowData[key] = (cell.value as any).result;
+                let cellValue = null;
+                if (cell.value && typeof cell.value === 'object' && 'result' in cell.value!) {
+                     cellValue = (cell.value as any).result;
                 } else {
-                     rowData[key] = cell.value;
+                     cellValue = cell.value;
+                }
+                
+                if (cellValue !== null && cellValue !== undefined) {
+                    rowData[key] = cellValue;
+                    hasData = true;
                 }
             }
         });
+
+        if (!hasData) continue; // Skip empty rows
 
         try {
             if (type === 'siswa') {
@@ -461,3 +458,4 @@ const pegawaiHeaders = [
     
 
     
+
