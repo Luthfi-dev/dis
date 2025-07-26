@@ -3,7 +3,7 @@
 
 import type { Siswa } from './data';
 import type { Pegawai } from './pegawai-data';
-import { sanitizeAndFormatData } from './utils';
+import { sanitizeAndFormatData, encryptId } from './utils';
 import type { PegawaiFormData } from '@/lib/pegawai-data';
 import type { StudentFormData } from '@/lib/student-data-t';
 import pool from './db';
@@ -32,11 +32,15 @@ function parseJsonFields(row: any) {
 // --- Public-facing Server Actions ---
 
 // SISWA ACTIONS
-export async function getSiswa(): Promise<Siswa[]> {
+export async function getSiswa(): Promise<(Siswa & { encryptedId: string })[]> {
     const db = await pool.getConnection();
     try {
         const [rows] = await db.query('SELECT * FROM siswa ORDER BY id DESC');
-        return (rows as Siswa[]).map(parseJsonFields);
+        const students = (rows as Siswa[]).map(parseJsonFields);
+        return students.map(student => ({
+            ...student,
+            encryptedId: encryptId(student.id)
+        }));
     } finally {
         db.release();
     }
@@ -85,7 +89,7 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
             }
 
             if (conditions.length > 0) {
-                const checkQuery = `SELECT id FROM siswa WHERE (${conditions.join(' OR ')})`;
+                let checkQuery = `SELECT id FROM siswa WHERE (${conditions.join(' OR ')})`;
                 const [existing]: any = await db.query(checkQuery, params);
 
                 if (existing.length > 0) {
@@ -159,11 +163,15 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
 
 
 // PEGAWAI ACTIONS
-export async function getPegawai(): Promise<Pegawai[]> {
+export async function getPegawai(): Promise<(Pegawai & { encryptedId: string })[]> {
     const db = await pool.getConnection();
     try {
         const [rows] = await db.query('SELECT * FROM pegawai ORDER BY id DESC');
-         return (rows as Pegawai[]).map(parseJsonFields);
+        const pegawaiList = (rows as Pegawai[]).map(parseJsonFields);
+        return pegawaiList.map(pegawai => ({
+            ...pegawai,
+            encryptedId: encryptId(pegawai.id)
+        }));
     } finally {
         db.release();
     }
@@ -450,9 +458,3 @@ const pegawaiHeaders = [
     { header: 'NRG', key: 'pegawai_nrg' },
     { header: 'Bidang Studi', key: 'pegawai_bidangStudi' },
 ];
-
-
-
-    
-
-    

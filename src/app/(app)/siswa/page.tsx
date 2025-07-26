@@ -33,11 +33,10 @@ import React, { useState, useEffect, useMemo, useTransition } from 'react';
 import { Input } from '@/components/ui/input';
 import { getSiswa, deleteSiswa, importData, ImportResult } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import { cn, encryptId } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
-function ActionMenu({ student, onDelete }: { student: Siswa, onDelete: (id: string) => void }) {
+function ActionMenu({ student, onDelete }: { student: Siswa & { encryptedId: string }, onDelete: (id: string) => void }) {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const encryptedId = encryptId(student.id);
   
   const handleDelete = () => {
     onDelete(student.id);
@@ -57,19 +56,19 @@ function ActionMenu({ student, onDelete }: { student: Siswa, onDelete: (id: stri
           <DropdownMenuLabel>Aksi</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
-            <Link href={`/siswa/${encryptedId}/lihat`}>
+            <Link href={`/siswa/${student.encryptedId}/lihat`}>
               <Eye className="mr-2 h-4 w-4" />
               <span>Lihat</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href={`/siswa/${encryptedId}/edit`}>
+            <Link href={`/siswa/${student.encryptedId}/edit`}>
               <FilePen className="mr-2 h-4 w-4" />
               <span>Edit</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href={`/siswa/${encryptedId}/preview`}>
+            <Link href={`/siswa/${student.encryptedId}/preview`}>
               <FileSearch className="mr-2 h-4 w-4" />
               <span>Preview</span>
             </Link>
@@ -216,7 +215,7 @@ function ImportDialog({ onImportComplete }: { onImportComplete: (result: ImportR
 const ITEMS_PER_PAGE = 20;
 
 export default function SiswaPage() {
-  const [students, setStudents] = useState<Siswa[]>([]);
+  const [students, setStudents] = useState<(Siswa & { encryptedId: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDeleting, startDeleteTransition] = useTransition();
