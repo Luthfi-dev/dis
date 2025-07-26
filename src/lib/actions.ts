@@ -71,23 +71,27 @@ export async function deleteSiswa(id: string): Promise<{ success: boolean; messa
 export async function submitStudentData(data: StudentFormData, studentId?: string) {
     const db = await pool.getConnection();
     try {
-        if (!studentId && (data.siswa_nis || data.siswa_nisn)) {
-             const conditions = [];
-             const params = [];
-             if(data.siswa_nis) {
+        // Cek duplikat hanya jika NIS atau NISN diisi
+        if (data.siswa_nis || data.siswa_nisn) {
+            const conditions = [];
+            const params = [];
+            if (data.siswa_nis) {
                 conditions.push('siswa_nis = ?');
                 params.push(data.siswa_nis);
-             }
-             if(data.siswa_nisn) {
+            }
+            if (data.siswa_nisn) {
                 conditions.push('siswa_nisn = ?');
                 params.push(data.siswa_nisn);
-             }
-             if (conditions.length > 0) {
+            }
+
+            if (conditions.length > 0) {
                 const checkQuery = `SELECT id FROM siswa WHERE ${conditions.join(' OR ')}`;
                 const [existing]: any = await db.query(checkQuery, params);
                 if (existing.length > 0) {
-                    if (!studentId || existing[0].id.toString() !== studentId) {
-                        return { success: false, message: 'NIS atau NISN sudah terdaftar untuk siswa lain.' };
+                    // Jika ada data yang cocok, cek apakah itu data yang sama atau berbeda
+                    const isSameRecord = studentId && existing.some((record: {id: any}) => record.id.toString() === studentId);
+                    if (!isSameRecord) {
+                         return { success: false, message: 'NIS atau NISN sudah terdaftar untuk siswa lain.' };
                     }
                 }
             }
@@ -111,7 +115,7 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
         dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
         
         // Remove undefined/null/empty keys from the data object before saving
-        const finalData = Object.fromEntries(Object.entries(dataForDb).filter(([_, v]) => v !== null && v !== undefined && v !== ''));
+        const finalData = Object.fromEntries(Object.entries(dataForDb).filter(([_, v]) => v !== null && v !== undefined));
 
         if (studentId) {
             const updateData = omit(finalData, ['id', 'created_at', 'updated_at']);
@@ -194,9 +198,12 @@ export async function deletePegawai(id: string): Promise<{ success: boolean; mes
 export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: string) {
     const db = await pool.getConnection();
     try {
+        // Cek duplikat hanya jika NIP diisi
         if (data.pegawai_nip) {
             const [existing]: any = await db.query('SELECT id FROM pegawai WHERE pegawai_nip = ?', [data.pegawai_nip]);
-             if (existing.length > 0) {
+            if (existing.length > 0) {
+                // Jika ada NIP yang cocok, cek apakah itu record yang sama yang sedang diedit.
+                // Error hanya jika NIP ditemukan pada record lain.
                 if (!pegawaiId || existing[0].id.toString() !== pegawaiId) {
                     return { success: false, message: 'NIP sudah terdaftar untuk pegawai lain.' };
                 }
@@ -222,7 +229,7 @@ export async function submitPegawaiData(data: PegawaiFormData, pegawaiId?: strin
         dataForDb.status = isComplete ? 'Lengkap' : 'Belum Lengkap';
         
         // Remove undefined/null/empty keys from the data object before saving
-        const finalData = Object.fromEntries(Object.entries(dataForDb).filter(([_, v]) => v !== null && v !== undefined && v !== ''));
+        const finalData = Object.fromEntries(Object.entries(dataForDb).filter(([_, v]) => v !== null && v !== undefined));
 
         if (pegawaiId) {
             const updateData = omit(finalData, ['id', 'created_at', 'updated_at']);
