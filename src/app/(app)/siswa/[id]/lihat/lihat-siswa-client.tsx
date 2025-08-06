@@ -130,11 +130,11 @@ export function LihatSiswaClient({ id }: { id: string }) {
              )}
             <div className="flex-1">
                 <CardTitle className="text-2xl">{student.siswa_namaLengkap}</CardTitle>
-                <CardDescription className='mt-2'>
+                <div className='mt-2'>
                     <Badge variant={studentStatus === 'Lengkap' ? 'default' : 'outline'} className={studentStatus === 'Lengkap' ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' : 'text-amber-600 border-amber-500/50'}>
                         Status: {studentStatus}
                     </Badge>
-                </CardDescription>
+                </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">

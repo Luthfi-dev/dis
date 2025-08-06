@@ -154,9 +154,11 @@ export function LihatPegawaiClient({ id }: { id: string }) {
                     <div className="flex items-center gap-2"><Briefcase className='w-4 h-4' /> {pegawai.pegawai_jabatan}</div>
                     <div className="flex items-center gap-2"><BookOpen className='w-4 h-4' /> {pegawai.pegawai_bidangStudi}</div>
                 </div>
-                <Badge variant={pegawaiStatus === 'Lengkap' ? 'default' : 'outline'} className={`mt-4 ${pegawaiStatus === 'Lengkap' ? 'bg-green-100 text-green-800' : 'text-amber-600 border-amber-500/50'}`}>
-                    Status: {pegawaiStatus}
-                </Badge>
+                <div className="mt-4">
+                    <Badge variant={pegawaiStatus === 'Lengkap' ? 'default' : 'outline'} className={`${pegawaiStatus === 'Lengkap' ? 'bg-green-100 text-green-800' : 'text-amber-600 border-amber-500/50'}`}>
+                        Status: {pegawaiStatus}
+                    </Badge>
+                </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
