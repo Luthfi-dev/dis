@@ -2,6 +2,10 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import CryptoJS from 'crypto-js';
+import { config } from 'dotenv';
+
+// Load environment variables at the start.
+config();
 
 // This function now safely retrieves the secret key on the server.
 const getSecretKey = () => {
