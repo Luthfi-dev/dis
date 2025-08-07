@@ -10,21 +10,13 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    let isMounted = true;
-
     if (!loading) {
-      if (isMounted) {
-        if (user) {
-          router.replace('/dashboard');
-        } else {
-          router.replace('/login');
-        }
+      if (user) {
+        router.replace('/dashboard');
+      } else {
+        router.replace('/login');
       }
     }
-
-    return () => {
-      isMounted = false;
-    };
   }, [user, loading, router]);
 
   return (

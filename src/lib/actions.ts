@@ -3,7 +3,7 @@
 
 import type { Siswa } from './data';
 import type { Pegawai } from './pegawai-data';
-import { sanitizeAndFormatData, encryptId } from './utils';
+import { sanitizeAndFormatData } from './utils';
 import type { PegawaiFormData } from '@/lib/pegawai-data';
 import type { StudentFormData } from '@/lib/student-data-t';
 import pool from './db';
@@ -32,15 +32,11 @@ function parseJsonFields(row: any) {
 // --- Public-facing Server Actions ---
 
 // SISWA ACTIONS
-export async function getSiswa(): Promise<(Siswa & { encryptedId: string })[]> {
+export async function getSiswa(): Promise<Siswa[]> {
     const db = await pool.getConnection();
     try {
         const [rows] = await db.query('SELECT * FROM siswa ORDER BY id DESC');
-        const students = (rows as Siswa[]).map(parseJsonFields);
-        return students.map(student => ({
-            ...student,
-            encryptedId: encryptId(student.id)
-        }));
+        return (rows as Siswa[]).map(parseJsonFields);
     } finally {
         db.release();
     }
@@ -163,15 +159,11 @@ export async function submitStudentData(data: StudentFormData, studentId?: strin
 
 
 // PEGAWAI ACTIONS
-export async function getPegawai(): Promise<(Pegawai & { encryptedId: string })[]> {
+export async function getPegawai(): Promise<Pegawai[]> {
     const db = await pool.getConnection();
     try {
         const [rows] = await db.query('SELECT * FROM pegawai ORDER BY id DESC');
-        const pegawaiList = (rows as Pegawai[]).map(parseJsonFields);
-        return pegawaiList.map(pegawai => ({
-            ...pegawai,
-            encryptedId: encryptId(pegawai.id)
-        }));
+        return (rows as Pegawai[]).map(parseJsonFields);
     } finally {
         db.release();
     }

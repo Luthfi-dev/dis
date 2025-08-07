@@ -57,15 +57,13 @@ export default function ProfilePage() {
     const avatarUrl = watch('avatar');
 
     useEffect(() => {
-        let isMounted = true;
-        if (user && isMounted) {
+        if (user) {
             reset({
                 name: user.name,
                 email: user.email,
                 avatar: user.avatar,
             });
         }
-        return () => { isMounted = false; };
     }, [user, reset]);
 
     if (loading || !user) {

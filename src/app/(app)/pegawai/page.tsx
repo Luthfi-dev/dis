@@ -36,7 +36,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
-function ActionMenu({ pegawai, onDelete }: { pegawai: Pegawai & { encryptedId: string }, onDelete: (id: string) => void }) {
+function ActionMenu({ pegawai, onDelete }: { pegawai: Pegawai, onDelete: (id: string) => void }) {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   
   const handleDelete = () => {
@@ -57,19 +57,19 @@ function ActionMenu({ pegawai, onDelete }: { pegawai: Pegawai & { encryptedId: s
           <DropdownMenuLabel>Aksi</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
-            <Link href={`/pegawai/${pegawai.encryptedId}/lihat`}>
+            <Link href={`/pegawai/${pegawai.id}/lihat`}>
               <Eye className="mr-2 h-4 w-4" />
               <span>Lihat</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href={`/pegawai/${pegawai.encryptedId}/edit`}>
+            <Link href={`/pegawai/${pegawai.id}/edit`}>
               <FilePen className="mr-2 h-4 w-4" />
               <span>Edit</span>
             </Link>
           </DropdownMenuItem>
            <DropdownMenuItem asChild>
-            <Link href={`/pegawai/${pegawai.encryptedId}/preview`}>
+            <Link href={`/pegawai/${pegawai.id}/preview`}>
               <FileSearch className="mr-2 h-4 w-4" />
               <span>Preview</span>
             </Link>
@@ -217,7 +217,7 @@ function ImportDialog({ onImportComplete }: { onImportComplete: (result: ImportR
 const ITEMS_PER_PAGE = 20;
 
 export default function PegawaiPage() {
-  const [pegawaiList, setPegawaiList] = useState<(Pegawai & { encryptedId: string })[]>([]);
+  const [pegawaiList, setPegawaiList] = useState<Pegawai[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDeleting, startDeleteTransition] = useTransition();

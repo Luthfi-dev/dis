@@ -35,7 +35,7 @@ import { getSiswa, deleteSiswa, importData, ImportResult } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
-function ActionMenu({ student, onDelete }: { student: Siswa & { encryptedId: string }, onDelete: (id: string) => void }) {
+function ActionMenu({ student, onDelete }: { student: Siswa, onDelete: (id: string) => void }) {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   
   const handleDelete = () => {
@@ -56,19 +56,19 @@ function ActionMenu({ student, onDelete }: { student: Siswa & { encryptedId: str
           <DropdownMenuLabel>Aksi</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
-            <Link href={`/siswa/${student.encryptedId}/lihat`}>
+            <Link href={`/siswa/${student.id}/lihat`}>
               <Eye className="mr-2 h-4 w-4" />
               <span>Lihat</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href={`/siswa/${student.encryptedId}/edit`}>
+            <Link href={`/siswa/${student.id}/edit`}>
               <FilePen className="mr-2 h-4 w-4" />
               <span>Edit</span>
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href={`/siswa/${student.encryptedId}/preview`}>
+            <Link href={`/siswa/${student.id}/preview`}>
               <FileSearch className="mr-2 h-4 w-4" />
               <span>Preview</span>
             </Link>
@@ -215,7 +215,7 @@ function ImportDialog({ onImportComplete }: { onImportComplete: (result: ImportR
 const ITEMS_PER_PAGE = 20;
 
 export default function SiswaPage() {
-  const [students, setStudents] = useState<(Siswa & { encryptedId: string })[]>([]);
+  const [students, setStudents] = useState<Siswa[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isDeleting, startDeleteTransition] = useTransition();

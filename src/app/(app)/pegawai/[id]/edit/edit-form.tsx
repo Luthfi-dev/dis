@@ -12,21 +12,15 @@ export function EditPegawaiForm({ pegawaiId }: { pegawaiId: string }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let isMounted = true;
     const fetchPegawai = async () => {
       const result = await getPegawaiById(pegawaiId);
-      if (isMounted) {
-        if (result) {
-          setPegawai(result);
-        }
-        setLoading(false);
+      if (result) {
+        setPegawai(result);
       }
+      setLoading(false);
     };
 
     fetchPegawai();
-    return () => {
-      isMounted = false;
-    };
   }, [pegawaiId]);
 
   if (loading) {

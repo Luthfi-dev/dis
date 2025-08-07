@@ -1,49 +1,9 @@
 
-import { clsx, type ClassValue } from "clsx"
+import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import CryptoJS from 'crypto-js';
-import { config } from 'dotenv';
-
-// Load environment variables at the start.
-config();
-
-// This function now safely retrieves the secret key on the server.
-const getSecretKey = () => {
-  const secret = process.env.ENCRYPTION_SECRET_KEY;
-  if (!secret) {
-    console.warn('Warning: ENCRYPTION_SECRET_KEY is not set. Using a default key. THIS IS NOT SECURE FOR PRODUCTION.');
-    return 'default-secret-key-that-is-long-enough-and-should-be-replaced';
-  }
-  return secret;
-};
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
-}
-
-export function encryptId(id: string): string {
-  const secretKey = getSecretKey();
-  const encrypted = CryptoJS.AES.encrypt(id.toString(), secretKey).toString();
-  // URL-safe encoding
-  return encodeURIComponent(encrypted);
-}
-
-export function decryptId(encryptedId: string): string {
-    const secretKey = getSecretKey();
-    try {
-        // URL-safe decoding
-        const decodedId = decodeURIComponent(encryptedId);
-        const bytes = CryptoJS.AES.decrypt(decodedId, secretKey);
-        const originalId = bytes.toString(CryptoJS.enc.Utf8);
-        if (!originalId) {
-           throw new Error("Decryption failed to produce a valid string.");
-        }
-        return originalId;
-    } catch (error) {
-        console.error("Decryption failed for ID:", encryptedId, error);
-        // Returning a value that is unlikely to exist in the DB
-        return 'invalid_id'; 
-    }
 }
 
 
