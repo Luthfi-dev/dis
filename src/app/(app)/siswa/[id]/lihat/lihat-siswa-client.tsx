@@ -3,7 +3,7 @@
 import { getSiswaById } from '@/lib/actions';
 import { Siswa } from '@/lib/data';
 import { notFound } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { FilePen, ArrowLeft, Building, User, Calendar, Mail, Phone, MapPin, Droplet, Stethoscope, BookOpen, File as FileIcon, Image as ImageIcon, Users, Languages, GraduationCap, School, HeartHandshake, Home, Briefcase, FileText } from 'lucide-react';
@@ -55,27 +55,33 @@ export function LihatSiswaClient({ id }: { id: string }) {
     const [domisili, setDomisili] = useState({provinsi: '', kabupaten: '', kecamatan: '', desa: ''});
 
     useEffect(() => {
+        let isMounted = true;
         const fetchStudent = async () => {
             const result = await getSiswaById(id);
-            if (result) {
-                setStudent(result);
-                // Fetch wilayah names
-                const [kkProv, kkKab, kkKec, kkDes, domProv, domKab, domKec, domDes] = await Promise.all([
-                    getProvinceName(result.siswa_alamatKkProvinsi),
-                    getKabupatenName(result.siswa_alamatKkKabupaten),
-                    getKecamatanName(result.siswa_alamatKkKecamatan),
-                    getDesaName(result.siswa_alamatKkDesa),
-                    getProvinceName(result.siswa_domisiliProvinsi),
-                    getKabupatenName(result.siswa_domisiliKabupaten),
-                    getKecamatanName(result.siswa_domisiliKecamatan),
-                    getDesaName(result.siswa_domisiliDesa),
-                ]);
-                setAlamatKk({provinsi: kkProv, kabupaten: kkKab, kecamatan: kkKec, desa: kkDes});
-                setDomisili({provinsi: domProv, kabupaten: domKab, kecamatan: domKec, desa: domDes});
+            if (isMounted) {
+                if (result) {
+                    setStudent(result);
+                    // Fetch wilayah names
+                    const [kkProv, kkKab, kkKec, kkDes, domProv, domKab, domKec, domDes] = await Promise.all([
+                        getProvinceName(result.siswa_alamatKkProvinsi),
+                        getKabupatenName(result.siswa_alamatKkKabupaten),
+                        getKecamatanName(result.siswa_alamatKkKecamatan),
+                        getDesaName(result.siswa_alamatKkDesa),
+                        getProvinceName(result.siswa_domisiliProvinsi),
+                        getKabupatenName(result.siswa_domisiliKabupaten),
+                        getKecamatanName(result.siswa_domisiliKecamatan),
+                        getDesaName(result.siswa_domisiliDesa),
+                    ]);
+                    setAlamatKk({provinsi: kkProv, kabupaten: kkKab, kecamatan: kkKec, desa: kkDes});
+                    setDomisili({provinsi: domProv, kabupaten: domKab, kecamatan: domKec, desa: domDes});
+                }
+                setLoading(false);
             }
-            setLoading(false);
         };
         fetchStudent();
+        return () => {
+            isMounted = false;
+        };
     }, [id]);
 
     const formatDate = (dateString?: string | Date) => {

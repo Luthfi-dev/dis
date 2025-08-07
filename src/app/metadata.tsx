@@ -7,7 +7,8 @@ export function AppMetadata() {
     const { settings } = useAppSettings();
 
     useEffect(() => {
-        if (settings) {
+        let isMounted = true;
+        if (settings && isMounted) {
             document.title = settings.app_title || 'EduArchive';
             
             let descriptionTag = document.querySelector('meta[name="description"]');
@@ -26,6 +27,7 @@ export function AppMetadata() {
             }
             iconTag.setAttribute('href', settings.app_logo_url || '/favicon.ico');
         }
+        return () => { isMounted = false; };
     }, [settings]);
 
     // This component doesn't render anything to the DOM itself.

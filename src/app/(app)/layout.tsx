@@ -1,3 +1,4 @@
+
 'use client';
 import { AppHeader } from '@/components/app-header';
 import { AppSidebar } from '@/components/app-sidebar';
@@ -12,9 +13,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
+    let isMounted = true;
+    if (!loading && !user && isMounted) {
       router.replace('/login');
     }
+    return () => {
+      isMounted = false;
+    };
   }, [user, loading, router]);
 
   if (loading || !user) {

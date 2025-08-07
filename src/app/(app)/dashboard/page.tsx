@@ -22,19 +22,26 @@ export default function DashboardPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
 
   useEffect(() => {
+    let isMounted = true;
     async function fetchData() {
         try {
             const siswaData = await getSiswa();
             const pegawaiData = await getPegawai();
             
-            setSiswaCount(siswaData.length);
-            setPegawaiCount(pegawaiData.length);
-            setActivities(getActivities());
+            if (isMounted) {
+                setSiswaCount(siswaData.length);
+                setPegawaiCount(pegawaiData.length);
+                setActivities(getActivities());
+            }
         } catch (error) {
             console.error("Failed to load dashboard data from server", error);
         }
     }
     fetchData();
+
+    return () => {
+        isMounted = false;
+    }
   }, []);
 
   const chartData = [
@@ -168,5 +175,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

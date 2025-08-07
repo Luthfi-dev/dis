@@ -46,10 +46,16 @@ export default function UsersPage() {
   const { toast } = useToast();
 
   const fetchUsers = async () => {
-    setLoading(true);
+    let isMounted = true;
+    if (isMounted) {
+        setLoading(true);
+    }
     const users = await getUsers();
-    setUserList(users);
-    setLoading(false);
+    if (isMounted) {
+        setUserList(users);
+        setLoading(false);
+    }
+    return () => { isMounted = false; };
   };
 
   useEffect(() => {

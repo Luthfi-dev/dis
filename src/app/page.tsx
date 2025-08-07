@@ -1,3 +1,4 @@
+
 'use client';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
@@ -9,13 +10,21 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
+    let isMounted = true;
+
     if (!loading) {
-      if (user) {
-        router.replace('/dashboard');
-      } else {
-        router.replace('/login');
+      if (isMounted) {
+        if (user) {
+          router.replace('/dashboard');
+        } else {
+          router.replace('/login');
+        }
       }
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [user, loading, router]);
 
   return (

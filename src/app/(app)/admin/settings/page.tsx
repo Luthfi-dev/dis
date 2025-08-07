@@ -55,11 +55,13 @@ export default function AdminSettingsPage() {
     const logoUrl = watch('app_logo_url');
 
     useEffect(() => {
-        if (!authLoading) {
+        let isMounted = true;
+        if (!authLoading && isMounted) {
             if (user?.role !== 'superadmin') {
                 router.replace('/dashboard');
             }
         }
+        return () => { isMounted = false; };
     }, [user, authLoading, router]);
 
     useEffect(() => {
