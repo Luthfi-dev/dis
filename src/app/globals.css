@@ -81,4 +81,10 @@
   body {
     @apply bg-background text-foreground;
   }
+  .rdp-dropdown_month, .rdp-dropdown_year {
+    @apply relative inline-flex items-center;
+  }
+  .rdp-dropdown_month select, .rdp-dropdown_year select {
+      @apply appearance-none bg-transparent font-medium py-1.5 pl-2 pr-7 text-sm;
+  }
 }
