@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { submitStudentData } from '@/lib/actions';
 import { Textarea } from './ui/textarea';
@@ -63,11 +63,20 @@ async function uploadFile(file: File) {
     return url;
 }
 
+const dateStringToDate = (dateString?: string): Date | undefined => {
+  if (!dateString) return undefined;
+  try {
+    return parse(dateString, 'yyyy-MM-dd', new Date());
+  } catch {
+    return undefined;
+  }
+};
+
 
 export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { id: string } }) {
   const searchParams = useSearchParams();
   const stepParam = searchParams.get('step');
-
+  const [isMounted, setIsMounted] = useState(false);
   const [currentStep, setCurrentStep] = useState(stepParam ? parseInt(stepParam, 10) : 1);
   const [isSubmitting, startTransition] = useTransition();
   const { toast } = useToast();
@@ -79,24 +88,16 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
 
   const { handleSubmit, reset } = methods;
   
-   useEffect(() => {
-    if (studentData) {
-        const dataToReset: any = { ...studentData };
-        // Ensure all date fields are Date objects and are timezone-corrected
-        for (const key in dataToReset) {
-            if ((key.includes('tanggal') || key.includes('Tanggal')) && dataToReset[key] && typeof dataToReset[key] === 'string') {
-                // Convert YYYY-MM-DD string to a Date object in a way that avoids timezone issues.
-                const dateString = dataToReset[key].split('T')[0];
-                const [year, month, day] = dateString.split('-').map(Number);
-                const date = new Date(year, month - 1, day);
-                dataToReset[key] = date;
-            }
-        }
-        reset(dataToReset);
-    } else {
-        reset(initialFormValues);
+  useEffect(() => {
+    let isMounted = true;
+    if (studentData && isMounted) {
+      reset(studentData);
+    } else if (isMounted) {
+      reset(initialFormValues);
     }
+    return () => { isMounted = false };
   }, [studentData, reset]);
+
 
   const handleNext = async () => {
     if (currentStep < steps.length) {
@@ -180,22 +181,73 @@ function Grid({ children, className }: { children: React.ReactNode, className?: 
   return <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4", className)}>{children}</div>;
 }
 
+function DatePickerField({ name, label }: { name: any, label: string }) {
+  const { control } = useFormContext<StudentFormData>();
+  
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <FormItem className="flex flex-col">
+          <FormLabel>{label}</FormLabel>
+          <Popover>
+            <PopoverTrigger asChild>
+              <FormControl>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "pl-3 text-left font-normal",
+                    !field.value && "text-muted-foreground"
+                  )}
+                >
+                  {field.value ? (
+                    format(dateStringToDate(field.value)!, 'dd-MM-yyyy')
+                  ) : (
+                    <span>Pilih tanggal</span>
+                  )}
+                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                </Button>
+              </FormControl>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={dateStringToDate(field.value)}
+                onSelect={(date) => field.onChange(date ? format(date, 'yyyy-MM-dd') : undefined)}
+                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+}
+
+
 function DataSiswaForm({ studentData }: { studentData?: Partial<Siswa> & { id: string } }) {
   const { control, watch, setValue, getValues, formState: { isDirty } } = useFormContext<StudentFormData>();
   const [preview, setPreview] = useState<string | null>(getValues('siswa_fotoProfil.fileURL') || null);
   const { toast } = useToast();
   
   useEffect(() => {
+    let isMounted = true;
     const fileURL = getValues('siswa_fotoProfil.fileURL');
-    if(fileURL && !preview) {
+    if(fileURL && !preview && isMounted) {
         setPreview(fileURL);
     }
     const subscription = watch((value, { name }) => {
-      if (name === 'siswa_fotoProfil') {
+      if (name === 'siswa_fotoProfil' && isMounted) {
         setPreview(value.siswa_fotoProfil?.fileURL ?? null);
       }
     });
-    return () => subscription.unsubscribe();
+    return () => { 
+        isMounted = false;
+        subscription.unsubscribe();
+    };
   }, [watch, getValues, preview]);
 
   
@@ -223,96 +275,128 @@ function DataSiswaForm({ studentData }: { studentData?: Partial<Siswa> & { id: s
 
   // Initial load for provinces and pre-filling dropdowns on edit
   useEffect(() => {
-    getProvinces().then(setProvinces);
+    let isMounted = true;
+    getProvinces().then(data => isMounted && setProvinces(data));
     if (studentData) {
-      if (studentData.siswa_alamatKkProvinsi) getKabupatens(studentData.siswa_alamatKkProvinsi).then(setKkKabupatens);
-      if (studentData.siswa_alamatKkKabupaten) getKecamatans(studentData.siswa_alamatKkKabupaten).then(setKkKecamatans);
-      if (studentData.siswa_alamatKkKecamatan) getDesas(studentData.siswa_alamatKkKecamatan).then(setKkDesas);
+      if (studentData.siswa_alamatKkProvinsi) getKabupatens(studentData.siswa_alamatKkProvinsi).then(data => isMounted && setKkKabupatens(data));
+      if (studentData.siswa_alamatKkKabupaten) getKecamatans(studentData.siswa_alamatKkKabupaten).then(data => isMounted && setKkKecamatans(data));
+      if (studentData.siswa_alamatKkKecamatan) getDesas(studentData.siswa_alamatKkKecamatan).then(data => isMounted && setKkDesas(data));
 
-      if (studentData.siswa_domisiliProvinsi) getKabupatens(studentData.siswa_domisiliProvinsi).then(setDomisiliKabupatens);
-      if (studentData.siswa_domisiliKabupaten) getKecamatans(studentData.siswa_domisiliKabupaten).then(setDomisiliKecamatans);
-      if (studentData.siswa_domisiliKecamatan) getDesas(studentData.siswa_domisiliKecamatan).then(setDomisiliDesas);
+      if (studentData.siswa_domisiliProvinsi) getKabupatens(studentData.siswa_domisiliProvinsi).then(data => isMounted && setDomisiliKabupatens(data));
+      if (studentData.siswa_domisiliKabupaten) getKecamatans(studentData.siswa_domisiliKabupaten).then(data => isMounted && setDomisiliKecamatans(data));
+      if (studentData.siswa_domisiliKecamatan) getDesas(studentData.siswa_domisiliKecamatan).then(data => isMounted && setDomisiliDesas(data));
     }
+    return () => { isMounted = false };
   }, [studentData]);
 
   // --- ISOLATED LOGIC FOR ALAMAT KK ---
   useEffect(() => {
+    let isMounted = true;
     const fetchKab = async () => {
         if (alamatKkProvinsi) {
-            setKkKabupatens(await getKabupatens(alamatKkProvinsi));
-            if (isDirty) {
-                setValue('siswa_alamatKkKabupaten', '');
-                setValue('siswa_alamatKkKecamatan', '');
-                setValue('siswa_alamatKkDesa', '');
+            const data = await getKabupatens(alamatKkProvinsi)
+            if(isMounted) {
+                setKkKabupatens(data);
+                if (isDirty) {
+                    setValue('siswa_alamatKkKabupaten', '');
+                    setValue('siswa_alamatKkKecamatan', '');
+                    setValue('siswa_alamatKkDesa', '');
+                }
             }
         }
     };
     fetchKab();
+    return () => { isMounted = false };
   }, [alamatKkProvinsi, setValue, isDirty]);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchKec = async () => {
         if (alamatKkKabupaten) {
-            setKkKecamatans(await getKecamatans(alamatKkKabupaten));
-            if (isDirty) {
-                setValue('siswa_alamatKkKecamatan', '');
-                setValue('siswa_alamatKkDesa', '');
+            const data = await getKecamatans(alamatKkKabupaten);
+            if(isMounted) {
+                setKkKecamatans(data);
+                if (isDirty) {
+                    setValue('siswa_alamatKkKecamatan', '');
+                    setValue('siswa_alamatKkDesa', '');
+                }
             }
         }
     };
     fetchKec();
+    return () => { isMounted = false };
   }, [alamatKkKabupaten, setValue, isDirty]);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchDesa = async () => {
         if (alamatKkKecamatan) {
-            setKkDesas(await getDesas(alamatKkKecamatan));
-            if (isDirty) {
-                setValue('siswa_alamatKkDesa', '');
+            const data = await getDesas(alamatKkKecamatan);
+            if(isMounted) {
+                setKkDesas(data);
+                if (isDirty) {
+                    setValue('siswa_alamatKkDesa', '');
+                }
             }
         }
     };
     fetchDesa();
+    return () => { isMounted = false };
   }, [alamatKkKecamatan, setValue, isDirty]);
 
    // --- ISOLATED LOGIC FOR DOMISILI ---
    useEffect(() => {
+    let isMounted = true;
     const fetchKab = async () => {
         if (domisiliProvinsi) {
-            setDomisiliKabupatens(await getKabupatens(domisiliProvinsi));
-            if (isDirty) {
-                setValue('siswa_domisiliKabupaten', '');
-                setValue('siswa_domisiliKecamatan', '');
-                setValue('siswa_domisiliDesa', '');
+            const data = await getKabupatens(domisiliProvinsi);
+            if(isMounted) {
+                setDomisiliKabupatens(data);
+                if (isDirty) {
+                    setValue('siswa_domisiliKabupaten', '');
+                    setValue('siswa_domisiliKecamatan', '');
+                    setValue('siswa_domisiliDesa', '');
+                }
             }
         }
     };
     fetchKab();
+    return () => { isMounted = false };
   }, [domisiliProvinsi, setValue, isDirty]);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchKec = async () => {
         if (domisiliKabupaten) {
-            setDomisiliKecamatans(await getKecamatans(domisiliKabupaten));
-            if (isDirty) {
-                setValue('siswa_domisiliKecamatan', '');
-                setValue('siswa_domisiliDesa', '');
+            const data = await getKecamatans(domisiliKabupaten);
+            if(isMounted) {
+                setDomisiliKecamatans(data);
+                if (isDirty) {
+                    setValue('siswa_domisiliKecamatan', '');
+                    setValue('siswa_domisiliDesa', '');
+                }
             }
         }
     };
     fetchKec();
+    return () => { isMounted = false };
   }, [domisiliKabupaten, setValue, isDirty]);
   
   useEffect(() => {
+    let isMounted = true;
     const fetchDesa = async () => {
         if (domisiliKecamatan) {
-            setDomisiliDesas(await getDesas(domisiliKecamatan));
-            if (isDirty) {
-                setValue('siswa_domisiliDesa', '');
+            const data = await getDesas(domisiliKecamatan);
+            if(isMounted) {
+                setDomisiliDesas(data);
+                if (isDirty) {
+                    setValue('siswa_domisiliDesa', '');
+                }
             }
         }
     };
     fetchDesa();
+    return () => { isMounted = false };
   }, [domisiliKecamatan, setValue, isDirty]);
 
   const wilayahToOptions = (wilayah: Wilayah[]) => wilayah.map(w => ({ value: w.id, label: w.name }));
@@ -386,18 +470,7 @@ function DataSiswaForm({ studentData }: { studentData?: Partial<Siswa> & { id: s
                 <FormField control={control} name="siswa_tempatLahir" render={({ field }) => (
                     <FormItem><FormLabel>Tempat Lahir</FormLabel><FormControl><Input placeholder="Contoh: Jakarta" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                 )} />
-                <FormField control={control} name="siswa_tanggalLahir" render={({ field }) => (
-                    <FormItem className="flex flex-col"><FormLabel>Tanggal Lahir</FormLabel><Popover>
-                    <PopoverTrigger asChild><FormControl>
-                        <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                        {field.value ? format(new Date(field.value), "PPP") : <span>Pilih tanggal</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                    </FormControl></PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date)} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
-                    </PopoverContent>
-                    </Popover><FormMessage /></FormItem>
-                )} />
+                <DatePickerField name="siswa_tanggalLahir" label="Tanggal Lahir" />
             </Grid>
         </div>
         <FormField control={control} name="siswa_agama" render={({ field }) => (
@@ -652,18 +725,7 @@ function DataPerkembanganForm() {
                     <FormField control={control} name="siswa_nomorSttb" render={({ field }) => (
                         <FormItem><FormLabel>2. Nomor STTB</FormLabel><FormControl><Input placeholder="Nomor STTB" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                     )} />
-                    <FormField control={control} name="siswa_tanggalSttb" render={({ field }) => (
-                        <FormItem className="flex flex-col"><FormLabel>3. Tanggal STTB</FormLabel><Popover>
-                        <PopoverTrigger asChild><FormControl>
-                            <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                            {field.value ? format(new Date(field.value), "PPP") : <span>Pilih tanggal</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                        </FormControl></PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date)} initialFocus />
-                        </PopoverContent>
-                        </Popover><FormMessage /></FormItem>
-                    )} />
+                    <DatePickerField name="siswa_tanggalSttb" label="3. Tanggal STTB" />
                 </Grid>
             </div>
             <Separator/>
@@ -676,18 +738,7 @@ function DataPerkembanganForm() {
                      <FormField control={control} name="siswa_pindahanDariTingkat" render={({ field }) => (
                         <FormItem><FormLabel>2. Dari Tingkat</FormLabel><FormControl><Input placeholder="Contoh: Kelas 4" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                     )} />
-                    <FormField control={control} name="siswa_pindahanDiterimaTanggal" render={({ field }) => (
-                        <FormItem className="flex flex-col"><FormLabel>3. Diterima Tanggal</FormLabel><Popover>
-                        <PopoverTrigger asChild><FormControl>
-                            <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                            {field.value ? format(new Date(field.value), "PPP") : <span>Pilih tanggal</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                        </FormControl></PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date)} initialFocus />
-                        </PopoverContent>
-                        </Popover><FormMessage /></FormItem>
-                    )} />
+                    <DatePickerField name="siswa_pindahanDiterimaTanggal" label="3. Diterima Tanggal" />
                 </Grid>
             </div>
         </div>
@@ -734,18 +785,9 @@ function DataMeninggalkanSekolahForm() {
                     <FormField control={control} name="siswa_keluarAlasan" render={({ field }) => (
                         <FormItem><FormLabel>Alasan keluar sekolah</FormLabel><FormControl><Textarea placeholder="Jelaskan alasan keluar" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
                     )} />
-                    <FormField control={control} name="siswa_keluarTanggal" render={({ field }) => (
-                        <FormItem className="flex flex-col max-w-sm"><FormLabel>Hari dan tanggal keluar sekolah</FormLabel><Popover>
-                        <PopoverTrigger asChild><FormControl>
-                            <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                            {field.value ? format(new Date(field.value), "PPP") : <span>Pilih tanggal</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                        </FormControl></PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date)} initialFocus />
-                        </PopoverContent>
-                        </Popover><FormMessage /></FormItem>
-                    )} />
+                     <div className='max-w-sm'>
+                       <DatePickerField name="siswa_keluarTanggal" label="Hari dan tanggal keluar sekolah" />
+                    </div>
                 </Grid>
             </div>
         </div>

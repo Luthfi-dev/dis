@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGr
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { submitPegawaiData } from '@/lib/actions';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -92,10 +92,20 @@ async function uploadFile(file: File) {
     return url;
 }
 
+const dateStringToDate = (dateString?: string): Date | undefined => {
+    if (!dateString) return undefined;
+    try {
+      return parse(dateString, 'yyyy-MM-dd', new Date());
+    } catch {
+      return undefined;
+    }
+  };
+
 
 export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & { id: string } }) {
   const searchParams = useSearchParams();
   const stepParam = searchParams.get('step');
+  const [isMounted, setIsMounted] = useState(false);
 
   const [currentStep, setCurrentStep] = useState(stepParam ? parseInt(stepParam, 10) : 1);
   const [isSubmitting, startTransition] = useTransition();
@@ -109,22 +119,13 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
   const { handleSubmit, reset } = methods;
   
    useEffect(() => {
-    if (pegawaiData) {
-        const dataToReset: any = { ...pegawaiData };
-        // Ensure all date fields are Date objects and are timezone-corrected
-        for (const key in dataToReset) {
-            if ((key.includes('tanggal') || key.includes('Tanggal')) && dataToReset[key] && typeof dataToReset[key] === 'string') {
-                 // Convert YYYY-MM-DD string to a Date object in a way that avoids timezone issues.
-                const dateString = dataToReset[key].split('T')[0];
-                const [year, month, day] = dateString.split('-').map(Number);
-                const date = new Date(year, month - 1, day);
-                dataToReset[key] = date;
-            }
-        }
-        reset(dataToReset);
-    } else {
+    let isMounted = true;
+    if (pegawaiData && isMounted) {
+        reset(pegawaiData);
+    } else if (isMounted) {
         reset(initialFormValues);
     }
+    return () => { isMounted = false };
   }, [pegawaiData, reset]);
 
 
@@ -207,22 +208,72 @@ function Grid({ children, className }: { children: React.ReactNode, className?: 
   return <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4", className)}>{children}</div>;
 }
 
+function DatePickerField({ name, label }: { name: any, label: string }) {
+    const { control, getValues, setValue } = useFormContext<PegawaiFormData>();
+    
+    return (
+      <FormField
+        control={control}
+        name={name}
+        render={({ field }) => (
+          <FormItem className="flex flex-col">
+            <FormLabel>{label}</FormLabel>
+            <Popover>
+              <PopoverTrigger asChild>
+                <FormControl>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "pl-3 text-left font-normal",
+                      !field.value && "text-muted-foreground"
+                    )}
+                  >
+                    {field.value ? (
+                      format(dateStringToDate(field.value)!, 'dd-MM-yyyy')
+                    ) : (
+                      <span>Pilih tanggal</span>
+                    )}
+                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                  </Button>
+                </FormControl>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={dateStringToDate(field.value)}
+                  onSelect={(date) => field.onChange(date ? format(date, 'yyyy-MM-dd') : undefined)}
+                  disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    );
+  }
+
 function DataIdentitasPegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & { id: string } }) {
   const { control, watch, setValue, getValues, formState: {isDirty} } = useFormContext<PegawaiFormData>();
   const { toast } = useToast();
   const [preview, setPreview] = useState<string | null>(getValues('pegawai_phaspoto.fileURL') || null);
   
   useEffect(() => {
+    let isMounted = true;
     const fileURL = getValues('pegawai_phaspoto.fileURL');
-    if(fileURL && !preview) {
+    if(fileURL && !preview && isMounted) {
         setPreview(fileURL);
     }
     const subscription = watch((value, { name }) => {
-      if (name === 'pegawai_phaspoto') {
+      if (name === 'pegawai_phaspoto' && isMounted) {
         setPreview(value.pegawai_phaspoto?.fileURL ?? null);
       }
     });
-    return () => subscription.unsubscribe();
+    return () => { 
+        isMounted = false;
+        subscription.unsubscribe();
+     };
   }, [watch, getValues, preview]);
 
   const [allKabupatens, setAllKabupatens] = useState<Wilayah[]>([]);
@@ -233,43 +284,52 @@ function DataIdentitasPegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegaw
   const alamatKecamatan = watch('pegawai_alamatKecamatan');
   
   useEffect(() => {
-    getKabupatens('11').then(setAllKabupatens); // Default to Aceh
+    let isMounted = true;
+    getKabupatens('11').then(data => isMounted && setAllKabupatens(data));
     if (pegawaiData) {
-        if(pegawaiData.pegawai_alamatKabupaten) getKecamatans(pegawaiData.pegawai_alamatKabupaten).then(setKecamatans);
-        if(pegawaiData.pegawai_alamatKecamatan) getDesas(pegawaiData.pegawai_alamatKecamatan).then(setDesas);
+        if(pegawaiData.pegawai_alamatKabupaten) getKecamatans(pegawaiData.pegawai_alamatKabupaten).then(data => isMounted && setKecamatans(data));
+        if(pegawaiData.pegawai_alamatKecamatan) getDesas(pegawaiData.pegawai_alamatKecamatan).then(data => isMounted && setDesas(data));
     }
+    return () => { isMounted = false };
   }, [pegawaiData]);
   
   useEffect(() => {
+      let isMounted = true;
       const fetchWilayah = async () => {
         if (alamatKabupaten) {
           const newKecamatans = await getKecamatans(alamatKabupaten);
-          setKecamatans(newKecamatans);
-          
-          if(isDirty) {
-            setValue('pegawai_alamatKecamatan', '');
-            setValue('pegawai_alamatDesa', '');
+          if (isMounted) {
+            setKecamatans(newKecamatans);
+            if(isDirty) {
+              setValue('pegawai_alamatKecamatan', '');
+              setValue('pegawai_alamatDesa', '');
+            }
           }
-        } else {
+        } else if (isMounted) {
           setKecamatans([]);
         }
       };
       fetchWilayah();
+      return () => { isMounted = false };
   }, [alamatKabupaten, setValue, isDirty]);
 
   useEffect(() => {
+      let isMounted = true;
       const fetchWilayah = async () => {
           if (alamatKecamatan) {
             const newDesas = await getDesas(alamatKecamatan);
-            setDesas(newDesas);
-            if(isDirty) {
-              setValue('pegawai_alamatDesa', '');
+            if(isMounted) {
+                setDesas(newDesas);
+                if(isDirty) {
+                setValue('pegawai_alamatDesa', '');
+                }
             }
-          } else {
+          } else if(isMounted) {
             setDesas([]);
           }
       };
       fetchWilayah();
+      return () => { isMounted = false };
   }, [alamatKecamatan, setValue, isDirty]);
 
   const wilayahToOptions = (wilayah: Wilayah[]) => wilayah.map(w => ({ value: w.id, label: w.name }));
@@ -371,18 +431,7 @@ function DataIdentitasPegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegaw
         <FormField control={control} name="pegawai_tempatLahir" render={({ field }) => (
             <FormItem><FormLabel>Tempat Lahir</FormLabel><FormControl><Input placeholder="Contoh: Jakarta" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
         )} />
-        <FormField control={control} name="pegawai_tanggalLahir" render={({ field }) => (
-            <FormItem className="flex flex-col"><FormLabel>Tanggal Lahir</FormLabel><Popover>
-            <PopoverTrigger asChild><FormControl>
-                <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                {field.value ? format(new Date(field.value), "PPP") : <span>Pilih tanggal</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                </Button>
-            </FormControl></PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date)} disabled={(date) => date > new Date() || date < new Date("1900-01-01")} initialFocus />
-            </PopoverContent>
-            </Popover><FormMessage /></FormItem>
-        )} />
+        <DatePickerField name="pegawai_tanggalLahir" label="Tanggal Lahir" />
         <FormField control={control} name="pegawai_nip" render={({ field }) => (
             <FormItem><FormLabel>NIP</FormLabel><FormControl><Input placeholder="Nomor Induk Pegawai" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
         )} />
@@ -403,18 +452,7 @@ function DataIdentitasPegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegaw
             </SelectContent>
             </Select><FormMessage /></FormItem>
         )} />
-         <FormField control={control} name="pegawai_tanggalPerkawinan" render={({ field }) => (
-            <FormItem className="flex flex-col"><FormLabel>Tanggal Perkawinan</FormLabel><Popover>
-            <PopoverTrigger asChild><FormControl>
-                <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                {field.value ? format(new Date(field.value), "PPP") : <span>Pilih tanggal</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                </Button>
-            </FormControl></PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date)} disabled={(date) => date > new Date()} initialFocus />
-            </PopoverContent>
-            </Popover><FormMessage /></FormItem>
-        )} />
+         <DatePickerField name="pegawai_tanggalPerkawinan" label="Tanggal Perkawinan" />
         <FormField control={control} name="pegawai_namaPasangan" render={({ field }) => (
             <FormItem><FormLabel>Nama Istri / Suami</FormLabel><FormControl><Input placeholder="Nama lengkap pasangan" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>
         )} />
@@ -467,18 +505,7 @@ function DataIdentitasPegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegaw
             </SelectContent>
             </Select><FormMessage /></FormItem>
         )} />
-        <FormField control={control} name="pegawai_terhitungMulaiTanggal" render={({ field }) => (
-            <FormItem className="flex flex-col"><FormLabel>Terhitung Mulai Tanggal</FormLabel><Popover>
-            <PopoverTrigger asChild><FormControl>
-                <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                {field.value ? format(new Date(field.value), "PPP") : <span>Pilih tanggal</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                </Button>
-            </FormControl></PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={(date) => field.onChange(date)} disabled={(date) => date > new Date()} initialFocus />
-            </PopoverContent>
-            </Popover><FormMessage /></FormItem>
-        )} />
+        <DatePickerField name="pegawai_terhitungMulaiTanggal" label="Terhitung Mulai Tanggal" />
       </Grid>
       <Separator className="my-6" />
         <div className="space-y-4">

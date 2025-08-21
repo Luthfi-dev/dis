@@ -97,24 +97,11 @@ function escapeHtml(str: string): string {
     .replace(/'/g, "&#039;");
 }
 
-function formatMySqlDate(date: Date) {
-    if (!(date instanceof Date) || isNaN(date.getTime())) {
-        return null;
-    }
-    // This function now correctly handles timezone offsets to prevent the "one day off" bug.
-    // It creates a new date object adjusted by the timezone offset of the original date,
-    // ensuring that when we call toISOString, we get the correct YYYY-MM-DD for the user's intended date.
-    const timezoneOffset = date.getTimezoneOffset() * 60000; //offset in milliseconds
-    const correctedDate = new Date(date.getTime() - timezoneOffset);
-    return correctedDate.toISOString().slice(0, 10);
-}
-
 /**
  * Recursively sanitizes and formats data for database insertion.
  * - Escapes HTML in strings.
  * - Converts empty strings to null.
  * - Stringifies objects/arrays.
- * - Formats Date objects for MySQL.
  * @param data The object or value to process.
  * @returns The processed object or value.
  */
@@ -130,12 +117,12 @@ export function sanitizeAndFormatData(data: any): any {
       let value = data[key];
 
       if (value instanceof Date) {
-        sanitizedData[key] = formatMySqlDate(value);
+        // This case should ideally not be hit if we manage dates as strings
+        // but as a fallback, format it.
+         sanitizedData[key] = value.toISOString().slice(0, 10);
       } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-        // This handles objects like 'documents', 'siswa_fotoProfil', etc.
         sanitizedData[key] = JSON.stringify(value);
       } else if (Array.isArray(value)) {
-        // This handles arrays like 'pegawai_skPengangkatan'
         sanitizedData[key] = JSON.stringify(value);
       } else if (typeof value === 'string') {
         sanitizedData[key] = value === '' ? null : escapeHtml(value);
