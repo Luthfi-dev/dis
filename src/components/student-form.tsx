@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format, parse } from 'date-fns';
+import { format, parse, isValid } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { submitStudentData } from '@/lib/actions';
 import { Textarea } from './ui/textarea';
@@ -65,11 +65,21 @@ async function uploadFile(file: File) {
 
 const dateStringToDate = (dateString?: string): Date | undefined => {
   if (!dateString) return undefined;
-  try {
-    return parse(dateString, 'yyyy-MM-dd', new Date());
-  } catch {
-    return undefined;
+  
+  // Try parsing ISO string first (from database)
+  let date = new Date(dateString);
+  if (isValid(date)) {
+    // It's a valid date, likely from an ISO string. We need to adjust for timezone.
+    return new Date(date.valueOf() + date.getTimezoneOffset() * 60 * 1000);
   }
+
+  // Fallback to parsing 'yyyy-MM-dd' (from form state)
+  date = parse(dateString, 'yyyy-MM-dd', new Date());
+  if (isValid(date)) {
+    return date;
+  }
+
+  return undefined;
 };
 
 
@@ -954,3 +964,4 @@ function DataValidasiForm() {
     </div>
   )
 }
+
