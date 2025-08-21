@@ -7,7 +7,6 @@ import { DayPicker } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select"
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
 
@@ -67,6 +66,8 @@ function Calendar({
           <ChevronRight className={cn("h-4 w-4", className)} {...props} />
         ),
       }}
+      // Set defaultMonth to the selected date to open the calendar at the correct month
+      defaultMonth={props.selected as Date | undefined}
       {...props}
     />
   )

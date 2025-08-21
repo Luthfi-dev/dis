@@ -113,7 +113,7 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
     
     // Ensure all date fields are Date objects if they exist
     for (const key in dataToReset) {
-      if ((key.startsWith('pegawai_tanggal') || key.endsWith('MulaiTanggal')) && dataToReset[key] && typeof dataToReset[key] === 'string') {
+      if ((key.includes('tanggal') || key.includes('Tanggal')) && dataToReset[key] && typeof dataToReset[key] === 'string') {
         dataToReset[key] = new Date(dataToReset[key]);
       }
     }

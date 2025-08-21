@@ -85,6 +85,6 @@
     @apply relative inline-flex items-center;
   }
   .rdp-dropdown_month select, .rdp-dropdown_year select {
-      @apply appearance-none bg-transparent font-medium py-1.5 pl-2 pr-7 text-sm;
+      @apply appearance-none bg-transparent font-medium py-1.5 pl-2 pr-7 text-sm rounded-md border border-input focus:ring-2 focus:ring-ring;
   }
 }
