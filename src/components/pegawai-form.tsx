@@ -109,15 +109,21 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
   const { handleSubmit, reset } = methods;
   
    useEffect(() => {
-    let dataToReset: any = pegawaiData ? { ...pegawaiData } : { ...initialFormValues };
-    
-    // Ensure all date fields are Date objects if they exist
-    for (const key in dataToReset) {
-      if ((key.includes('tanggal') || key.includes('Tanggal')) && dataToReset[key] && typeof dataToReset[key] === 'string') {
-        dataToReset[key] = new Date(dataToReset[key]);
-      }
+    if (pegawaiData) {
+        const dataToReset: any = { ...pegawaiData };
+        // Ensure all date fields are Date objects and are timezone-corrected
+        for (const key in dataToReset) {
+            if ((key.includes('tanggal') || key.includes('Tanggal')) && dataToReset[key] && typeof dataToReset[key] === 'string') {
+                const d = new Date(dataToReset[key]);
+                // Correct for timezone offset
+                const correctedDate = new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+                dataToReset[key] = correctedDate;
+            }
+        }
+        reset(dataToReset);
+    } else {
+        reset(initialFormValues);
     }
-    reset(dataToReset);
   }, [pegawaiData, reset]);
 
 

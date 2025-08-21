@@ -80,15 +80,21 @@ export function StudentForm({ studentData }: { studentData?: Partial<Siswa> & { 
   const { handleSubmit, reset } = methods;
   
    useEffect(() => {
-    let dataToReset: any = studentData ? { ...studentData } : { ...initialFormValues };
-    
-    // Ensure all date fields are Date objects if they exist
-    for (const key in dataToReset) {
-      if (key.includes('tanggal') && dataToReset[key] && typeof dataToReset[key] === 'string') {
-        dataToReset[key] = new Date(dataToReset[key]);
-      }
+    if (studentData) {
+        const dataToReset: any = { ...studentData };
+        // Ensure all date fields are Date objects and are timezone-corrected
+        for (const key in dataToReset) {
+            if ((key.includes('tanggal') || key.includes('Tanggal')) && dataToReset[key] && typeof dataToReset[key] === 'string') {
+                const d = new Date(dataToReset[key]);
+                 // Correct for timezone offset by creating a new date from UTC components
+                const correctedDate = new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+                dataToReset[key] = correctedDate;
+            }
+        }
+        reset(dataToReset);
+    } else {
+        reset(initialFormValues);
     }
-    reset(dataToReset);
   }, [studentData, reset]);
 
   const handleNext = async () => {
