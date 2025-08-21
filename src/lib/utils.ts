@@ -101,9 +101,12 @@ function formatMySqlDate(date: Date) {
     if (!(date instanceof Date) || isNaN(date.getTime())) {
         return null;
     }
-    const pad = (num: number) => num.toString().padStart(2, '0');
-    // Use UTC methods to prevent timezone shifts
-    return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
+    // This function now correctly handles timezone offsets to prevent the "one day off" bug.
+    // It creates a new date object adjusted by the timezone offset of the original date,
+    // ensuring that when we call toISOString, we get the correct YYYY-MM-DD for the user's intended date.
+    const timezoneOffset = date.getTimezoneOffset() * 60000; //offset in milliseconds
+    const correctedDate = new Date(date.getTime() - timezoneOffset);
+    return correctedDate.toISOString().slice(0, 10);
 }
 
 /**

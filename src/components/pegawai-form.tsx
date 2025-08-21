@@ -114,10 +114,11 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
         // Ensure all date fields are Date objects and are timezone-corrected
         for (const key in dataToReset) {
             if ((key.includes('tanggal') || key.includes('Tanggal')) && dataToReset[key] && typeof dataToReset[key] === 'string') {
-                const d = new Date(dataToReset[key]);
-                // Correct for timezone offset
-                const correctedDate = new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
-                dataToReset[key] = correctedDate;
+                 // Convert YYYY-MM-DD string to a Date object in a way that avoids timezone issues.
+                const dateString = dataToReset[key].split('T')[0];
+                const [year, month, day] = dateString.split('-').map(Number);
+                const date = new Date(year, month - 1, day);
+                dataToReset[key] = date;
             }
         }
         reset(dataToReset);
