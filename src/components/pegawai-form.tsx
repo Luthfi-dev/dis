@@ -92,15 +92,16 @@ async function uploadFile(file: File) {
     return url;
 }
 
-const dateStringToDate = (dateString?: string): Date | undefined => {
+const dateStringToDate = (dateString?: string | Date): Date | undefined => {
     if (!dateString) return undefined;
-    
+    if (dateString instanceof Date) return dateString;
+
     // Split the string to handle both 'YYYY-MM-DD' and full ISO strings (YYYY-MM-DDTHH:mm:ss.sssZ)
     const datePart = dateString.split('T')[0];
     const [year, month, day] = datePart.split('-').map(Number);
 
     if (year && month && day) {
-        // Create a new Date in UTC to avoid timezone shifts. 
+        // Create a new Date in UTC to avoid timezone shifts.
         // JavaScript's Date constructor treats 'YYYY-MM-DD' as UTC midnight.
         return new Date(Date.UTC(year, month - 1, day));
     }

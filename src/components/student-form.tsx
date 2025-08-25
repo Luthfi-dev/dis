@@ -63,8 +63,9 @@ async function uploadFile(file: File) {
     return url;
 }
 
-const dateStringToDate = (dateString?: string): Date | undefined => {
+const dateStringToDate = (dateString?: string | Date): Date | undefined => {
     if (!dateString) return undefined;
+    if (dateString instanceof Date) return dateString;
     
     // Split the string to handle both 'YYYY-MM-DD' and full ISO strings (YYYY-MM-DDTHH:mm:ss.sssZ)
     const datePart = dateString.split('T')[0];
