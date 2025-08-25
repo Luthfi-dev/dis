@@ -1,53 +1,5 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { config } from 'dotenv';
-import CryptoJS from 'crypto-js';
-
-// Ensure env vars are loaded
-config();
-
-// It's better to read the env var once and store it.
-// This function should only be called in server-side code.
-const getSecretKey = () => {
-  const key = process.env.ENCRYPTION_SECRET_KEY;
-  if (!key) {
-    console.error("ENCRYPTION_SECRET_KEY is not set in the environment variables.");
-    // Provide a default key for development to prevent crashes, but log a warning.
-    if (process.env.NODE_ENV === 'development') {
-        console.warn("Using a default, insecure encryption key for development.");
-        return 'default-dev-secret-key-123456';
-    }
-    throw new Error("ENCRYPTION_SECRET_KEY is not defined.");
-  }
-  return key;
-};
-
-
-export function encryptId(id: string): string {
-    const SECRET_KEY = getSecretKey();
-    const encrypted = CryptoJS.AES.encrypt(id, SECRET_KEY).toString();
-    // Use a URL-safe version of Base64 encoding
-    return CryptoJS.enc.Base64.parse(CryptoJS.enc.Utf8.parse(encrypted)).toString(CryptoJS.enc.UrlSafe);
-}
-
-export function decryptId(encryptedId: string): string {
-  try {
-    const SECRET_KEY = getSecretKey();
-    // Decode the URL-safe Base64 string first
-    const decodedFromUrlSafe = CryptoJS.enc.Base64.parse(encryptedId, CryptoJS.enc.UrlSafe).toString(CryptoJS.enc.Utf8);
-    const bytes = CryptoJS.AES.decrypt(decodedFromUrlSafe, SECRET_KEY);
-    const originalId = bytes.toString(CryptoJS.enc.Utf8);
-    // If the decrypted string is empty, it means decryption failed
-    if (!originalId) {
-        return 'invalid_id';
-    }
-    return originalId;
-  } catch (error) {
-    console.error("Decryption failed:", error);
-    return 'invalid_id';
-  }
-}
-
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))

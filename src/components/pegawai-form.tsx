@@ -93,22 +93,19 @@ async function uploadFile(file: File) {
 }
 
 const dateStringToDate = (dateString?: string): Date | undefined => {
-  if (!dateString) return undefined;
-  
-  // Try parsing ISO string first (from database)
-  let date = new Date(dateString);
-  if (isValid(date)) {
-    // It's a valid date, likely from an ISO string. We need to adjust for timezone.
-    return new Date(date.valueOf() + date.getTimezoneOffset() * 60 * 1000);
-  }
+    if (!dateString) return undefined;
+    
+    // Split the string to handle both 'YYYY-MM-DD' and full ISO strings (YYYY-MM-DDTHH:mm:ss.sssZ)
+    const datePart = dateString.split('T')[0];
+    const [year, month, day] = datePart.split('-').map(Number);
 
-  // Fallback to parsing 'yyyy-MM-dd' (from form state)
-  date = parse(dateString, 'yyyy-MM-dd', new Date());
-  if (isValid(date)) {
-    return date;
-  }
+    if (year && month && day) {
+        // Create a new Date in UTC to avoid timezone shifts. 
+        // JavaScript's Date constructor treats 'YYYY-MM-DD' as UTC midnight.
+        return new Date(Date.UTC(year, month - 1, day));
+    }
 
-  return undefined;
+    return undefined;
 };
 
 
@@ -129,13 +126,11 @@ export function PegawaiForm({ pegawaiData }: { pegawaiData?: Partial<Pegawai> & 
   const { handleSubmit, reset } = methods;
   
    useEffect(() => {
-    let isMounted = true;
-    if (pegawaiData && isMounted) {
+    if (pegawaiData) {
         reset(pegawaiData);
-    } else if (isMounted) {
+    } else {
         reset(initialFormValues);
     }
-    return () => { isMounted = false };
   }, [pegawaiData, reset]);
 
 
@@ -219,7 +214,7 @@ function Grid({ children, className }: { children: React.ReactNode, className?: 
 }
 
 function DatePickerField({ name, label }: { name: any, label: string }) {
-    const { control, getValues, setValue } = useFormContext<PegawaiFormData>();
+    const { control } = useFormContext<PegawaiFormData>();
     
     return (
       <FormField

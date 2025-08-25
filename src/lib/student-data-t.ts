@@ -15,7 +15,7 @@ export type StudentFormData = {
   siswa_nisn: string;
   siswa_jenisKelamin?: 'Laki-laki' | 'Perempuan';
   siswa_tempatLahir?: string;
-  siswa_tanggalLahir?: Date;
+  siswa_tanggalLahir?: string;
   siswa_agama?: string;
   siswa_kewarganegaraan?: string;
   siswa_fotoProfil?: { fileName: string; fileURL: string; } | null;
@@ -67,10 +67,10 @@ export type StudentFormData = {
   siswa_teleponOrangTua?: string;
   siswa_asalSekolah?: string;
   siswa_nomorSttb?: string;
-  siswa_tanggalSttb?: Date | null;
+  siswa_tanggalSttb?: string | null;
   siswa_pindahanAsalSekolah?: string;
   siswa_pindahanDariTingkat?: string;
-  siswa_pindahanDiterimaTanggal?: Date | null;
+  siswa_pindahanDiterimaTanggal?: string | null;
   siswa_lulusTahun?: string;
   siswa_lulusNomorIjazah?: string;
   siswa_lulusMelanjutkanKe?: string;
@@ -78,6 +78,6 @@ export type StudentFormData = {
   siswa_pindahTingkatKelas?: string;
   siswa_pindahKeTingkat?: string;
   siswa_keluarAlasan?: string;
-  siswa_keluarTanggal?: Date | null;
+  siswa_keluarTanggal?: string | null;
   [key: string]: any;
 };
